@@ -1,0 +1,83 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wrenchMetal" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="20%" style="stop-color:#e0e0e0"/>
+      <stop offset="50%" style="stop-color:#bdbdbd"/>
+      <stop offset="100%" style="stop-color:#9e9e9e"/>
+    </linearGradient>
+    <linearGradient id="wrenchHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="hammerHeadMetal" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" style="stop-color:#cfd8dc"/> <stop offset="30%" style="stop-color:#546e7a"/>
+      <stop offset="80%" style="stop-color:#37474f"/>
+      <stop offset="100%" style="stop-color:#263238"/>
+    </linearGradient>
+    <linearGradient id="handleBase" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#c62828"/>
+      <stop offset="100%" style="stop-color:#8e0000"/>
+    </linearGradient>
+    <linearGradient id="handleTopGloss" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff7043"/>
+      <stop offset="80%" style="stop-color:#d84315"/>
+    </linearGradient>
+    <linearGradient id="collarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a1887f"/>
+      <stop offset="100%" stop-color="#5d4037"/>
+    </linearGradient>
+
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur"/>
+      <feOffset in="blur" dx="4" dy="8" result="offsetBlur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="offsetBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="contactShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="2" dy="4"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.6"/></feComponentTransfer>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)" transform="translate(256, 256)">
+
+    <g transform="rotate(-45) translate(-190, -60)">
+      <path d="M360,30 C360,30 340,35 325,55 L80,55 C52.386,55 30,77.386 30,105 C30,132.614 52.386,155 80,155 L325,155 C340,175 360,180 360,180 L380,210 C380,210 430,180 430,105 C430,30 380,0 380,0 L360,30 Z M375,65 L405,105 L375,145 L345,145 L325,120 L325,90 L345,65 L375,65 Z" fill="url(#wrenchMetal)"/>
+
+      <path d="M80,57 L325,57 C335,57 345,45 360,32 L378,2 C378,2 415,25 425,70" fill="none" stroke="url(#wrenchHighlight)" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+      <path d="M80,153 L325,153 C335,153 345,165 360,178 L378,208" fill="none" stroke="#757575" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+      <circle cx="80" cy="105" r="18" fill="#757575"/> <circle cx="80" cy="106" r="15" fill="#e0e0e0"/> <circle cx="80" cy="105" r="15" fill="none" stroke="#555" stroke-width="2" opacity="0.5"/> </g>
+
+    <g transform="rotate(45) translate(-200, -70)">
+
+      <g filter="url(#contactShadow)" opacity="0.6">
+        <rect x="130" y="45" width="260" height="50" rx="25" fill="#000"/>
+      </g>
+
+      <rect x="20" y="40" width="370" height="60" rx="30" fill="url(#handleBase)"/>
+
+      <path d="M50,40 L360,40 C376.569,40 390,53.431 390,70 L390,70 C390,75 388,80 385,85 L25,85 C22,80 20,75 20,70 L20,70 C20,53.431 33.431,40 50,40 Z" fill="url(#handleTopGloss)"/>
+
+      <path d="M60,48 L350,48 C355,48 360,52 360,55 C360,58 355,62 350,62 L60,62 C55,62 50,58 50,55 C50,52 55,48 60,48 Z" fill="#ffffff" opacity="0.35"/>
+
+      <rect x="280" y="35" width="40" height="70" rx="5" fill="url(#collarGrad)" stroke="#4e342e" stroke-width="2"/>
+
+      <g transform="translate(315, 70)">
+        <path d="M0,-60 C0,-65 5,-70 10,-70 L40,-70 C45,-70 50,-65 50,-60 L55,0 L50,60 C50,65 45,70 40,70 L10,70 C5,70 0,65 0,60 L-10,0 Z" fill="url(#hammerHeadMetal)"/>
+        <path d="M10,-68 C-30,-50 -40,0 10,68 L25,68 C-25,0 -15,-50 25,-68 Z" fill="#37474f"/>
+        <rect x="48" y="-55" width="8" height="110" rx="2" fill="#cfd8dc" opacity="0.6"/>
+        <path d="M10,-70 L40,-70 C45,-70 50,-65 50,-60 L52,0" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+      </g>
+    </g>
+
+  </g>
+</svg>

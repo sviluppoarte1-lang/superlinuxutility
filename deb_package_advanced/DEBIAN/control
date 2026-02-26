@@ -1,0 +1,15 @@
+Package: super-linux-utility-advanced
+Version: 1.8.6
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libgtk-3-0, libglib2.0-0, libc6
+Maintainer: Marco Di Giangiacomo
+License: GPL-3.0+
+Homepage: https://github.com/marcodigiangiacomo/super-linux-utility
+Description: Super Linux Utility - Versione avanzata (a pagamento)
+ Versione completa con GRUB Editor, gestione Kernel e System Recovery.
+ Richiede attivazione licenza. Include tutte le funzioni della versione standard
+ più strumenti avanzati per utenti esperti.
+ .
+ Questo software è distribuito sotto licenza GPL-3.0 o successiva.

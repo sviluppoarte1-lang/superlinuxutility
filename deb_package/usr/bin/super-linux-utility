@@ -1,0 +1,20 @@
+#!/bin/bash
+# Wrapper script per Super Linux Utility
+# L'eseguibile Flutter deve essere nella stessa directory delle librerie
+APP_DIR="/usr/share/super-linux-utility"
+EXECUTABLE="$APP_DIR/super_linux_utility"
+
+# Verifica che la directory e l'eseguibile esistano
+if [ ! -d "$APP_DIR" ]; then
+    echo "Error: Application directory not found: $APP_DIR" >&2
+    exit 1
+fi
+
+if [ ! -f "$EXECUTABLE" ]; then
+    echo "Error: Executable not found: $EXECUTABLE" >&2
+    exit 1
+fi
+
+# Cambia alla directory dell'app e esegui
+cd "$APP_DIR" || exit 1
+exec "$EXECUTABLE" "$@"

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Super Linux Utility
+Comment=Gestione sistema Linux - Versione standard (gratuita)
+Exec=super-linux-utility
+Icon=super-linux-utility
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true

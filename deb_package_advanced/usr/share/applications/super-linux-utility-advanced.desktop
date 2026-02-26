@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Super Linux Utility (Advanced)
+Comment=Gestione sistema Linux - Versione avanzata (GRUB, Kernel, Recovery)
+Exec=super-linux-utility-advanced
+Icon=super-linux-utility-advanced
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true

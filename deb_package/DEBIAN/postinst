@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+
+# Aggiorna il database delle applicazioni desktop
+if [ -x /usr/bin/update-desktop-database ]; then
+    update-desktop-database -q /usr/share/applications 2>/dev/null || true
+fi
+
+# Aggiorna il database delle icone
+if [ -x /usr/bin/update-icon-caches ]; then
+    update-icon-caches /usr/share/pixmaps 2>/dev/null || true
+fi
+
+# Aggiorna il database GNOME (se disponibile)
+if [ -x /usr/bin/glib-compile-schemas ]; then
+    glib-compile-schemas /usr/share/glib-2.0/schemas 2>/dev/null || true
+fi
+
+# Forza l'aggiornamento del menu GNOME
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
+# Aggiorna la cache delle icone per KDE
+if command -v kbuildsycoca4 >/dev/null 2>&1; then
+    kbuildsycoca4 2>/dev/null || true
+fi
+
+if command -v kbuildsycoca5 >/dev/null 2>&1; then
+    kbuildsycoca5 2>/dev/null || true
+fi
+
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+    kbuildsycoca6 2>/dev/null || true
+fi
+
+exit 0

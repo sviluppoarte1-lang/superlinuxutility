@@ -1,0 +1,1 @@
+Super Linux Utility—full-featured system manager for Linux. Manage systemd services, startup apps, temp cleanup, installed packages (APT, Snap, Flatpak), monitor CPU/RAM/disks, analyze disk usage, customize appearance; free standard edition; paid advanced adds GRUB editor, kernel and recovery

@@ -1,0 +1,29 @@
+Package: super-linux-utility
+Version: 1.8.6
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libgtk-3-0, libglib2.0-0, libc6
+Maintainer: Marco Di Giangiacomo
+License: GPL-3.0+
+Homepage: https://github.com/marcodigiangiacomo/super-linux-utility
+Vcs-Browser: https://github.com/marcodigiangiacomo/super-linux-utility
+Vcs-Git: https://github.com/marcodigiangiacomo/super-linux-utility.git
+Description: Super Linux Utility - Gestione completa del sistema Linux
+ Super Linux Utility è un'applicazione completa per la gestione avanzata del sistema Linux.
+ Offre strumenti potenti per ottimizzare le prestazioni, gestire servizi, applicazioni e
+ personalizzare l'aspetto del sistema.
+ .
+ Caratteristiche principali:
+ - Analisi e gestione servizi systemd (identifica servizi che rallentano l'avvio)
+ - Gestione applicazioni all'avvio con protezione app di sistema
+ - Pulizia intelligente file temporanei di applicazioni comuni
+ - Gestione app installate (APT, Snap, Flatpak, GNOME) con controllo dipendenze
+ - Monitoraggio processi e risorse di sistema (CPU, RAM, Dischi, GPU)
+ - Personalizzazione aspetto (font, temi, icone, sfondo, comportamento finestre)
+ - GRUB Editor (modalità avanzata) con backup automatico
+ - Gestione Kernel (modalità avanzata) con rimozione sicura
+ - Modalità Standard e Avanzata per separare funzionalità base da quelle avanzate
+ .
+ Questo software è distribuito sotto licenza GPL-3.0 o successiva.
+ Vedere /usr/share/common-licenses/GPL-3 per i dettagli completi della licenza.
