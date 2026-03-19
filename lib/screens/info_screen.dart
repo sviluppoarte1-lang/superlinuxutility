@@ -37,8 +37,18 @@ class _InfoScreenState extends State<InfoScreen> {
   /// Link PayPal.me con importo preimpostato 19,99 € (formato: paypal.me/username/amount)
   static const String _paypalUrl = 'https://paypal.me/fearescape/19.99';
 
+  /// Project website (GitHub repository)
+  static const String _projectWebsiteUrl = 'https://github.com/sviluppoarte1-lang/superlinuxutility';
+
   Future<void> _launchPayPal() async {
     final uri = Uri.parse(_paypalUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchProjectWebsite() async {
+    final uri = Uri.parse(_projectWebsiteUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -161,6 +171,46 @@ class _InfoScreenState extends State<InfoScreen> {
                     style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Project website
+          Card(
+            child: InkWell(
+              onTap: _launchProjectWebsite,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.language, color: Theme.of(context).colorScheme.primary, size: 28),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            localizations.infoProjectWebsite,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _projectWebsiteUrl,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).textTheme.bodySmall?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.open_in_new, color: Theme.of(context).colorScheme.primary, size: 22),
+                  ],
+                ),
               ),
             ),
           ),

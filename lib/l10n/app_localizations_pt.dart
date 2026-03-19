@@ -583,6 +583,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Aplicativo projetado para usuários especialistas Linux';
 
   @override
+  String get infoProjectWebsite => 'Site do projeto';
+
+  @override
   String get disclaimerLicenseTitle => 'Licença e Aviso Legal';
 
   @override

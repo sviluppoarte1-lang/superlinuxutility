@@ -187,6 +187,7 @@
   "appDescription": "Super Linux Utility is a complete application for advanced Linux system management. It offers powerful tools to optimize performance, manage services, applications and customize the system appearance.",
   "features": "Features",
   "appExpertUsers": "Application designed for expert Linux users",
+  "infoProjectWebsite": "Project website",
   "disclaimerLicenseTitle": "License & Disclaimer",
   "disclaimerGplNotice": "This application is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.",
   "disclaimerNoWarranty": "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.",

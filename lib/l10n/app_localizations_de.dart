@@ -580,6 +580,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appExpertUsers => 'Anwendung für Linux-Experten entwickelt';
 
   @override
+  String get infoProjectWebsite => 'Projekt-Website';
+
+  @override
   String get disclaimerLicenseTitle => 'Lizenz und Haftungsausschluss';
 
   @override

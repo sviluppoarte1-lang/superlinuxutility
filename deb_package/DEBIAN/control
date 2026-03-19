@@ -6,9 +6,9 @@ Architecture: amd64
 Depends: libgtk-3-0, libglib2.0-0, libc6
 Maintainer: Marco Di Giangiacomo
 License: GPL-3.0+
-Homepage: https://github.com/marcodigiangiacomo/super-linux-utility
-Vcs-Browser: https://github.com/marcodigiangiacomo/super-linux-utility
-Vcs-Git: https://github.com/marcodigiangiacomo/super-linux-utility.git
+Homepage: https://github.com/sviluppoarte1-lang/superlinuxutility
+Vcs-Browser: https://github.com/sviluppoarte1-lang/superlinuxutility
+Vcs-Git: https://github.com/sviluppoarte1-lang/superlinuxutility.git
 Description: Super Linux Utility - Gestione completa del sistema Linux
  Super Linux Utility è un'applicazione completa per la gestione avanzata del sistema Linux.
  Offre strumenti potenti per ottimizzare le prestazioni, gestire servizi, applicazioni e

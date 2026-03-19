@@ -204,6 +204,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       if (!mounted) return;
       showDialog<void>(
         context: context,
+        barrierColor: Colors.transparent,
         builder: (ctx) => const TrayTaskManagerDialog(),
       );
     });

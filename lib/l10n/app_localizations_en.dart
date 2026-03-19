@@ -578,6 +578,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appExpertUsers => 'Application designed for expert Linux users';
 
   @override
+  String get infoProjectWebsite => 'Project website';
+
+  @override
   String get disclaimerLicenseTitle => 'License & Disclaimer';
 
   @override

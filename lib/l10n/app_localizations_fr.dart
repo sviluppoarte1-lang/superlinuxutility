@@ -587,6 +587,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Application conçue pour les utilisateurs experts Linux';
 
   @override
+  String get infoProjectWebsite => 'Site web du projet';
+
+  @override
   String get disclaimerLicenseTitle => 'Licence et Avertissement';
 
   @override

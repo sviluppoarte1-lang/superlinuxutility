@@ -582,6 +582,9 @@ class AppLocalizationsIt extends AppLocalizations {
       'Applicazione progettata per utenti esperti Linux';
 
   @override
+  String get infoProjectWebsite => 'Sito web del progetto';
+
+  @override
   String get disclaimerLicenseTitle => 'Licenza e Disclaimer';
 
   @override

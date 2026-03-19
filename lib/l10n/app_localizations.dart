@@ -1168,6 +1168,12 @@ abstract class AppLocalizations {
   /// **'Applicazione progettata per utenti esperti Linux'**
   String get appExpertUsers;
 
+  /// No description provided for @infoProjectWebsite.
+  ///
+  /// In it, this message translates to:
+  /// **'Sito web del progetto'**
+  String get infoProjectWebsite;
+
   /// No description provided for @disclaimerLicenseTitle.
   ///
   /// In it, this message translates to:

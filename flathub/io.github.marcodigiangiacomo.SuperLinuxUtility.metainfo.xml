@@ -33,9 +33,9 @@
 
   <launchable type="desktop-id">io.github.marcodigiangiacomo.SuperLinuxUtility.desktop</launchable>
 
-  <url type="homepage">https://github.com/marcodigiangiacomo/super-linux-utility</url>
-  <url type="bugtracker">https://github.com/marcodigiangiacomo/super-linux-utility/issues</url>
-  <url type="vcs-browser">https://github.com/marcodigiangiacomo/super-linux-utility</url>
+  <url type="homepage">https://github.com/sviluppoarte1-lang/superlinuxutility</url>
+  <url type="bugtracker">https://github.com/sviluppoarte1-lang/superlinuxutility/issues</url>
+  <url type="vcs-browser">https://github.com/sviluppoarte1-lang/superlinuxutility</url>
 
   <categories>
     <category>System</category>
@@ -90,7 +90,7 @@
   <!-- Replace the screenshot URL with a direct link to your app screenshot (e.g. from GitHub repo or release). Flathub requires at least one screenshot. -->
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/marcodigiangiacomo/super-linux-utility/main/screenshots/super-linux-utility.png</image>
+      <image>https://raw.githubusercontent.com/sviluppoarte1-lang/superlinuxutility/main/screenshots/super-linux-utility.png</image>
       <caption>Super Linux Utility main window</caption>
       <caption xml:lang="it">Finestra principale di Super Linux Utility</caption>
     </screenshot>
@@ -98,7 +98,7 @@
 
   <releases>
     <release version="1.8.6" date="2025-02-24">
-      <url type="details">https://github.com/marcodigiangiacomo/super-linux-utility/releases</url>
+      <url type="details">https://github.com/sviluppoarte1-lang/superlinuxutility/releases</url>
       <description>
         <p>Current release with standard (free) and advanced (paid) editions.</p>
         <ul>

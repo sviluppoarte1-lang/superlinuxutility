@@ -61,7 +61,7 @@ Architecture: amd64
 Depends: libgtk-3-0, libglib2.0-0, libc6, libayatana-appindicator3-1
 Maintainer: Marco Di Giangiacomo
 License: GPL-3.0+
-Homepage: https://github.com/marcodigiangiacomo/super-linux-utility
+Homepage: https://github.com/sviluppoarte1-lang/superlinuxutility
 Description: Super Linux Utility - Versione standard (gratuita)
  Applicazione per la gestione del sistema Linux: servizi systemd, applicazioni
  all'avvio, pulizia file temporanei, app installate (APT, Snap, Flatpak),
@@ -155,7 +155,7 @@ Architecture: amd64
 Depends: libgtk-3-0, libglib2.0-0, libc6, libayatana-appindicator3-1
 Maintainer: Marco Di Giangiacomo
 License: GPL-3.0+
-Homepage: https://github.com/marcodigiangiacomo/super-linux-utility
+Homepage: https://github.com/sviluppoarte1-lang/superlinuxutility
 Description: Super Linux Utility - Versione avanzata (a pagamento)
  Versione completa con GRUB Editor, gestione Kernel e System Recovery.
  Richiede attivazione licenza. Include tutte le funzioni della versione standard
@@ -249,7 +249,7 @@ Architecture: amd64
 Depends: libgtk-3-0, libglib2.0-0, libc6, libayatana-appindicator3-1
 Maintainer: Marco Di Giangiacomo
 License: GPL-3.0+
-Homepage: https://github.com/marcodigiangiacomo/super-linux-utility
+Homepage: https://github.com/sviluppoarte1-lang/superlinuxutility
 Description: Super Linux Utility - Versione personale (test)
  Versione completa per uso personale/test: stesse funzioni della versione
  avanzata senza richiesta di licenza. Non per distribuzione.
