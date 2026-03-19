@@ -348,37 +348,136 @@ class RecoveryService {
       // APT (Ubuntu/Debian/Mint)
       if (systemInfo.hasApt) {
         try {
-          // apt list --upgradable non richiede sudo
-          final result = await Process.run(
-            'apt',
-            ['list', '--upgradable'],
+          // Usa una simulazione per evitare falsi positivi con "phasing" (deferred due to phasing):
+          // anche se apt mostra aggiornamenti "posticipati", spesso non verranno installati subito.
+          final simResult = await Process.run(
+            'bash',
+            ['-c', 'apt-get -s -y upgrade 2>&1'],
             runInShell: false,
           );
-          final aptOutput = result.stdout.toString();
-          if (aptOutput.isNotEmpty) {
-            // Filtra solo le righe che sono pacchetti validi (formato: nome/versione)
-            // Escludi header, messaggi di warning, e righe vuote
-            // Il formato tipico è: nome/versione,versione2,versione3 arch [upgradable from: versione]
-            final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+/[^\s,]+');
-            final lines = aptOutput.split('\n')
-                .where((line) {
-                  final trimmed = line.trim();
-                  return trimmed.isNotEmpty && 
-                      !trimmed.contains('Listing...') &&
-                      !trimmed.contains('WARNING:') &&
-                      !trimmed.startsWith('WARNING:') &&
-                      !trimmed.startsWith('...') &&
-                      packageRegex.hasMatch(trimmed) &&
-                      (trimmed.contains('upgradable') || trimmed.contains('/'));
-                })
-                .toList();
-            updates.addAll(lines);
-            output += 'APT: ${lines.length} aggiornamenti disponibili\n';
+          final simOutput = (simResult.stdout.toString() + '\n' + simResult.stderr.toString()).trim();
+          if (simOutput.isNotEmpty) {
+            final pkgTokenRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+$');
+
+            // 1) Prova ad estrarre i pacchetti che verrebbero installati ora (tipicamente righe "Inst ...").
+            final instRegex = RegExp(r'^\s*Inst\s+([a-zA-Z0-9][a-zA-Z0-9+\-._]+)\b');
+            final instPkgs = <String>{};
+            for (final rawLine in simOutput.split('\n')) {
+              final line = rawLine.trimRight();
+              final match = instRegex.firstMatch(line);
+              if (match != null) {
+                final pkg = match.group(1)!.trim();
+                instPkgs.add(pkg);
+              }
+            }
+
+            // 2) Estrai eventuali pacchetti "deferred/postponed due to phasing" per sottrarli.
+            final deferredTriggerRegex = RegExp(
+              r'(deferred|postponed).{0,60}phasing|scaglionamento',
+              caseSensitive: false,
+            );
+            final deferredPkgs = <String>{};
+            bool inDeferredBlock = false;
+            for (final rawLine in simOutput.split('\n')) {
+              final trimmed = rawLine.trim();
+              if (trimmed.isEmpty) {
+                inDeferredBlock = false;
+                continue;
+              }
+
+              if (deferredTriggerRegex.hasMatch(trimmed)) {
+                inDeferredBlock = true;
+              }
+
+              if (!inDeferredBlock && !deferredTriggerRegex.hasMatch(trimmed)) continue;
+
+              // Tenta di trovare token che assomigliano a nomi pacchetto.
+              final parts = trimmed
+                  .replaceAll(':', ' ')
+                  .replaceAll(';', ' ')
+                  .replaceAll(',', ' ')
+                  .split(RegExp(r'\s+'));
+              for (final part in parts) {
+                final token = part.trim();
+                if (pkgTokenRegex.hasMatch(token)) {
+                  deferredPkgs.add(token);
+                }
+              }
+            }
+
+            // Se abbiamo "Inst ...", usiamo quelli come verità principale.
+            if (instPkgs.isNotEmpty) {
+              final effectivePkgs = instPkgs.where((p) => !deferredPkgs.contains(p)).toList()..sort();
+              updates = effectivePkgs;
+              output += effectivePkgs.isNotEmpty
+                  ? 'APT: ${effectivePkgs.length} aggiornamenti disponibili\n'
+                  : 'APT: Nessun aggiornamento disponibile (solo scaglionati)\n';
+            } else {
+              // Fallback: usa la sezione "The following packages will be upgraded:" e sottrai quelli deferred.
+              final willUpgradeHeader = RegExp(r'^The following packages will be upgraded:\s*$');
+              bool inWillUpgradeBlock = false;
+              final willUpgradedPkgs = <String>{};
+
+              final pkgPrefixRegex = RegExp(r'^([a-zA-Z0-9][a-zA-Z0-9+\-._]+)');
+              for (final rawLine in simOutput.split('\n')) {
+                final trimmed = rawLine.trim();
+                if (willUpgradeHeader.hasMatch(trimmed)) {
+                  inWillUpgradeBlock = true;
+                  continue;
+                }
+                if (inWillUpgradeBlock) {
+                  if (trimmed.isEmpty) {
+                    inWillUpgradeBlock = false;
+                    continue;
+                  }
+                  final match = pkgPrefixRegex.firstMatch(trimmed);
+                  if (match != null) {
+                    willUpgradedPkgs.add(match.group(1)!.trim());
+                  }
+                }
+              }
+
+              final effectivePkgs = willUpgradedPkgs.difference(deferredPkgs).toList()..sort();
+              updates = effectivePkgs;
+              output += effectivePkgs.isNotEmpty
+                  ? 'APT: ${effectivePkgs.length} aggiornamenti disponibili\n'
+                  : 'APT: Nessun aggiornamento disponibile (solo scaglionati)\n';
+            }
           } else {
             output += 'APT: Nessun aggiornamento disponibile\n';
           }
         } catch (e) {
-          output += 'APT: Errore durante la verifica: $e\n';
+          // Fallback: ripiego sul vecchio metodo se la simulazione fallisce.
+          try {
+            // apt list --upgradable non richiede sudo
+            final result = await Process.run(
+              'apt',
+              ['list', '--upgradable'],
+              runInShell: false,
+            );
+            final aptOutput = result.stdout.toString();
+            if (aptOutput.isNotEmpty) {
+              final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+/[^\s,]+');
+              final lines = aptOutput.split('\n')
+                  .where((line) {
+                    final trimmed = line.trim();
+                    return trimmed.isNotEmpty &&
+                        !trimmed.contains('Listing...') &&
+                        !trimmed.contains('WARNING:') &&
+                        !trimmed.startsWith('WARNING:') &&
+                        !trimmed.startsWith('...') &&
+                        packageRegex.hasMatch(trimmed) &&
+                        (trimmed.contains('upgradable') || trimmed.contains('/'));
+                  })
+                  .toList();
+              updates.addAll(lines);
+              output += 'APT: ${lines.length} aggiornamenti disponibili\n';
+            } else {
+              output += 'APT: Nessun aggiornamento disponibile\n';
+            }
+          } catch (_) {
+            output += 'APT: Errore durante la verifica: $e\n';
+          }
         }
       }
 

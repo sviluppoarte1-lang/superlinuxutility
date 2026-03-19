@@ -140,15 +140,15 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
             }
           });
           
-          // Calcola le dimensioni in background e aggiorna la cache
+          // Calcola le dimensioni in background
           _calculateSizesInBackground(items);
-          // Salva nella cache dopo aver calcolato le dimensioni
-          _saveDirectoryListToCache(diskPath, path, items);
+          // Aggiornamento incrementale: solo nuovi/cancellati (non rigenerare)
+          _updateCacheIncrementalForPath(diskPath, path);
           return;
         }
       }
-      
-      // Se non c'è cache o è scaduta, carica dal filesystem
+
+      // Se non c'è cache: prima volta, carica dal filesystem e genera il file di cache
       items = await DiskAnalyzerService.listDirectory(path, calculateSizes: calculateSizes);
       
       // Directory virtuali da escludere (filesystem virtuali che non hanno dimensioni reali)
@@ -229,21 +229,43 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   /// Salva la lista dei file/directory nella cache
   Future<void> _saveDirectoryListToCache(String diskPath, String directoryPath, List<FileSystemItem> items) async {
     try {
-      // Converti FileSystemItem in Map per la cache
-      final itemsData = items.map((item) {
-        return {
-          'path': item.path,
-          'name': item.name,
-          'size': item.size,
-          'isDirectory': item.isDirectory,
-          'modified': item.modified?.toIso8601String(),
-          'mimeType': item.mimeType,
-        };
-      }).toList();
-      
+      final itemsData = _fileSystemItemsToMaps(items);
       await DiskCacheService.saveDirectoryList(diskPath, directoryPath, itemsData);
     } catch (e) {
       // Ignora errori di salvataggio cache
+    }
+  }
+
+  /// Aggiorna la cache in modo incrementale (solo file/cartelle nuovi o cancellati). Non rigenera.
+  Future<void> _updateCacheIncrementalForPath(String diskPath, String directoryPath) async {
+    try {
+      final currentItems = await DiskAnalyzerService.listDirectory(directoryPath, calculateSizes: false);
+      final currentFromFs = _fileSystemItemsToMaps(currentItems);
+      await DiskCacheService.updateDirectoryListIncremental(diskPath, directoryPath, currentFromFs);
+    } catch (e) {
+      // Ignora errori aggiornamento cache
+    }
+  }
+
+  static List<Map<String, dynamic>> _fileSystemItemsToMaps(List<FileSystemItem> items) {
+    return items.map((item) => {
+      'path': item.path,
+      'name': item.name,
+      'size': item.size,
+      'isDirectory': item.isDirectory,
+      'modified': item.modified?.toIso8601String(),
+      'mimeType': item.mimeType,
+    }).toList();
+  }
+
+  /// Aggiorna la cache delle dimensioni in modo incrementale (solo cartelle nuove/cancellate).
+  Future<void> _updateDirectorySizesCacheIncremental(String diskPath, List<Map<String, dynamic>> cachedSizes) async {
+    try {
+      final items = await DiskAnalyzerService.listDirectory(diskPath, calculateSizes: false);
+      final topDirs = items.where((e) => e.isDirectory).map((e) => {'name': e.name, 'path': e.path}).toList();
+      await DiskCacheService.updateDirectorySizesIncremental(diskPath, topDirs, cachedSizes);
+    } catch (e) {
+      // Ignora errori aggiornamento cache
     }
   }
 
@@ -304,6 +326,20 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           // Riordina solo una volta dopo aver aggiornato il batch
           _sortItems();
         });
+        // Persiste le dimensioni calcolate in cache (grafico + liste directory)
+        final diskPath = _selectedBasePath.isEmpty || _selectedBasePath == '/'
+            ? '/'
+            : (_selectedBasePath.endsWith('/') && _selectedBasePath.length > 1
+                ? _selectedBasePath.substring(0, _selectedBasePath.length - 1)
+                : _selectedBasePath);
+        final dirPath = _currentPath.endsWith('/') && _currentPath.length > 1
+            ? _currentPath.substring(0, _currentPath.length - 1)
+            : _currentPath;
+        await DiskCacheService.updateDirectoryListSizes(
+          diskPath,
+          dirPath,
+          _fileSystemItemsToMaps(_currentItems),
+        );
       }
     }
   }
@@ -388,14 +424,15 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     final cachedSizes = await DiskCacheService.loadDirectorySizes(diskPath);
     
     if (cachedSizes != null && cachedSizes.isNotEmpty) {
-      // Usa la cache se disponibile
+      // Usa la cache (aggiornamento incrementale in background, non rigenerazione)
       if (mounted) {
         setState(() {
           _directorySizes = cachedSizes;
           _isGeneratingCache = false;
-          _hasShownCacheMessage = true; // Marca come già mostrato per evitare di rigenerare
+          _hasShownCacheMessage = true;
         });
       }
+      _updateDirectorySizesCacheIncremental(diskPath, cachedSizes);
       return;
     }
     

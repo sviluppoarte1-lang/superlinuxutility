@@ -24,6 +24,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trayRemoveTempFiles => 'Remove temporary files';
 
   @override
+  String get trayCleanTempFilesAndCache => 'Clean temporary files and cache';
+
+  @override
+  String get trayCleanVram => 'Clear VRAM (GPU reset)';
+
+  @override
   String get trayCpuGpuTemp => 'CPU, GPU temperature';
 
   @override
@@ -56,6 +62,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Error clearing cache.';
+
+  @override
+  String get cleanupVram => 'Clear VRAM';
+
+  @override
+  String get cleanupVramConfirmTitle => 'GPU reset';
+
+  @override
+  String get cleanupVramConfirmMessage =>
+      'I will try to reset the graphics card to free VRAM. It requires an administrator password and may cause a temporary screen interruption. Continue?';
+
+  @override
+  String get cleanupVramSuccess => 'VRAM cleared (GPU reset) successfully.';
+
+  @override
+  String get cleanupVramError => 'Failed to clear VRAM (GPU reset).';
 
   @override
   String get tabServices => 'Services';
@@ -354,6 +376,56 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not change start at login setting.';
 
   @override
+  String get settingsAutoUpdateCheckTitle => 'Automatic update check';
+
+  @override
+  String get settingsAutoUpdateCheckDesc =>
+      'Check for system updates automatically at the chosen interval.';
+
+  @override
+  String get settingsAutoUpdateCheckInterval => 'Check for updates';
+
+  @override
+  String get settingsAutoUpdateNever => 'Never';
+
+  @override
+  String get settingsAutoUpdateEvery15Min => 'Every 15 minutes';
+
+  @override
+  String get settingsAutoUpdateEvery30Min => 'Every 30 minutes';
+
+  @override
+  String get settingsAutoUpdateEvery1Hour => 'Every 1 hour';
+
+  @override
+  String get settingsAutoUpdateEvery6Hours => 'Every 6 hours';
+
+  @override
+  String get settingsAutoUpdateEvery12Hours => 'Every 12 hours';
+
+  @override
+  String get settingsAutoUpdateEveryDay => 'Every day';
+
+  @override
+  String updatesAvailableCount(int count) {
+    return '$count updates available';
+  }
+
+  @override
+  String get updatesAvailableDialogTitle => 'Updates available';
+
+  @override
+  String updatesAvailableDialogMessage(int count) {
+    return '$count updates are available. Do you want to apply them now?';
+  }
+
+  @override
+  String get applyNow => 'Apply now';
+
+  @override
+  String get postpone => 'Postpone';
+
+  @override
   String get fontFamily => 'Font Family';
 
   @override
@@ -504,6 +576,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appExpertUsers => 'Application designed for expert Linux users';
+
+  @override
+  String get disclaimerLicenseTitle => 'License & Disclaimer';
+
+  @override
+  String get disclaimerGplNotice =>
+      'This application is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.';
+
+  @override
+  String get disclaimerNoWarranty =>
+      'This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.';
+
+  @override
+  String get disclaimerCopyright =>
+      'Copyright (c) 2024-2025 Marco Di Giangiacomo. All rights reserved under GPL-3.0.';
+
+  @override
+  String get payWithPaypal => 'Pay with PayPal';
+
+  @override
+  String get purchaseLicenseViaPaypal =>
+      'The Advanced version costs 19.99 €. To purchase a license, pay via PayPal. After successful payment you will receive your license code by email. Without valid payment, the application cannot be activated.';
 
   @override
   String get languageSelectionTitle => 'Language Selection';
@@ -1395,6 +1489,57 @@ class AppLocalizationsEn extends AppLocalizations {
       'Do you want to perform the available updates? This operation may take some time.';
 
   @override
+  String get recoveryTabRecovery => 'Recovery';
+
+  @override
+  String get recoveryTabCheckUpdates => 'Check for Updates';
+
+  @override
+  String get recoveryTabSoftwareInstaller => 'System Software Installer';
+
+  @override
+  String get recoverySoftwareInstallerDesc =>
+      'Download and install essential system software automatically.';
+
+  @override
+  String get recoveryInstallFfmpeg => 'FFmpeg';
+
+  @override
+  String get recoveryInstallFfmpegDesc =>
+      'Multimedia framework for encoding/decoding audio and video.';
+
+  @override
+  String get recoveryInstallYtDlp => 'yt-dlp';
+
+  @override
+  String get recoveryInstallYtDlpDesc =>
+      'Video downloader supporting many sites.';
+
+  @override
+  String get recoveryInstallSystemLibs => 'System libraries';
+
+  @override
+  String get recoveryInstallSystemLibsDesc =>
+      'Essential system libraries that are often required and can get corrupted.';
+
+  @override
+  String get recoveryInstallCodecs => 'Video and audio codecs';
+
+  @override
+  String get recoveryInstallCodecsDesc =>
+      'Codecs for playing common video and audio formats.';
+
+  @override
+  String get recoveryInstallRsync => 'rsync';
+
+  @override
+  String get recoveryInstallRsyncDesc =>
+      'Efficient file sync and transfer tool.';
+
+  @override
+  String get install => 'Install';
+
+  @override
   String get execute => 'Execute';
 
   @override
@@ -1833,5 +1978,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenseActivateCardDesc =>
-      'Enter your details and the license code you received to unlock GRUB, Kernel and Recovery tools.';
+      'The Advanced version costs 19.99 €. Enter your details and the license code you received after successful payment to unlock GRUB, Kernel and Recovery tools. Without valid payment, the application cannot be activated.';
 }

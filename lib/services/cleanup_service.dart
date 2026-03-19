@@ -221,6 +221,8 @@ class CleanupService {
       '$homeDir/.cache/pkcs11',
       '$homeDir/.config/autostart',
       '$homeDir/.config/environment.d',
+      '$homeDir/.cache/super-linux-utility',
+      '$homeDir/.local/share/super-linux-utility',
     };
   }
 

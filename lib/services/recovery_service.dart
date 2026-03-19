@@ -348,37 +348,136 @@ class RecoveryService {
       // APT (Ubuntu/Debian/Mint)
       if (systemInfo.hasApt) {
         try {
-          // apt list --upgradable non richiede sudo
-          final result = await Process.run(
-            'apt',
-            ['list', '--upgradable'],
+          // Usa una simulazione per evitare falsi positivi con "phasing" (deferred due to phasing):
+          // anche se apt mostra aggiornamenti "posticipati", spesso non verranno installati subito.
+          final simResult = await Process.run(
+            'bash',
+            ['-c', 'apt-get -s -y upgrade 2>&1'],
             runInShell: false,
           );
-          final aptOutput = result.stdout.toString();
-          if (aptOutput.isNotEmpty) {
-            // Filtra solo le righe che sono pacchetti validi (formato: nome/versione)
-            // Escludi header, messaggi di warning, e righe vuote
-            // Il formato tipico è: nome/versione,versione2,versione3 arch [upgradable from: versione]
-            final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+/[^\s,]+');
-            final lines = aptOutput.split('\n')
-                .where((line) {
-                  final trimmed = line.trim();
-                  return trimmed.isNotEmpty && 
-                      !trimmed.contains('Listing...') &&
-                      !trimmed.contains('WARNING:') &&
-                      !trimmed.startsWith('WARNING:') &&
-                      !trimmed.startsWith('...') &&
-                      packageRegex.hasMatch(trimmed) &&
-                      (trimmed.contains('upgradable') || trimmed.contains('/'));
-                })
-                .toList();
-            updates.addAll(lines);
-            output += 'APT: ${lines.length} aggiornamenti disponibili\n';
+          final simOutput = (simResult.stdout.toString() + '\n' + simResult.stderr.toString()).trim();
+          if (simOutput.isNotEmpty) {
+            final pkgTokenRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+$');
+
+            // 1) Prova ad estrarre i pacchetti che verrebbero installati ora (tipicamente righe "Inst ...").
+            final instRegex = RegExp(r'^\s*Inst\s+([a-zA-Z0-9][a-zA-Z0-9+\-._]+)\b');
+            final instPkgs = <String>{};
+            for (final rawLine in simOutput.split('\n')) {
+              final line = rawLine.trimRight();
+              final match = instRegex.firstMatch(line);
+              if (match != null) {
+                final pkg = match.group(1)!.trim();
+                instPkgs.add(pkg);
+              }
+            }
+
+            // 2) Estrai eventuali pacchetti "deferred/postponed due to phasing" per sottrarli.
+            final deferredTriggerRegex = RegExp(
+              r'(deferred|postponed).{0,60}phasing|scaglionamento',
+              caseSensitive: false,
+            );
+            final deferredPkgs = <String>{};
+            bool inDeferredBlock = false;
+            for (final rawLine in simOutput.split('\n')) {
+              final trimmed = rawLine.trim();
+              if (trimmed.isEmpty) {
+                inDeferredBlock = false;
+                continue;
+              }
+
+              if (deferredTriggerRegex.hasMatch(trimmed)) {
+                inDeferredBlock = true;
+              }
+
+              if (!inDeferredBlock && !deferredTriggerRegex.hasMatch(trimmed)) continue;
+
+              // Tenta di trovare token che assomigliano a nomi pacchetto.
+              final parts = trimmed
+                  .replaceAll(':', ' ')
+                  .replaceAll(';', ' ')
+                  .replaceAll(',', ' ')
+                  .split(RegExp(r'\s+'));
+              for (final part in parts) {
+                final token = part.trim();
+                if (pkgTokenRegex.hasMatch(token)) {
+                  deferredPkgs.add(token);
+                }
+              }
+            }
+
+            // Se abbiamo "Inst ...", usiamo quelli come verità principale.
+            if (instPkgs.isNotEmpty) {
+              final effectivePkgs = instPkgs.where((p) => !deferredPkgs.contains(p)).toList()..sort();
+              updates = effectivePkgs;
+              output += effectivePkgs.isNotEmpty
+                  ? 'APT: ${effectivePkgs.length} aggiornamenti disponibili\n'
+                  : 'APT: Nessun aggiornamento disponibile (solo scaglionati)\n';
+            } else {
+              // Fallback: usa la sezione "The following packages will be upgraded:" e sottrai quelli deferred.
+              final willUpgradeHeader = RegExp(r'^The following packages will be upgraded:\s*$');
+              bool inWillUpgradeBlock = false;
+              final willUpgradedPkgs = <String>{};
+
+              final pkgPrefixRegex = RegExp(r'^([a-zA-Z0-9][a-zA-Z0-9+\-._]+)');
+              for (final rawLine in simOutput.split('\n')) {
+                final trimmed = rawLine.trim();
+                if (willUpgradeHeader.hasMatch(trimmed)) {
+                  inWillUpgradeBlock = true;
+                  continue;
+                }
+                if (inWillUpgradeBlock) {
+                  if (trimmed.isEmpty) {
+                    inWillUpgradeBlock = false;
+                    continue;
+                  }
+                  final match = pkgPrefixRegex.firstMatch(trimmed);
+                  if (match != null) {
+                    willUpgradedPkgs.add(match.group(1)!.trim());
+                  }
+                }
+              }
+
+              final effectivePkgs = willUpgradedPkgs.difference(deferredPkgs).toList()..sort();
+              updates = effectivePkgs;
+              output += effectivePkgs.isNotEmpty
+                  ? 'APT: ${effectivePkgs.length} aggiornamenti disponibili\n'
+                  : 'APT: Nessun aggiornamento disponibile (solo scaglionati)\n';
+            }
           } else {
             output += 'APT: Nessun aggiornamento disponibile\n';
           }
         } catch (e) {
-          output += 'APT: Errore durante la verifica: $e\n';
+          // Fallback: ripiego sul vecchio metodo se la simulazione fallisce.
+          try {
+            // apt list --upgradable non richiede sudo
+            final result = await Process.run(
+              'apt',
+              ['list', '--upgradable'],
+              runInShell: false,
+            );
+            final aptOutput = result.stdout.toString();
+            if (aptOutput.isNotEmpty) {
+              final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+/[^\s,]+');
+              final lines = aptOutput.split('\n')
+                  .where((line) {
+                    final trimmed = line.trim();
+                    return trimmed.isNotEmpty &&
+                        !trimmed.contains('Listing...') &&
+                        !trimmed.contains('WARNING:') &&
+                        !trimmed.startsWith('WARNING:') &&
+                        !trimmed.startsWith('...') &&
+                        packageRegex.hasMatch(trimmed) &&
+                        (trimmed.contains('upgradable') || trimmed.contains('/'));
+                  })
+                  .toList();
+              updates.addAll(lines);
+              output += 'APT: ${lines.length} aggiornamenti disponibili\n';
+            } else {
+              output += 'APT: Nessun aggiornamento disponibile\n';
+            }
+          } catch (_) {
+            output += 'APT: Errore durante la verifica: $e\n';
+          }
         }
       }
 
@@ -634,6 +733,117 @@ class RecoveryService {
         'message': 'Errore durante l\'esecuzione degli aggiornamenti: $e',
       };
     }
+  }
+
+  /// Installs a list of packages using the system package manager. Returns { success, message, output }.
+  static Future<Map<String, dynamic>> _installPackages(List<String> packages, String operationName) async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      String output = '';
+      String command;
+
+      if (systemInfo.hasApt) {
+        command = 'apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ${packages.join(" ")}';
+      } else if (systemInfo.hasDnf) {
+        command = 'dnf install -y ${packages.join(" ")}';
+      } else if (systemInfo.hasPacman) {
+        command = 'pacman -S --noconfirm ${packages.join(" ")}';
+      } else {
+        return {
+          'success': false,
+          'message': 'Nessun package manager supportato (APT/DNF/Pacman)',
+        };
+      }
+
+      final result = await _runSudoCommand(command);
+      output = result.stdout.toString();
+      if (result.exitCode != 0) {
+        output += '\n${result.stderr}';
+        return {
+          'success': false,
+          'message': 'Errore durante l\'installazione di $operationName',
+          'output': output,
+        };
+      }
+      return {
+        'success': true,
+        'message': '$operationName installato con successo',
+        'output': output,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Errore: $e',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> installFfmpeg() async {
+    return _installPackages(['ffmpeg'], 'FFmpeg');
+  }
+
+  static Future<Map<String, dynamic>> installYtDlp() async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      if (systemInfo.hasApt) {
+        return _installPackages(['yt-dlp'], 'yt-dlp');
+      }
+      if (systemInfo.hasDnf) {
+        return _installPackages(['yt-dlp'], 'yt-dlp');
+      }
+      if (systemInfo.hasPacman) {
+        return _installPackages(['yt-dlp'], 'yt-dlp');
+      }
+      return {'success': false, 'message': 'Package manager non supportato per yt-dlp'};
+    } catch (e) {
+      return {'success': false, 'message': 'Errore: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> installSystemLibraries() async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      List<String> packages;
+      if (systemInfo.hasApt) {
+        packages = ['build-essential', 'libc6-dev', 'pkg-config'];
+      } else if (systemInfo.hasDnf) {
+        packages = ['@development-tools', 'glibc-devel'];
+      } else if (systemInfo.hasPacman) {
+        packages = ['base-devel'];
+      } else {
+        return {'success': false, 'message': 'Package manager non supportato'};
+      }
+      return _installPackages(packages, 'Librerie di sistema');
+    } catch (e) {
+      return {'success': false, 'message': 'Errore: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> installCodecs() async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      List<String> packages;
+      if (systemInfo.hasApt) {
+        packages = [
+          'gstreamer1.0-libav',
+          'gstreamer1.0-plugins-bad',
+          'gstreamer1.0-plugins-ugly',
+        ];
+      } else if (systemInfo.hasDnf) {
+        packages = ['ffmpeg', 'gstreamer1-plugins-ugly', 'gstreamer1-plugins-bad-free'];
+      } else if (systemInfo.hasPacman) {
+        packages = ['gst-libav', 'gst-plugins-bad', 'gst-plugins-ugly'];
+      } else {
+        return {'success': false, 'message': 'Package manager non supportato'};
+      }
+      return _installPackages(packages, 'Codec video e audio');
+    } catch (e) {
+      return {'success': false, 'message': 'Errore: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> installRsync() async {
+    return _installPackages(['rsync'], 'rsync');
   }
 }
 

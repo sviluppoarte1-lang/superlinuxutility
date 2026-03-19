@@ -21,17 +21,23 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
     _initializeOperationStates();
   }
 
+  static const List<String> _recoveryOperations = [
+    'pipewire', 'network', 'grub', 'flathub', 'repositories',
+  ];
+  static const List<String> _installerOperations = [
+    'ffmpeg', 'ytdlp', 'systemlibs', 'codecs', 'rsync',
+  ];
+
   void _initializeOperationStates() {
-    final operations = [
-      'pipewire',
-      'network',
-      'grub',
-      'flathub',
-      'repositories',
-      'updates',
-    ];
-    
-    for (final op in operations) {
+    for (final op in _recoveryOperations) {
+      _operationStatus[op] = false;
+      _operationOutput[op] = '';
+      _operationLoading[op] = false;
+    }
+    _operationStatus['updates'] = false;
+    _operationOutput['updates'] = '';
+    _operationLoading['updates'] = false;
+    for (final op in _installerOperations) {
       _operationStatus[op] = false;
       _operationOutput[op] = '';
       _operationLoading[op] = false;
@@ -69,6 +75,21 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
           if (result['updateCount'] != null) {
             _updateCount = result['updateCount'] as int;
           }
+          break;
+        case 'ffmpeg':
+          result = await RecoveryService.installFfmpeg();
+          break;
+        case 'ytdlp':
+          result = await RecoveryService.installYtDlp();
+          break;
+        case 'systemlibs':
+          result = await RecoveryService.installSystemLibraries();
+          break;
+        case 'codecs':
+          result = await RecoveryService.installCodecs();
+          break;
+        case 'rsync':
+          result = await RecoveryService.installRsync();
           break;
         default:
           result = {'success': false, 'message': 'Operazione sconosciuta'};
@@ -282,6 +303,91 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
     );
   }
 
+  Widget _buildInstallerCard({
+    required String operation,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+  }) {
+    final isLoading = _operationLoading[operation] ?? false;
+    final isSuccess = _operationStatus[operation] ?? false;
+    final hasOutput = (_operationOutput[operation] ?? '').isNotEmpty;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 32),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isLoading)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else if (isSuccess)
+                  Icon(Icons.check_circle, color: Colors.green, size: 24)
+                else if (_operationStatus[operation] == false && hasOutput)
+                  Icon(Icons.error, color: Colors.red, size: 24),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (hasOutput)
+                  TextButton.icon(
+                    onPressed: () => _showOutputDialog(operation, title),
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: Text(l10n.viewOutput),
+                  ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: isLoading ? null : () => _executeOperation(operation),
+                  icon: const Icon(Icons.download, size: 18),
+                  label: Text(l10n.install),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRecoveryCard({
     required String operation,
     required String title,
@@ -382,72 +488,162 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          setState(() {
-            _initializeOperationStates();
-          });
-        },
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+      body: DefaultTabController(
+        length: 3,
+        child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.recoveryDescription,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
+            TabBar(
+              labelColor: Theme.of(context).colorScheme.primary,
+              unselectedLabelColor: Colors.grey,
+              tabs: [
+                Tab(text: l10n.recoveryTabRecovery),
+                Tab(text: l10n.recoveryTabCheckUpdates),
+                Tab(text: l10n.recoveryTabSoftwareInstaller),
+              ],
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  setState(() {
+                    _initializeOperationStates();
+                  });
+                },
+                child: TabBarView(
+                  children: [
+                    _buildRecoveryTab(l10n),
+                    _buildCheckUpdatesTab(l10n),
+                    _buildSoftwareInstallerTab(l10n),
+                  ],
                 ),
               ),
-            ),
-            _buildRecoveryCard(
-              operation: 'pipewire',
-              title: l10n.recoveryRestartPipewire,
-              description: l10n.recoveryRestartPipewireDesc,
-              icon: Icons.volume_up,
-              color: Colors.blue,
-            ),
-            _buildRecoveryCard(
-              operation: 'network',
-              title: l10n.recoveryRestoreNetwork,
-              description: l10n.recoveryRestoreNetworkDesc,
-              icon: Icons.wifi,
-              color: Colors.green,
-            ),
-            _buildRecoveryCard(
-              operation: 'grub',
-              title: l10n.recoveryRebuildGrub,
-              description: l10n.recoveryRebuildGrubDesc,
-              icon: Icons.settings_backup_restore,
-              color: Colors.orange,
-            ),
-            _buildRecoveryCard(
-              operation: 'flathub',
-              title: l10n.recoveryRestoreFlathub,
-              description: l10n.recoveryRestoreFlathubDesc,
-              icon: Icons.apps,
-              color: Colors.purple,
-            ),
-            _buildRecoveryCard(
-              operation: 'repositories',
-              title: l10n.recoveryRestoreRepos,
-              description: l10n.recoveryRestoreReposDesc,
-              icon: Icons.storage,
-              color: Colors.teal,
-            ),
-            _buildRecoveryCard(
-              operation: 'updates',
-              title: l10n.recoveryCheckUpdates,
-              description: l10n.recoveryCheckUpdatesDesc,
-              icon: Icons.system_update,
-              color: Colors.indigo,
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildRecoveryTab(AppLocalizations l10n) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            l10n.recoveryDescription,
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          ),
+        ),
+        _buildRecoveryCard(
+          operation: 'pipewire',
+          title: l10n.recoveryRestartPipewire,
+          description: l10n.recoveryRestartPipewireDesc,
+          icon: Icons.volume_up,
+          color: Colors.blue,
+        ),
+        _buildRecoveryCard(
+          operation: 'network',
+          title: l10n.recoveryRestoreNetwork,
+          description: l10n.recoveryRestoreNetworkDesc,
+          icon: Icons.wifi,
+          color: Colors.green,
+        ),
+        _buildRecoveryCard(
+          operation: 'grub',
+          title: l10n.recoveryRebuildGrub,
+          description: l10n.recoveryRebuildGrubDesc,
+          icon: Icons.settings_backup_restore,
+          color: Colors.orange,
+        ),
+        _buildRecoveryCard(
+          operation: 'flathub',
+          title: l10n.recoveryRestoreFlathub,
+          description: l10n.recoveryRestoreFlathubDesc,
+          icon: Icons.apps,
+          color: Colors.purple,
+        ),
+        _buildRecoveryCard(
+          operation: 'repositories',
+          title: l10n.recoveryRestoreRepos,
+          description: l10n.recoveryRestoreReposDesc,
+          icon: Icons.storage,
+          color: Colors.teal,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckUpdatesTab(AppLocalizations l10n) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            l10n.recoveryCheckUpdatesDesc,
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          ),
+        ),
+        _buildRecoveryCard(
+          operation: 'updates',
+          title: l10n.recoveryCheckUpdates,
+          description: l10n.recoveryCheckUpdatesDesc,
+          icon: Icons.system_update,
+          color: Colors.indigo,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSoftwareInstallerTab(AppLocalizations l10n) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            l10n.recoverySoftwareInstallerDesc,
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          ),
+        ),
+        _buildInstallerCard(
+          operation: 'ffmpeg',
+          title: l10n.recoveryInstallFfmpeg,
+          description: l10n.recoveryInstallFfmpegDesc,
+          icon: Icons.video_library,
+          color: Colors.blue,
+        ),
+        _buildInstallerCard(
+          operation: 'ytdlp',
+          title: l10n.recoveryInstallYtDlp,
+          description: l10n.recoveryInstallYtDlpDesc,
+          icon: Icons.download,
+          color: Colors.red,
+        ),
+        _buildInstallerCard(
+          operation: 'systemlibs',
+          title: l10n.recoveryInstallSystemLibs,
+          description: l10n.recoveryInstallSystemLibsDesc,
+          icon: Icons.build,
+          color: Colors.orange,
+        ),
+        _buildInstallerCard(
+          operation: 'codecs',
+          title: l10n.recoveryInstallCodecs,
+          description: l10n.recoveryInstallCodecsDesc,
+          icon: Icons.music_video,
+          color: Colors.purple,
+        ),
+        _buildInstallerCard(
+          operation: 'rsync',
+          title: l10n.recoveryInstallRsync,
+          description: l10n.recoveryInstallRsyncDesc,
+          icon: Icons.sync,
+          color: Colors.teal,
+        ),
+      ],
     );
   }
 }

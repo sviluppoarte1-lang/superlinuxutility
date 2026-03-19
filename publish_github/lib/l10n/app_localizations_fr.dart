@@ -25,6 +25,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trayRemoveTempFiles => 'Supprimer les fichiers temporaires';
 
   @override
+  String get trayCleanVram => 'Vider la VRAM (redémarrage GPU)';
+
+  @override
   String get trayCpuGpuTemp => 'Température CPU, GPU';
 
   @override
@@ -57,6 +60,23 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Erreur lors du vidage du cache.';
+
+  @override
+  String get cleanupVram => 'Vider la VRAM';
+
+  @override
+  String get cleanupVramConfirmTitle => 'Redémarrage du GPU';
+
+  @override
+  String get cleanupVramConfirmMessage =>
+      'Je vais essayer de redémarrer la carte graphique pour libérer la VRAM. Nécessite le mot de passe administrateur et peut provoquer une interruption temporaire de l\'écran. Continuer ?';
+
+  @override
+  String get cleanupVramSuccess => 'VRAM vidée (redémarrage GPU) avec succès.';
+
+  @override
+  String get cleanupVramError =>
+      'Impossible de vider la VRAM (redémarrage GPU échoué).';
 
   @override
   String get tabServices => 'Services';

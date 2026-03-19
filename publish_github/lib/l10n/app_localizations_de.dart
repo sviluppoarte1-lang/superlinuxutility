@@ -24,6 +24,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trayRemoveTempFiles => 'Temporäre Dateien entfernen';
 
   @override
+  String get trayCleanVram => 'VRAM leeren (GPU-Reset)';
+
+  @override
   String get trayCpuGpuTemp => 'CPU-, GPU-Temperatur';
 
   @override
@@ -56,6 +59,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Fehler beim Leeren des Caches.';
+
+  @override
+  String get cleanupVram => 'VRAM leeren';
+
+  @override
+  String get cleanupVramConfirmTitle => 'GPU-Reset';
+
+  @override
+  String get cleanupVramConfirmMessage =>
+      'Ich versuche, die Grafikkarte zurückzusetzen, um die VRAM freizugeben. Erfordert ein Administratorpasswort und kann eine temporäre Unterbrechung des Bildschirms verursachen. Fortfahren?';
+
+  @override
+  String get cleanupVramSuccess => 'VRAM erfolgreich geleert (GPU-Reset).';
+
+  @override
+  String get cleanupVramError =>
+      'VRAM konnte nicht geleert werden (GPU-Reset fehlgeschlagen).';
 
   @override
   String get tabServices => 'Dienste';

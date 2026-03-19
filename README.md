@@ -60,6 +60,29 @@ Applicazione Flutter completa per la gestione e ottimizzazione del sistema Linux
 - Flutter SDK
 - Privilegi sudo per alcune operazioni
 
+## Dipendenze Linux (avvio dalla build/bundle)
+
+Se avvii l’app dalla cartella `build/linux/x64/release/bundle` (senza usare il .deb), su alcune distro può mancare la libreria per la **system tray** (icona in area di notifica).
+
+- **Fedora / RHEL** (errore `libayatana-appindicator3.so.1: cannot open shared object file`):
+  ```bash
+  sudo dnf install libayatana-appindicator-gtk3
+  ```
+  Su **Fedora** (es. 42) con KDE/GNOME la system tray può causare un *segmentation fault* per incompatibilità del plugin con libayatana. L’app **disabilita automaticamente la tray su Fedora**: parte senza icona in system tray, tutto il resto funziona.
+- **Debian / Ubuntu** (se non usi il .deb):
+  ```bash
+  sudo apt install libayatana-appindicator3-1
+  ```
+- **Arch Linux**:
+  ```bash
+  sudo pacman -S libayatana-appindicator
+  ```
+
+Per disabilitare la system tray su qualsiasi distro (es. per evitare crash): avvia con  
+`SUPER_LINUX_UTILITY_NO_TRAY=1 ./super_linux_utility`.
+
+Dopo aver installato la dipendenza (ove serve), riesegui `./super_linux_utility` dalla cartella `bundle`.
+
 ## Installazione
 
 ### 1. Installa le dipendenze Flutter

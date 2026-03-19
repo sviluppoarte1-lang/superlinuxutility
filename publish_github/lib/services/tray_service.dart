@@ -12,6 +12,7 @@ class TrayMenuLabels {
   final String checkUpdates;
   final String cleanLinuxCache;
   final String removeTempFiles;
+  final String cleanVram;
   final String cpuGpuTemp;
   final String diskUsage;
   final String memoryUsage;
@@ -23,6 +24,7 @@ class TrayMenuLabels {
     required this.checkUpdates,
     required this.cleanLinuxCache,
     required this.removeTempFiles,
+    required this.cleanVram,
     required this.cpuGpuTemp,
     required this.diskUsage,
     required this.memoryUsage,
@@ -39,6 +41,7 @@ class TrayCallbacks {
   final void Function()? onShowCheckUpdatesDialog;
   final void Function()? onCleanLinuxCache;
   final void Function()? onCleanTempFiles;
+  final void Function()? onCleanVram;
   final void Function()? onShowCpuGpuTemp;
   final void Function()? onShowDiskUsage;
   final void Function()? onShowMemoryUsage;
@@ -53,6 +56,7 @@ class TrayCallbacks {
     this.onShowCheckUpdatesDialog,
     this.onCleanLinuxCache,
     this.onCleanTempFiles,
+    this.onCleanVram,
     this.onShowCpuGpuTemp,
     this.onShowDiskUsage,
     this.onShowMemoryUsage,
@@ -197,6 +201,7 @@ class TrayService {
       checkUpdates: 'Verifica aggiornamenti di sistema',
       cleanLinuxCache: 'Pulisci Cache Linux',
       removeTempFiles: 'Rimuovi File temporanei',
+      cleanVram: 'Ripulisci VRAM (reset GPU)',
       cpuGpuTemp: 'Temperatura CPU, GPU',
       diskUsage: 'Uso del disco',
       memoryUsage: 'Uso memoria RAM',
@@ -214,6 +219,7 @@ class TrayService {
       MenuItemLabel(label: l.checkUpdates, onClicked: (_) => _onCheckUpdates()),
       MenuItemLabel(label: l.cleanLinuxCache, onClicked: (_) => _onCleanLinuxCache()),
       MenuItemLabel(label: l.removeTempFiles, onClicked: (_) => _onCleanTempFiles()),
+      MenuItemLabel(label: l.cleanVram, onClicked: (_) => _onCleanVram()),
       MenuItemLabel(label: tempLabel, onClicked: (_) {
         _callbacks?.onShowCpuGpuTemp?.call();
         _appWindow?.show();
@@ -293,6 +299,20 @@ class TrayService {
       _callbacks?.showSnackbar?.call('Errore: $e');
     }
     _callbacks?.onCleanTempFiles?.call();
+  }
+
+  static void _onCleanVram() async {
+    _appWindow?.show();
+    try {
+      final result = await CleanupService.cleanVram();
+      final msg = result['success'] == true
+          ? (result['message']?.toString().isNotEmpty == true ? result['message']!.toString() : 'Pulizia VRAM completata.')
+          : '${result['message']?.toString().isNotEmpty == true ? result['message']!.toString() : 'Errore pulizia VRAM'}';
+      _callbacks?.showSnackbar?.call(msg);
+    } catch (e) {
+      _callbacks?.showSnackbar?.call('Errore pulizia VRAM: $e');
+    }
+    _callbacks?.onCleanVram?.call();
   }
 
   static void showWindow() {

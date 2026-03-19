@@ -45,10 +45,10 @@ modules:
           install -m 644 assets/icons/icon.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/io.github.marcodigiangiacomo.SuperLinuxUtility.png
         fi
     sources:
-      # Replace with your GitHub release tarball URL (contents of build/linux/x64/release/bundle/)
+      # Tarball from GitHub Releases (contents of build/linux/x64/release/bundle/)
       - type: archive
-        url: https://github.com/marcodigiangiacomo/super-linux-utility/releases/download/v1.8.6/super-linux-utility-1.8.6-linux-bundle.tar.gz
-        sha256: REPLACE_WITH_SHA256
+        url: https://github.com/sviluppoarte1-lang/superlinuxutility/releases/download/1.8.6/super-linux-utility-1.8.6-linux-bundle.tar.gz
+        sha256: be1e7f62e9e32dd40de5db8d2b78d93f15dcaf53d39a4dd59537fcaa52be85a2 
       - type: file
         path: io.github.marcodigiangiacomo.SuperLinuxUtility.metainfo.xml
       - type: file

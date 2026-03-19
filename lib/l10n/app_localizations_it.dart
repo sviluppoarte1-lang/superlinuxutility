@@ -24,6 +24,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get trayRemoveTempFiles => 'Rimuovi File temporanei';
 
   @override
+  String get trayCleanTempFilesAndCache => 'Pulisci file temporanei e cache';
+
+  @override
+  String get trayCleanVram => 'Ripulisci VRAM (reset GPU)';
+
+  @override
   String get trayCpuGpuTemp => 'Temperatura CPU, GPU';
 
   @override
@@ -56,6 +62,23 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Errore durante la pulizia della cache.';
+
+  @override
+  String get cleanupVram => 'Pulisci VRAM';
+
+  @override
+  String get cleanupVramConfirmTitle => 'Reset della GPU';
+
+  @override
+  String get cleanupVramConfirmMessage =>
+      'Proverò a resettare la scheda grafica per liberare la VRAM. Richiede password amministratore e può causare un\'interruzione temporanea dello schermo. Continuare?';
+
+  @override
+  String get cleanupVramSuccess => 'VRAM ripulita (reset GPU) con successo.';
+
+  @override
+  String get cleanupVramError =>
+      'Impossibile ripulire la VRAM (reset GPU fallito).';
 
   @override
   String get tabServices => 'Servizi';
@@ -355,6 +378,57 @@ class AppLocalizationsIt extends AppLocalizations {
       'Impossibile modificare l\'avvio al login.';
 
   @override
+  String get settingsAutoUpdateCheckTitle =>
+      'Verifica aggiornamenti automatica';
+
+  @override
+  String get settingsAutoUpdateCheckDesc =>
+      'Controlla gli aggiornamenti di sistema automaticamente con la frequenza scelta.';
+
+  @override
+  String get settingsAutoUpdateCheckInterval => 'Verifica aggiornamenti';
+
+  @override
+  String get settingsAutoUpdateNever => 'Mai';
+
+  @override
+  String get settingsAutoUpdateEvery15Min => 'Ogni 15 minuti';
+
+  @override
+  String get settingsAutoUpdateEvery30Min => 'Ogni 30 minuti';
+
+  @override
+  String get settingsAutoUpdateEvery1Hour => 'Ogni 1 ora';
+
+  @override
+  String get settingsAutoUpdateEvery6Hours => 'Ogni 6 ore';
+
+  @override
+  String get settingsAutoUpdateEvery12Hours => 'Ogni 12 ore';
+
+  @override
+  String get settingsAutoUpdateEveryDay => 'Ogni giorno';
+
+  @override
+  String updatesAvailableCount(int count) {
+    return '$count aggiornamenti disponibili';
+  }
+
+  @override
+  String get updatesAvailableDialogTitle => 'Aggiornamenti disponibili';
+
+  @override
+  String updatesAvailableDialogMessage(int count) {
+    return '$count aggiornamenti disponibili. Vuoi applicarli ora?';
+  }
+
+  @override
+  String get applyNow => 'Applica ora';
+
+  @override
+  String get postpone => 'Rimanda';
+
+  @override
   String get fontFamily => 'Famiglia Font';
 
   @override
@@ -506,6 +580,28 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get appExpertUsers =>
       'Applicazione progettata per utenti esperti Linux';
+
+  @override
+  String get disclaimerLicenseTitle => 'Licenza e Disclaimer';
+
+  @override
+  String get disclaimerGplNotice =>
+      'Questa applicazione è software libero; puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, versione 3 della Licenza o (a tua scelta) successiva.';
+
+  @override
+  String get disclaimerNoWarranty =>
+      'Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA GARANZIA; senza nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedere la GNU General Public License per i dettagli.';
+
+  @override
+  String get disclaimerCopyright =>
+      'Copyright (c) 2024-2025 Marco Di Giangiacomo. Tutti i diritti riservati sotto GPL-3.0.';
+
+  @override
+  String get payWithPaypal => 'Paga con PayPal';
+
+  @override
+  String get purchaseLicenseViaPaypal =>
+      'La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email. Senza un pagamento valido l\'app non può essere attivata.';
 
   @override
   String get languageSelectionTitle => 'Selezione Lingua';
@@ -1403,6 +1499,56 @@ class AppLocalizationsIt extends AppLocalizations {
       'Vuoi eseguire gli aggiornamenti disponibili? Questa operazione potrebbe richiedere del tempo.';
 
   @override
+  String get recoveryTabRecovery => 'Recovery';
+
+  @override
+  String get recoveryTabCheckUpdates => 'Verifica Aggiornamenti';
+
+  @override
+  String get recoveryTabSoftwareInstaller => 'Installatore Software di Sistema';
+
+  @override
+  String get recoverySoftwareInstallerDesc =>
+      'Scarica e installa automaticamente software di sistema essenziale.';
+
+  @override
+  String get recoveryInstallFfmpeg => 'FFmpeg';
+
+  @override
+  String get recoveryInstallFfmpegDesc =>
+      'Framework multimediale per codifica/decodifica audio e video.';
+
+  @override
+  String get recoveryInstallYtDlp => 'yt-dlp';
+
+  @override
+  String get recoveryInstallYtDlpDesc => 'Scaricatore video per molti siti.';
+
+  @override
+  String get recoveryInstallSystemLibs => 'Librerie di sistema';
+
+  @override
+  String get recoveryInstallSystemLibsDesc =>
+      'Librerie di sistema essenziali che spesso si possono corrompere.';
+
+  @override
+  String get recoveryInstallCodecs => 'Codec video e audio';
+
+  @override
+  String get recoveryInstallCodecsDesc =>
+      'Codec per riprodurre formati video e audio comuni.';
+
+  @override
+  String get recoveryInstallRsync => 'rsync';
+
+  @override
+  String get recoveryInstallRsyncDesc =>
+      'Strumento efficiente per sincronizzazione e trasferimento file.';
+
+  @override
+  String get install => 'Installa';
+
+  @override
   String get execute => 'Esegui';
 
   @override
@@ -1844,5 +1990,5 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get licenseActivateCardDesc =>
-      'Inserisci i tuoi dati e il codice licenza ricevuto per sbloccare GRUB, Kernel e Recovery.';
+      'La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery. Senza un pagamento valido l\'app non può essere attivata.';
 }

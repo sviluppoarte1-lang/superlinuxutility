@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+[ -x /usr/bin/update-desktop-database ] && update-desktop-database -q /usr/share/applications 2>/dev/null || true
+[ -x /usr/bin/update-icon-caches ] && update-icon-caches /usr/share/pixmaps 2>/dev/null || true
+command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+exit 0

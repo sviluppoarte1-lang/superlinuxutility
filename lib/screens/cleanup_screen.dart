@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../services/cleanup_service.dart';
+import '../services/tray_service.dart';
 
 class CleanupScreen extends StatefulWidget {
   const CleanupScreen({super.key});
@@ -24,6 +25,12 @@ class _CleanupScreenState extends State<CleanupScreen> {
     super.initState();
     _loadExcludedPaths();
     _loadSizes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (TrayService.runCleanupWhenScreenShown) {
+        TrayService.runCleanupWhenScreenShown = false;
+        _cleanupFromTray();
+      }
+    });
   }
 
   Future<void> _loadExcludedPaths() async {
@@ -147,6 +154,50 @@ class _CleanupScreenState extends State<CleanupScreen> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  /// Esegue la pulizia quando la schermata è stata aperta dalla system tray (senza dialog).
+  Future<void> _cleanupFromTray() async {
+    setState(() {
+      _isCleaning = true;
+      _error = null;
+      _cleanupResults = null;
+    });
+
+    try {
+      final results = await CleanupService.cleanupTempFiles();
+      if (mounted) {
+        setState(() {
+          _cleanupResults = results;
+          _isCleaning = false;
+        });
+        await _loadSizes();
+        final allSuccess = results.values.every((success) => success);
+        final message = allSuccess
+            ? (AppLocalizations.of(context)!.cleanupSuccess)
+            : (AppLocalizations.of(context)!.cleanupPartialSuccess);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: allSuccess ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isCleaning = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocalizations.of(context)!.error}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -316,7 +367,9 @@ class _CleanupScreenState extends State<CleanupScreen> {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  onPressed: _isCleaningCache ? null : _cleanLinuxCache,
+                  onPressed: (_isLoading || _isCleaning || _isCleaningCache)
+                      ? null
+                      : _cleanLinuxCache,
                   icon: _isCleaningCache
                       ? const SizedBox(
                           width: 20,

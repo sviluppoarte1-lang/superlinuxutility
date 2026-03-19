@@ -17,6 +17,18 @@ import 'services/dependency_check_service.dart';
 import 'services/window_close_to_tray.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// Rileva se la distro è Fedora (evita init system tray per segfault noti con appindicator su Fedora/KDE).
+Future<bool> _isFedora() async {
+  try {
+    final file = File('/etc/os-release');
+    if (!await file.exists()) return false;
+    final content = await file.readAsString();
+    return content.contains('ID=fedora') || content.contains('ID="fedora"');
+  } catch (_) {
+    return false;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -35,7 +47,10 @@ void main() async {
   if (Platform.isLinux) {
     final prefs = await SharedPreferences.getInstance();
     final trayEnabled = prefs.getBool(TrayService.prefKeySystemTrayEnabled) ?? true;
-    if (trayEnabled) {
+    final skipTrayEnv = Platform.environment['SUPER_LINUX_UTILITY_NO_TRAY'] == '1' ||
+        Platform.environment['SUPER_LINUX_UTILITY_NO_TRAY'] == 'true';
+    final isFedora = await _isFedora();
+    if (trayEnabled && !skipTrayEnv && !isFedora) {
       final supported = await DependencyCheckService.isSystemTraySupported();
       if (!supported) {
         await DependencyCheckService.installSystemTrayDependencies();

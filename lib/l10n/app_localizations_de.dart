@@ -24,6 +24,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trayRemoveTempFiles => 'Temporäre Dateien entfernen';
 
   @override
+  String get trayCleanTempFilesAndCache =>
+      'Temporäre Dateien und Cache bereinigen';
+
+  @override
+  String get trayCleanVram => 'VRAM leeren (GPU-Reset)';
+
+  @override
   String get trayCpuGpuTemp => 'CPU-, GPU-Temperatur';
 
   @override
@@ -56,6 +63,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Fehler beim Leeren des Caches.';
+
+  @override
+  String get cleanupVram => 'VRAM leeren';
+
+  @override
+  String get cleanupVramConfirmTitle => 'GPU-Reset';
+
+  @override
+  String get cleanupVramConfirmMessage =>
+      'Ich versuche, die Grafikkarte zurückzusetzen, um die VRAM freizugeben. Erfordert ein Administratorpasswort und kann eine temporäre Unterbrechung des Bildschirms verursachen. Fortfahren?';
+
+  @override
+  String get cleanupVramSuccess => 'VRAM erfolgreich geleert (GPU-Reset).';
+
+  @override
+  String get cleanupVramError =>
+      'VRAM konnte nicht geleert werden (GPU-Reset fehlgeschlagen).';
 
   @override
   String get tabServices => 'Dienste';
@@ -354,6 +378,56 @@ class AppLocalizationsDe extends AppLocalizations {
       'Einstellung „Start bei Anmeldung“ konnte nicht geändert werden.';
 
   @override
+  String get settingsAutoUpdateCheckTitle => 'Automatische Update-Prüfung';
+
+  @override
+  String get settingsAutoUpdateCheckDesc =>
+      'Systemupdates automatisch in der gewählten Zeitspanne prüfen.';
+
+  @override
+  String get settingsAutoUpdateCheckInterval => 'Nach Updates suchen';
+
+  @override
+  String get settingsAutoUpdateNever => 'Nie';
+
+  @override
+  String get settingsAutoUpdateEvery15Min => 'Alle 15 Minuten';
+
+  @override
+  String get settingsAutoUpdateEvery30Min => 'Alle 30 Minuten';
+
+  @override
+  String get settingsAutoUpdateEvery1Hour => 'Jede Stunde';
+
+  @override
+  String get settingsAutoUpdateEvery6Hours => 'Alle 6 Stunden';
+
+  @override
+  String get settingsAutoUpdateEvery12Hours => 'Alle 12 Stunden';
+
+  @override
+  String get settingsAutoUpdateEveryDay => 'Täglich';
+
+  @override
+  String updatesAvailableCount(int count) {
+    return '$count Updates verfügbar';
+  }
+
+  @override
+  String get updatesAvailableDialogTitle => 'Updates verfügbar';
+
+  @override
+  String updatesAvailableDialogMessage(int count) {
+    return '$count Updates verfügbar. Möchten Sie sie jetzt anwenden?';
+  }
+
+  @override
+  String get applyNow => 'Jetzt anwenden';
+
+  @override
+  String get postpone => 'Später';
+
+  @override
   String get fontFamily => 'Schriftfamilie';
 
   @override
@@ -504,6 +578,28 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get appExpertUsers => 'Anwendung für Linux-Experten entwickelt';
+
+  @override
+  String get disclaimerLicenseTitle => 'Lizenz und Haftungsausschluss';
+
+  @override
+  String get disclaimerGplNotice =>
+      'Diese Anwendung ist freie Software; Sie können sie unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, Version 3 der Lizenz oder (nach Ihrer Wahl) einer späteren Version weiterverbreiten und/oder modifizieren.';
+
+  @override
+  String get disclaimerNoWarranty =>
+      'Dieses Programm wird in der Hoffnung verteilt, dass es nützlich ist, aber OHNE JEDE GEWÄHRLEISTUNG; ohne sogar die implizite Gewährleistung der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Details finden Sie in der GNU General Public License.';
+
+  @override
+  String get disclaimerCopyright =>
+      'Copyright (c) 2024-2025 Marco Di Giangiacomo. Alle Rechte vorbehalten unter GPL-3.0.';
+
+  @override
+  String get payWithPaypal => 'Mit PayPal bezahlen';
+
+  @override
+  String get purchaseLicenseViaPaypal =>
+      'Die Advanced-Version kostet 19,99 €. Um eine Lizenz zu erwerben, zahlen Sie per PayPal. Nach erfolgreicher Zahlung erhalten Sie Ihren Lizenzschlüssel per E-Mail. Ohne gültige Zahlung kann die Anwendung nicht aktiviert werden.';
 
   @override
   String get languageSelectionTitle => 'Sprachauswahl';
@@ -1402,6 +1498,56 @@ class AppLocalizationsDe extends AppLocalizations {
       'Möchten Sie die verfügbaren Updates durchführen? Dieser Vorgang kann einige Zeit dauern.';
 
   @override
+  String get recoveryTabRecovery => 'Recovery';
+
+  @override
+  String get recoveryTabCheckUpdates => 'Nach Updates suchen';
+
+  @override
+  String get recoveryTabSoftwareInstaller => 'System-Software-Installer';
+
+  @override
+  String get recoverySoftwareInstallerDesc =>
+      'Lädt und installiert wichtige Systemsoftware automatisch.';
+
+  @override
+  String get recoveryInstallFfmpeg => 'FFmpeg';
+
+  @override
+  String get recoveryInstallFfmpegDesc =>
+      'Multimedia-Framework für Audio- und Video-Enkodierung/-Dekodierung.';
+
+  @override
+  String get recoveryInstallYtDlp => 'yt-dlp';
+
+  @override
+  String get recoveryInstallYtDlpDesc => 'Video-Downloader für viele Websites.';
+
+  @override
+  String get recoveryInstallSystemLibs => 'Systembibliotheken';
+
+  @override
+  String get recoveryInstallSystemLibsDesc =>
+      'Wichtige Systembibliotheken, die oft benötigt werden und beschädigt werden können.';
+
+  @override
+  String get recoveryInstallCodecs => 'Video- und Audiocodecs';
+
+  @override
+  String get recoveryInstallCodecsDesc =>
+      'Codecs für gängige Video- und Audioformate.';
+
+  @override
+  String get recoveryInstallRsync => 'rsync';
+
+  @override
+  String get recoveryInstallRsyncDesc =>
+      'Effizientes Tool für Dateisync und -übertragung.';
+
+  @override
+  String get install => 'Installieren';
+
+  @override
   String get execute => 'Ausführen';
 
   @override
@@ -1846,5 +1992,5 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get licenseActivateCardDesc =>
-      'Geben Sie Ihre Daten und den erhaltenen Lizenzschlüssel ein, um GRUB-, Kernel- und Recovery-Tools freizuschalten.';
+      'Die Advanced-Version kostet 19,99 €. Geben Sie Ihre Daten und den Lizenzschlüssel ein, den Sie nach erfolgreicher Zahlung erhalten haben, um GRUB-, Kernel- und Recovery-Tools freizuschalten. Ohne gültige Zahlung kann die Anwendung nicht aktiviert werden.';
 }

@@ -136,6 +136,12 @@ abstract class AppLocalizations {
   /// **'Rimuovi File temporanei'**
   String get trayRemoveTempFiles;
 
+  /// No description provided for @trayCleanVram.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripulisci VRAM (reset GPU)'**
+  String get trayCleanVram;
+
   /// No description provided for @trayCpuGpuTemp.
   ///
   /// In it, this message translates to:
@@ -201,6 +207,36 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Errore durante la pulizia della cache.'**
   String get cleanupLinuxCacheError;
+
+  /// No description provided for @cleanupVram.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulisci VRAM'**
+  String get cleanupVram;
+
+  /// No description provided for @cleanupVramConfirmTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Reset della GPU'**
+  String get cleanupVramConfirmTitle;
+
+  /// No description provided for @cleanupVramConfirmMessage.
+  ///
+  /// In it, this message translates to:
+  /// **'Proverò a resettare la scheda grafica per liberare la VRAM. Richiede password amministratore e può causare un\'interruzione temporanea dello schermo. Continuare?'**
+  String get cleanupVramConfirmMessage;
+
+  /// No description provided for @cleanupVramSuccess.
+  ///
+  /// In it, this message translates to:
+  /// **'VRAM ripulita (reset GPU) con successo.'**
+  String get cleanupVramSuccess;
+
+  /// No description provided for @cleanupVramError.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile ripulire la VRAM (reset GPU fallito).'**
+  String get cleanupVramError;
 
   /// No description provided for @tabServices.
   ///

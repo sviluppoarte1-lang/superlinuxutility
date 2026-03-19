@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Super Linux Utility (Personal)
+Comment=Gestione sistema Linux - Versione personale/test (GRUB, Kernel, Recovery)
+Exec=super-linux-utility-personal
+Icon=super-linux-utility-personal
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true

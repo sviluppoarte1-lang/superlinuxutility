@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
@@ -16,6 +17,7 @@ import 'settings_screen.dart';
 import 'disk_analyzer_screen.dart';
 import 'recovery_screen.dart';
 import 'shutdown_scheduler_screen.dart';
+import 'tray_task_manager_dialog.dart';
 import 'dart:io';
 import '../services/tray_service.dart';
 import '../services/recovery_service.dart';
@@ -39,6 +41,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isAdvancedMode = false;
   bool _isLoading = true;
   bool _licenseActivated = false;
+  Timer? _updateCheckTimer;
+  static const String _keyUpdateCheckIntervalMinutes = 'update_check_interval_minutes';
+  static const String _keyLastUpdateCheckTs = 'last_update_check_ts';
 
   static const int _standardTabCount = 8;
   static const int _advancedTabCount = 11;
@@ -50,6 +55,84 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (Platform.isLinux) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _initTray());
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startUpdateCheckTimer());
+  }
+
+  Future<void> _startUpdateCheckTimer() async {
+    _updateCheckTimer?.cancel();
+    final prefs = await SharedPreferences.getInstance();
+    final interval = prefs.getInt(_keyUpdateCheckIntervalMinutes) ?? 0;
+    if (interval <= 0) return;
+    _updateCheckTimer = Timer.periodic(const Duration(minutes: 1), (_) => _onUpdateCheckTick());
+    Timer(const Duration(seconds: 15), () => _onUpdateCheckTick());
+  }
+
+  Future<void> _onUpdateCheckTick() async {
+    final prefs = await SharedPreferences.getInstance();
+    final interval = prefs.getInt(_keyUpdateCheckIntervalMinutes) ?? 0;
+    if (interval <= 0) return;
+    final last = prefs.getInt(_keyLastUpdateCheckTs) ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (last > 0 && now - last < interval * 60 * 1000) return;
+    try {
+      final result = await RecoveryService.checkForUpdates();
+      await prefs.setInt(_keyLastUpdateCheckTs, now);
+      if (!mounted) return;
+      final count = result['updateCount'] as int? ?? 0;
+      if (count > 0) {
+        _showUpdatesAvailableDialog(result, count);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _showUpdatesAvailableDialog(Map<String, dynamic> result, int count) async {
+    if (!mounted) return;
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final apply = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.system_update, color: Colors.green),
+              const SizedBox(width: 8),
+              Text(l10n.updatesAvailableDialogTitle),
+            ],
+          ),
+          content: Text(l10n.updatesAvailableDialogMessage(count)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.postpone),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(ctx, true),
+              icon: const Icon(Icons.download, size: 20),
+              label: Text(l10n.applyNow),
+            ),
+          ],
+        ),
+      );
+      if (apply == true && mounted) {
+        _showTrayCheckUpdatesDialogWithResult(result);
+      }
+    });
+  }
+
+  void _showTrayCheckUpdatesDialogWithResult(Map<String, dynamic> initialResult) {
+    if (!mounted) return;
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => _TrayCheckUpdatesDialog(initialResult: initialResult),
+      );
+    });
   }
 
   void _initTray() {
@@ -57,8 +140,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final l10n = AppLocalizations.of(context)!;
     TrayService.setLabels(TrayMenuLabels(
       checkUpdates: l10n.trayCheckUpdates,
-      cleanLinuxCache: l10n.trayCleanLinuxCache,
-      removeTempFiles: l10n.trayRemoveTempFiles,
+      cleanTempFilesAndCache: l10n.trayCleanTempFilesAndCache,
       cpuGpuTemp: l10n.trayCpuGpuTemp,
       diskUsage: l10n.trayDiskUsage,
       memoryUsage: l10n.trayMemoryUsage,
@@ -71,12 +153,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       onShowMainWindow: () => TrayService.showWindow(),
       onCheckUpdates: () => _goToTab(8),
       onShowCheckUpdatesDialog: () => _showTrayCheckUpdatesDialog(),
-      onCleanLinuxCache: () {},
-      onShowCleanCacheDialog: () => _showTrayCleanCacheDialog(),
       onCleanTempFiles: () => _goToTab(2),
+      onShowCleanCacheDialog: () => _showTrayCleanCacheDialog(),
       onShowCpuGpuTemp: () => _goToTab(4),
       onShowDiskUsage: () => _goToTab(5),
-      onShowMemoryUsage: () => _goToTab(4),
+      onShowTaskManagerDialog: () => _showTrayTaskManagerDialog(),
       onShowShutdownTimerDialog: () => _showTrayShutdownTimerDialog(),
       onShowCpuGpuUsage: () => _goToTab(4),
       showSnackbar: (msg) {
@@ -89,11 +170,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _showTrayCheckUpdatesDialog() {
     if (!mounted) return;
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _TrayCheckUpdatesDialog(),
-    );
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const _TrayCheckUpdatesDialog(),
+      );
+    });
   }
 
   void _showTrayShutdownTimerDialog() {
@@ -112,6 +197,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  void _showTrayTaskManagerDialog() {
+    if (!mounted) return;
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => const TrayTaskManagerDialog(),
+      );
+    });
+  }
+
   void _goToTab(int index) {
     TrayService.showWindow();
     if (_tabController != null && index < _tabController!.length) {
@@ -126,6 +223,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final bool effectiveAdvanced;
     if (isStandardBuild) {
       effectiveAdvanced = false;
+    } else if (isPersonalBuild) {
+      effectiveAdvanced = true;
+      _licenseActivated = true;
     } else {
       _licenseActivated = await isActivated();
       effectiveAdvanced = _licenseActivated && (prefs.getBool('advancedMode') ?? false);
@@ -173,6 +273,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    _updateCheckTimer?.cancel();
     _tabController?.dispose();
     super.dispose();
   }
@@ -254,6 +355,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   )
+                else if (isPersonalBuild)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Personal / Test',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  )
                 else if (!_licenseActivated)
                   ElevatedButton.icon(
                     onPressed: _openLicenseDialog,
@@ -311,6 +420,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 }
 
 class _TrayCheckUpdatesDialog extends StatefulWidget {
+  final Map<String, dynamic>? initialResult;
+
+  const _TrayCheckUpdatesDialog({this.initialResult});
+
   @override
   State<_TrayCheckUpdatesDialog> createState() => _TrayCheckUpdatesDialogState();
 }
@@ -323,7 +436,12 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
   @override
   void initState() {
     super.initState();
-    _runCheck();
+    if (widget.initialResult != null) {
+      _result = widget.initialResult;
+      _loading = false;
+    } else {
+      _runCheck();
+    }
   }
 
   Future<void> _runCheck() async {

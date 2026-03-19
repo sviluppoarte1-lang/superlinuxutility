@@ -24,6 +24,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trayRemoveTempFiles => 'Remove temporary files';
 
   @override
+  String get trayCleanVram => 'Clear VRAM (GPU reset)';
+
+  @override
   String get trayCpuGpuTemp => 'CPU, GPU temperature';
 
   @override
@@ -56,6 +59,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Error clearing cache.';
+
+  @override
+  String get cleanupVram => 'Clear VRAM';
+
+  @override
+  String get cleanupVramConfirmTitle => 'GPU reset';
+
+  @override
+  String get cleanupVramConfirmMessage =>
+      'I will try to reset the graphics card to free VRAM. It requires an administrator password and may cause a temporary screen interruption. Continue?';
+
+  @override
+  String get cleanupVramSuccess => 'VRAM cleared (GPU reset) successfully.';
+
+  @override
+  String get cleanupVramError => 'Failed to clear VRAM (GPU reset).';
 
   @override
   String get tabServices => 'Services';

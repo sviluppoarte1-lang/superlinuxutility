@@ -136,6 +136,18 @@ abstract class AppLocalizations {
   /// **'Rimuovi File temporanei'**
   String get trayRemoveTempFiles;
 
+  /// No description provided for @trayCleanTempFilesAndCache.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulisci file temporanei e cache'**
+  String get trayCleanTempFilesAndCache;
+
+  /// No description provided for @trayCleanVram.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripulisci VRAM (reset GPU)'**
+  String get trayCleanVram;
+
   /// No description provided for @trayCpuGpuTemp.
   ///
   /// In it, this message translates to:
@@ -201,6 +213,36 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Errore durante la pulizia della cache.'**
   String get cleanupLinuxCacheError;
+
+  /// No description provided for @cleanupVram.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulisci VRAM'**
+  String get cleanupVram;
+
+  /// No description provided for @cleanupVramConfirmTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Reset della GPU'**
+  String get cleanupVramConfirmTitle;
+
+  /// No description provided for @cleanupVramConfirmMessage.
+  ///
+  /// In it, this message translates to:
+  /// **'Proverò a resettare la scheda grafica per liberare la VRAM. Richiede password amministratore e può causare un\'interruzione temporanea dello schermo. Continuare?'**
+  String get cleanupVramConfirmMessage;
+
+  /// No description provided for @cleanupVramSuccess.
+  ///
+  /// In it, this message translates to:
+  /// **'VRAM ripulita (reset GPU) con successo.'**
+  String get cleanupVramSuccess;
+
+  /// No description provided for @cleanupVramError.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile ripulire la VRAM (reset GPU fallito).'**
+  String get cleanupVramError;
 
   /// No description provided for @tabServices.
   ///
@@ -748,6 +790,96 @@ abstract class AppLocalizations {
   /// **'Impossibile modificare l\'avvio al login.'**
   String get settingsStartAtLoginError;
 
+  /// No description provided for @settingsAutoUpdateCheckTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Verifica aggiornamenti automatica'**
+  String get settingsAutoUpdateCheckTitle;
+
+  /// No description provided for @settingsAutoUpdateCheckDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Controlla gli aggiornamenti di sistema automaticamente con la frequenza scelta.'**
+  String get settingsAutoUpdateCheckDesc;
+
+  /// No description provided for @settingsAutoUpdateCheckInterval.
+  ///
+  /// In it, this message translates to:
+  /// **'Verifica aggiornamenti'**
+  String get settingsAutoUpdateCheckInterval;
+
+  /// No description provided for @settingsAutoUpdateNever.
+  ///
+  /// In it, this message translates to:
+  /// **'Mai'**
+  String get settingsAutoUpdateNever;
+
+  /// No description provided for @settingsAutoUpdateEvery15Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 15 minuti'**
+  String get settingsAutoUpdateEvery15Min;
+
+  /// No description provided for @settingsAutoUpdateEvery30Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 30 minuti'**
+  String get settingsAutoUpdateEvery30Min;
+
+  /// No description provided for @settingsAutoUpdateEvery1Hour.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 1 ora'**
+  String get settingsAutoUpdateEvery1Hour;
+
+  /// No description provided for @settingsAutoUpdateEvery6Hours.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 6 ore'**
+  String get settingsAutoUpdateEvery6Hours;
+
+  /// No description provided for @settingsAutoUpdateEvery12Hours.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 12 ore'**
+  String get settingsAutoUpdateEvery12Hours;
+
+  /// No description provided for @settingsAutoUpdateEveryDay.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni giorno'**
+  String get settingsAutoUpdateEveryDay;
+
+  /// No description provided for @updatesAvailableCount.
+  ///
+  /// In it, this message translates to:
+  /// **'{count} aggiornamenti disponibili'**
+  String updatesAvailableCount(int count);
+
+  /// No description provided for @updatesAvailableDialogTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti disponibili'**
+  String get updatesAvailableDialogTitle;
+
+  /// No description provided for @updatesAvailableDialogMessage.
+  ///
+  /// In it, this message translates to:
+  /// **'{count} aggiornamenti disponibili. Vuoi applicarli ora?'**
+  String updatesAvailableDialogMessage(int count);
+
+  /// No description provided for @applyNow.
+  ///
+  /// In it, this message translates to:
+  /// **'Applica ora'**
+  String get applyNow;
+
+  /// No description provided for @postpone.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimanda'**
+  String get postpone;
+
   /// No description provided for @fontFamily.
   ///
   /// In it, this message translates to:
@@ -1035,6 +1167,42 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Applicazione progettata per utenti esperti Linux'**
   String get appExpertUsers;
+
+  /// No description provided for @disclaimerLicenseTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Licenza e Disclaimer'**
+  String get disclaimerLicenseTitle;
+
+  /// No description provided for @disclaimerGplNotice.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa applicazione è software libero; puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, versione 3 della Licenza o (a tua scelta) successiva.'**
+  String get disclaimerGplNotice;
+
+  /// No description provided for @disclaimerNoWarranty.
+  ///
+  /// In it, this message translates to:
+  /// **'Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA GARANZIA; senza nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedere la GNU General Public License per i dettagli.'**
+  String get disclaimerNoWarranty;
+
+  /// No description provided for @disclaimerCopyright.
+  ///
+  /// In it, this message translates to:
+  /// **'Copyright (c) 2024-2025 Marco Di Giangiacomo. Tutti i diritti riservati sotto GPL-3.0.'**
+  String get disclaimerCopyright;
+
+  /// No description provided for @payWithPaypal.
+  ///
+  /// In it, this message translates to:
+  /// **'Paga con PayPal'**
+  String get payWithPaypal;
+
+  /// No description provided for @purchaseLicenseViaPaypal.
+  ///
+  /// In it, this message translates to:
+  /// **'La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email. Senza un pagamento valido l\'app non può essere attivata.'**
+  String get purchaseLicenseViaPaypal;
 
   /// No description provided for @languageSelectionTitle.
   ///
@@ -2680,6 +2848,96 @@ abstract class AppLocalizations {
   /// **'Vuoi eseguire gli aggiornamenti disponibili? Questa operazione potrebbe richiedere del tempo.'**
   String get recoveryPerformUpdatesConfirm;
 
+  /// No description provided for @recoveryTabRecovery.
+  ///
+  /// In it, this message translates to:
+  /// **'Recovery'**
+  String get recoveryTabRecovery;
+
+  /// No description provided for @recoveryTabCheckUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'Verifica Aggiornamenti'**
+  String get recoveryTabCheckUpdates;
+
+  /// No description provided for @recoveryTabSoftwareInstaller.
+  ///
+  /// In it, this message translates to:
+  /// **'Installatore Software di Sistema'**
+  String get recoveryTabSoftwareInstaller;
+
+  /// No description provided for @recoverySoftwareInstallerDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Scarica e installa automaticamente software di sistema essenziale.'**
+  String get recoverySoftwareInstallerDesc;
+
+  /// No description provided for @recoveryInstallFfmpeg.
+  ///
+  /// In it, this message translates to:
+  /// **'FFmpeg'**
+  String get recoveryInstallFfmpeg;
+
+  /// No description provided for @recoveryInstallFfmpegDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Framework multimediale per codifica/decodifica audio e video.'**
+  String get recoveryInstallFfmpegDesc;
+
+  /// No description provided for @recoveryInstallYtDlp.
+  ///
+  /// In it, this message translates to:
+  /// **'yt-dlp'**
+  String get recoveryInstallYtDlp;
+
+  /// No description provided for @recoveryInstallYtDlpDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Scaricatore video per molti siti.'**
+  String get recoveryInstallYtDlpDesc;
+
+  /// No description provided for @recoveryInstallSystemLibs.
+  ///
+  /// In it, this message translates to:
+  /// **'Librerie di sistema'**
+  String get recoveryInstallSystemLibs;
+
+  /// No description provided for @recoveryInstallSystemLibsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Librerie di sistema essenziali che spesso si possono corrompere.'**
+  String get recoveryInstallSystemLibsDesc;
+
+  /// No description provided for @recoveryInstallCodecs.
+  ///
+  /// In it, this message translates to:
+  /// **'Codec video e audio'**
+  String get recoveryInstallCodecs;
+
+  /// No description provided for @recoveryInstallCodecsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Codec per riprodurre formati video e audio comuni.'**
+  String get recoveryInstallCodecsDesc;
+
+  /// No description provided for @recoveryInstallRsync.
+  ///
+  /// In it, this message translates to:
+  /// **'rsync'**
+  String get recoveryInstallRsync;
+
+  /// No description provided for @recoveryInstallRsyncDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Strumento efficiente per sincronizzazione e trasferimento file.'**
+  String get recoveryInstallRsyncDesc;
+
+  /// No description provided for @install.
+  ///
+  /// In it, this message translates to:
+  /// **'Installa'**
+  String get install;
+
   /// No description provided for @execute.
   ///
   /// In it, this message translates to:
@@ -3475,7 +3733,7 @@ abstract class AppLocalizations {
   /// No description provided for @licenseActivateCardDesc.
   ///
   /// In it, this message translates to:
-  /// **'Inserisci i tuoi dati e il codice licenza ricevuto per sbloccare GRUB, Kernel e Recovery.'**
+  /// **'La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery. Senza un pagamento valido l\'app non può essere attivata.'**
   String get licenseActivateCardDesc;
 }
 

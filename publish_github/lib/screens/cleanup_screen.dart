@@ -16,6 +16,7 @@ class _CleanupScreenState extends State<CleanupScreen> {
   bool _isLoading = false;
   bool _isCleaning = false;
   bool _isCleaningCache = false;
+  bool _isCleaningVram = false;
   String? _error;
   Set<String> _excludedPaths = {};
 
@@ -268,6 +269,69 @@ class _CleanupScreenState extends State<CleanupScreen> {
     }
   }
 
+  Future<void> _cleanVram() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.cleanupVramConfirmTitle),
+        content: Text(l10n.cleanupVramConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isCleaningVram = true;
+      _error = null;
+    });
+
+    try {
+      final result = await CleanupService.cleanVram();
+      if (!mounted) return;
+      setState(() => _isCleaningVram = false);
+
+      final success = result['success'] == true;
+      final details = result['message']?.toString() ?? '';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? l10n.cleanupVramSuccess
+                : '${l10n.cleanupVramError}${details.isNotEmpty ? '\n$details' : ''}',
+          ),
+          backgroundColor: success ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isCleaningVram = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.cleanupVramError}\n$e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
   int _getTotalSize() {
     return _sizes.values.fold(0, (sum, size) => sum + size);
   }
@@ -316,7 +380,9 @@ class _CleanupScreenState extends State<CleanupScreen> {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  onPressed: _isCleaningCache ? null : _cleanLinuxCache,
+                  onPressed: (_isLoading || _isCleaning || _isCleaningCache || _isCleaningVram)
+                      ? null
+                      : _cleanLinuxCache,
                   icon: _isCleaningCache
                       ? const SizedBox(
                           width: 20,
@@ -328,6 +394,24 @@ class _CleanupScreenState extends State<CleanupScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.tertiary,
                     foregroundColor: Theme.of(context).colorScheme.onTertiary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: (_isLoading || _isCleaning || _isCleaningCache || _isCleaningVram)
+                      ? null
+                      : _cleanVram,
+                  icon: _isCleaningVram
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.memory),
+                  label: Text(AppLocalizations.of(context)!.cleanupVram),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                    foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
                 ),
               ],

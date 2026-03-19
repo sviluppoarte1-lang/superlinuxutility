@@ -4,6 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'password_storage.dart';
 
 class CleanupService {
+  /// Checks if a command is available in PATH.
+  static Future<bool> _commandExists(String command) async {
+    final result = await Process.run(
+      'bash',
+      ['-c', 'command -v $command >/dev/null 2>&1'],
+      runInShell: false,
+    );
+    return result.exitCode == 0;
+  }
+
   static Future<ProcessResult> _runSudoCommand(String command) async {
     final password = await PasswordStorage.getPassword();
     if (password == null || password.isEmpty) {
@@ -429,6 +439,92 @@ class CleanupService {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
     } else {
       return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+    }
+  }
+
+  /// Best-effort VRAM cleanup.
+  /// Usa la password amministratore già memorizzata nell'app (Impostazioni).
+  /// On NVIDIA, we try `nvidia-smi --gpu-reset` via sudo with that password.
+  static Future<Map<String, dynamic>> cleanVram() async {
+    try {
+      final password = await PasswordStorage.getPassword();
+      if (password == null || password.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Password amministratore non salvata. Salvala nelle Impostazioni per eseguire il reset GPU.',
+        };
+      }
+
+      final hasNvidiaSmi = await _commandExists('nvidia-smi');
+      if (!hasNvidiaSmi) {
+        return {
+          'success': false,
+          'message': 'nvidia-smi non disponibile (reset VRAM non supportato).',
+        };
+      }
+
+      final listResult = await Process.run(
+        'bash',
+        ['-c', 'nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null || true'],
+        runInShell: false,
+      );
+
+      final stdout = listResult.stdout.toString();
+      final indices = <int>{};
+      for (final rawLine in stdout.split('\n')) {
+        final line = rawLine.trim();
+        if (line.isEmpty) continue;
+        final v = int.tryParse(line);
+        if (v != null) indices.add(v);
+      }
+
+      if (indices.isEmpty) {
+        indices.add(0);
+      }
+
+      int successCount = 0;
+      final errorLines = <String>[];
+
+      for (final idx in indices.toList()..sort()) {
+        final process = await Process.start(
+          'sudo',
+          ['-S', 'nvidia-smi', '--gpu-reset', '-i', idx.toString()],
+          runInShell: false,
+        );
+        process.stdin.writeln(password);
+        await process.stdin.close();
+        final exitCode = await process.exitCode;
+        final stderr = await process.stderr.transform(const SystemEncoding().decoder).join();
+        final out = await process.stdout.transform(const SystemEncoding().decoder).join();
+
+        if (exitCode == 0) {
+          successCount++;
+        } else {
+          final err = (stderr.trim().isNotEmpty ? stderr : out).trim();
+          String summary = err.isNotEmpty ? err.replaceFirst(RegExp(r'\[sudo\].*'), '').trim() : '';
+          if (summary.isEmpty) summary = 'exit code $exitCode';
+          if (summary.isNotEmpty) {
+            errorLines.add('GPU $idx: $summary');
+          }
+        }
+      }
+
+      if (successCount > 0) {
+        return {
+          'success': true,
+          'message': 'Reset GPU eseguito su $successCount dispositivo/i.',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': errorLines.isNotEmpty ? errorLines.join('\n') : 'Reset GPU fallito.',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
     }
   }
 }

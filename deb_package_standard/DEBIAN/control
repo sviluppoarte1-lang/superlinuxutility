@@ -3,7 +3,7 @@ Version: 1.8.6
 Section: utils
 Priority: optional
 Architecture: amd64
-Depends: libgtk-3-0, libglib2.0-0, libc6
+Depends: libgtk-3-0, libglib2.0-0, libc6, libayatana-appindicator3-1
 Maintainer: Marco Di Giangiacomo
 License: GPL-3.0+
 Homepage: https://github.com/marcodigiangiacomo/super-linux-utility

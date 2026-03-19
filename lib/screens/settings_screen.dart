@@ -38,6 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _startAtLogin = false;
   bool? _trayDepsOk;
   bool _trayInstalling = false;
+  int _updateCheckIntervalMinutes = 0;
+
+  static const String _keyUpdateCheckIntervalMinutes = 'update_check_interval_minutes';
 
   @override
   void initState() {
@@ -50,7 +53,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadCloseToTray();
     _loadStartMinimized();
     _loadStartAtLogin();
+    _loadUpdateCheckInterval();
     if (Platform.isLinux) _checkTrayDeps();
+  }
+
+  Future<void> _loadUpdateCheckInterval() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _updateCheckIntervalMinutes = prefs.getInt(_keyUpdateCheckIntervalMinutes) ?? 0);
+  }
+
+  Future<void> _setUpdateCheckInterval(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyUpdateCheckIntervalMinutes, minutes);
+    setState(() => _updateCheckIntervalMinutes = minutes);
   }
 
   Future<void> _loadSystemTrayEnabled() async {
@@ -928,6 +943,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.system_update, size: 32),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(context)!.settingsAutoUpdateCheckTitle,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppLocalizations.of(context)!.settingsAutoUpdateCheckDesc,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      value: [0, 15, 30, 60, 360, 720, 1440].contains(_updateCheckIntervalMinutes)
+                          ? _updateCheckIntervalMinutes
+                          : 0,
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.settingsAutoUpdateCheckInterval,
+                        border: const OutlineInputBorder(),
+                      ),
+                      items: [
+                        DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context)!.settingsAutoUpdateNever)),
+                        DropdownMenuItem(value: 15, child: Text(AppLocalizations.of(context)!.settingsAutoUpdateEvery15Min)),
+                        DropdownMenuItem(value: 30, child: Text(AppLocalizations.of(context)!.settingsAutoUpdateEvery30Min)),
+                        DropdownMenuItem(value: 60, child: Text(AppLocalizations.of(context)!.settingsAutoUpdateEvery1Hour)),
+                        DropdownMenuItem(value: 360, child: Text(AppLocalizations.of(context)!.settingsAutoUpdateEvery6Hours)),
+                        DropdownMenuItem(value: 720, child: Text(AppLocalizations.of(context)!.settingsAutoUpdateEvery12Hours)),
+                        DropdownMenuItem(value: 1440, child: Text(AppLocalizations.of(context)!.settingsAutoUpdateEveryDay)),
+                      ],
+                      onChanged: (v) => _setUpdateCheckInterval(v ?? 0),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             Card(
               child: Padding(

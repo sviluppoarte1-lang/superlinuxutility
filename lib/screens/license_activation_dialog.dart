@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
+import 'package:super_linux_utility/config/app_build.dart';
 import '../services/license_service.dart';
 
 /// Dialog to activate the Advanced version with nome, cognome, email and license code.
@@ -54,6 +56,16 @@ class _LicenseActivationDialogState extends State<LicenseActivationDialog> {
     }
   }
 
+  /// Link PayPal.me con importo preimpostato 19,99 € (formato: paypal.me/username/amount)
+  static const String _paypalUrl = 'https://paypal.me/fearescape/19.99';
+
+  Future<void> _launchPayPal() async {
+    final uri = Uri.parse(_paypalUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -66,6 +78,19 @@ class _LicenseActivationDialogState extends State<LicenseActivationDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (isAdvancedBuild) ...[
+                Text(
+                  l10n.purchaseLicenseViaPaypal,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _launchPayPal,
+                  icon: const Icon(Icons.payment, size: 18),
+                  label: Text(l10n.payWithPaypal),
+                ),
+                const SizedBox(height: 16),
+              ],
               TextFormField(
                 controller: _nomeController,
                 decoration: InputDecoration(
