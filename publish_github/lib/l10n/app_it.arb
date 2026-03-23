@@ -8,6 +8,7 @@
   "trayCheckUpdates": "Verifica aggiornamenti di sistema",
   "trayCleanLinuxCache": "Pulisci Cache Linux",
   "trayRemoveTempFiles": "Rimuovi File temporanei",
+  "trayCleanTempFilesAndCache": "Pulisci file temporanei e cache",
   "trayCleanVram": "Ripulisci VRAM (reset GPU)",
   "trayCpuGpuTemp": "Temperatura CPU, GPU",
   "trayDiskUsage": "Uso del disco",
@@ -116,6 +117,103 @@
   "settingsStartAtLoginOn": "Avvio al login attivato. L'app si avvierà al login.",
   "settingsStartAtLoginOff": "Avvio al login disattivato.",
   "settingsStartAtLoginError": "Impossibile modificare l'avvio al login.",
+  "settingsAutoUpdateCheckTitle": "Verifica aggiornamenti automatica",
+  "settingsAutoUpdateCheckDesc": "Controlla gli aggiornamenti di sistema automaticamente con la frequenza scelta.",
+  "settingsAutoUpdateCheckInterval": "Verifica aggiornamenti",
+  "settingsAutoUpdateNever": "Mai",
+  "settingsAutoUpdateEvery15Min": "Ogni 15 minuti",
+  "settingsAutoUpdateEvery30Min": "Ogni 30 minuti",
+  "settingsAutoUpdateEvery1Hour": "Ogni 1 ora",
+  "settingsAutoUpdateEvery6Hours": "Ogni 6 ore",
+  "settingsAutoUpdateEvery12Hours": "Ogni 12 ore",
+  "settingsAutoUpdateEveryDay": "Ogni giorno",
+  "settingsAutoAppUpdateFromGithubTitle": "Aggiornamento automatico app da GitHub",
+  "settingsAutoAppUpdateFromGithubDesc": "Se attivo, l'app scarica e installa periodicamente l'ultimo .deb di questa edizione dalle release GitHub. Richiede password amministratore salvata e funziona solo se sopra è attiva la verifica periodica aggiornamenti di sistema.",
+  "updateCheckAptNone": "APT: Nessun aggiornamento disponibile",
+  "updateCheckAptPhasedOnly": "APT: Nessun aggiornamento installabile subito (solo rollout scaglionato)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} aggiornamento disponibile} other{APT: {count} aggiornamenti disponibili}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} aggiornamento scaglionato rilevato} other{APT: {count} aggiornamenti scaglionati rilevati}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT: Errore durante la verifica: {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF: Nessun aggiornamento disponibile",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} aggiornamento disponibile} other{DNF: {count} aggiornamenti disponibili}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF: Errore durante la verifica: {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman: Nessun aggiornamento disponibile",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} aggiornamento disponibile} other{Pacman: {count} aggiornamenti disponibili}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman: Errore durante la verifica: {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap: Nessun aggiornamento disponibile",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} aggiornamento disponibile} other{Snap: {count} aggiornamenti disponibili}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap: Errore durante la verifica: {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak: Nessun aggiornamento disponibile",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} aggiornamento disponibile} other{Flatpak: {count} aggiornamenti disponibili}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak: Errore durante la verifica: {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 pacchetti} one{{count} pacchetto} other{{count} pacchetti}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updatesAvailableCount": "{count} aggiornamenti disponibili",
+  "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDialogTitle": "Aggiornamenti disponibili",
+  "updatesAvailableDialogMessage": "{count} aggiornamenti disponibili. Vuoi applicarli ora?",
+  "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "applyNow": "Applica ora",
+  "postpone": "Rimanda",
   "fontFamily": "Famiglia Font",
   "fontSize": "Dimensione Font",
   "fontDefault": "Default (Roboto)",
@@ -164,6 +262,13 @@
   "appDescription": "Super Linux Utility è un'applicazione completa per la gestione avanzata del sistema Linux. Offre strumenti potenti per ottimizzare le prestazioni, gestire servizi, applicazioni e personalizzare l'aspetto del sistema.",
   "features": "Caratteristiche",
   "appExpertUsers": "Applicazione progettata per utenti esperti Linux",
+  "infoProjectWebsite": "Sito web del progetto",
+  "disclaimerLicenseTitle": "Licenza e Disclaimer",
+  "disclaimerGplNotice": "Questa applicazione è software libero; puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, versione 3 della Licenza o (a tua scelta) successiva.",
+  "disclaimerNoWarranty": "Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA GARANZIA; senza nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedere la GNU General Public License per i dettagli.",
+  "disclaimerCopyright": "Copyright (c) 2024-2025 Marco Di Giangiacomo. Tutti i diritti riservati sotto GPL-3.0.",
+  "payWithPaypal": "Paga con PayPal",
+  "purchaseLicenseViaPaypal": "La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email. Senza un pagamento valido l'app non può essere attivata.",
   "languageSelectionTitle": "Selezione Lingua",
   "languageSelectionDesc": "Seleziona la lingua per l'applicazione",
   "languageItalian": "Italiano",
@@ -282,8 +387,8 @@
     }
   },
   "kernelRemoveError": "Errore durante la rimozione del kernel",
-  "setDefaultKernel": "Imposta Kernel di Default",
-  "setDefaultKernelQuestion": "Vuoi impostare {version} come kernel di default?",
+  "setDefaultKernel": "Imposta kernel predefinito (GRUB)",
+  "setDefaultKernelQuestion": "Impostare {version} come kernel predefinito al prossimo avvio? Verranno usati comandi GRUB con privilegi di amministratore.",
   "@setDefaultKernelQuestion": {
     "placeholders": {
       "version": {
@@ -292,7 +397,7 @@
     }
   },
   "set": "Imposta",
-  "kernelSetDefaultSuccess": "Kernel {version} impostato come default",
+  "kernelSetDefaultSuccess": "Kernel {version} impostato come predefinito in GRUB",
   "@kernelSetDefaultSuccess": {
     "placeholders": {
       "version": {
@@ -351,7 +456,7 @@
   "rebootSystemError": "Errore durante il riavvio del sistema",
   "package": "Pacchetto",
   "size": "Dimensione",
-  "setAsDefault": "Imposta come Default",
+  "setAsDefault": "Imposta come predefinito",
   "refreshDimensions": "Aggiorna Dimensioni",
   "cleanupTempFiles": "Pulisci File Temporanei",
   "disableApp": "Disabilita App",
@@ -594,6 +699,21 @@
   "recoveryCheckUpdatesDesc": "Verifica la disponibilità di aggiornamenti per tutti i package manager installati (APT, DNF, Pacman, Snap, Flatpak).",
   "recoveryPerformUpdates": "Esegui Aggiornamenti",
   "recoveryPerformUpdatesConfirm": "Vuoi eseguire gli aggiornamenti disponibili? Questa operazione potrebbe richiedere del tempo.",
+  "recoveryTabRecovery": "Recovery",
+  "recoveryTabCheckUpdates": "Verifica Aggiornamenti",
+  "recoveryTabSoftwareInstaller": "Installatore Software di Sistema",
+  "recoverySoftwareInstallerDesc": "Scarica e installa automaticamente software di sistema essenziale.",
+  "recoveryInstallFfmpeg": "FFmpeg",
+  "recoveryInstallFfmpegDesc": "Framework multimediale per codifica/decodifica audio e video.",
+  "recoveryInstallYtDlp": "yt-dlp",
+  "recoveryInstallYtDlpDesc": "Scaricatore video per molti siti.",
+  "recoveryInstallSystemLibs": "Librerie di sistema",
+  "recoveryInstallSystemLibsDesc": "Librerie di sistema essenziali che spesso si possono corrompere.",
+  "recoveryInstallCodecs": "Codec video e audio",
+  "recoveryInstallCodecsDesc": "Codec per riprodurre formati video e audio comuni.",
+  "recoveryInstallRsync": "rsync",
+  "recoveryInstallRsyncDesc": "Strumento efficiente per sincronizzazione e trasferimento file.",
+  "install": "Installa",
   "execute": "Esegui",
   "viewOutput": "Visualizza Output",
   "infoServices": "Servizi",
@@ -734,6 +854,6 @@
   "licenseActivateError": "Codice non valido. Verifica nome, cognome e email.",
   "licenseActivatePremium": "Attiva / Premium",
   "licenseActivateCardTitle": "Attiva versione avanzata",
-  "licenseActivateCardDesc": "Inserisci i tuoi dati e il codice licenza ricevuto per sbloccare GRUB, Kernel e Recovery."
+  "licenseActivateCardDesc": "La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery. Senza un pagamento valido l'app non può essere attivata."
 }
 

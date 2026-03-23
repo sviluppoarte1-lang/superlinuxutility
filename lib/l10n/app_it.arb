@@ -127,6 +127,86 @@
   "settingsAutoUpdateEvery6Hours": "Ogni 6 ore",
   "settingsAutoUpdateEvery12Hours": "Ogni 12 ore",
   "settingsAutoUpdateEveryDay": "Ogni giorno",
+  "settingsAutoAppUpdateFromGithubTitle": "Aggiornamento automatico app da GitHub",
+  "settingsAutoAppUpdateFromGithubDesc": "Se attivo, l'app scarica e installa periodicamente l'ultimo .deb di questa edizione dalle release GitHub. Richiede password amministratore salvata e funziona solo se sopra è attiva la verifica periodica aggiornamenti di sistema.",
+  "updateCheckAptNone": "APT: Nessun aggiornamento disponibile",
+  "updateCheckAptPhasedOnly": "APT: Nessun aggiornamento installabile subito (solo rollout scaglionato)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} aggiornamento disponibile} other{APT: {count} aggiornamenti disponibili}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} aggiornamento scaglionato rilevato} other{APT: {count} aggiornamenti scaglionati rilevati}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT: Errore durante la verifica: {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF: Nessun aggiornamento disponibile",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} aggiornamento disponibile} other{DNF: {count} aggiornamenti disponibili}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF: Errore durante la verifica: {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman: Nessun aggiornamento disponibile",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} aggiornamento disponibile} other{Pacman: {count} aggiornamenti disponibili}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman: Errore durante la verifica: {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap: Nessun aggiornamento disponibile",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} aggiornamento disponibile} other{Snap: {count} aggiornamenti disponibili}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap: Errore durante la verifica: {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak: Nessun aggiornamento disponibile",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} aggiornamento disponibile} other{Flatpak: {count} aggiornamenti disponibili}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak: Errore durante la verifica: {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 pacchetti} one{{count} pacchetto} other{{count} pacchetti}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "updatesAvailableCount": "{count} aggiornamenti disponibili",
   "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
   "updatesAvailableDialogTitle": "Aggiornamenti disponibili",
@@ -183,6 +263,17 @@
   "features": "Caratteristiche",
   "appExpertUsers": "Applicazione progettata per utenti esperti Linux",
   "infoProjectWebsite": "Sito web del progetto",
+  "applicationIdLabel": "ID applicazione (desktop)",
+  "updatesPendingPackagesTitle": "Pacchetti in coda (ultimo controllo)",
+  "updatesProgressCurrent": "Avanzamento: {detail}",
+  "@updatesProgressCurrent": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesCommandOutputTitle": "Output del comando",
   "disclaimerLicenseTitle": "Licenza e Disclaimer",
   "disclaimerGplNotice": "Questa applicazione è software libero; puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, versione 3 della Licenza o (a tua scelta) successiva.",
   "disclaimerNoWarranty": "Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA GARANZIA; senza nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedere la GNU General Public License per i dettagli.",
@@ -307,8 +398,8 @@
     }
   },
   "kernelRemoveError": "Errore durante la rimozione del kernel",
-  "setDefaultKernel": "Imposta Kernel di Default",
-  "setDefaultKernelQuestion": "Vuoi impostare {version} come kernel di default?",
+  "setDefaultKernel": "Imposta kernel predefinito (GRUB)",
+  "setDefaultKernelQuestion": "Impostare {version} come kernel predefinito al prossimo avvio? Verranno usati comandi GRUB con privilegi di amministratore.",
   "@setDefaultKernelQuestion": {
     "placeholders": {
       "version": {
@@ -317,7 +408,7 @@
     }
   },
   "set": "Imposta",
-  "kernelSetDefaultSuccess": "Kernel {version} impostato come default",
+  "kernelSetDefaultSuccess": "Kernel {version} impostato come predefinito in GRUB",
   "@kernelSetDefaultSuccess": {
     "placeholders": {
       "version": {
@@ -376,7 +467,7 @@
   "rebootSystemError": "Errore durante il riavvio del sistema",
   "package": "Pacchetto",
   "size": "Dimensione",
-  "setAsDefault": "Imposta come Default",
+  "setAsDefault": "Imposta come predefinito",
   "refreshDimensions": "Aggiorna Dimensioni",
   "cleanupTempFiles": "Pulisci File Temporanei",
   "disableApp": "Disabilita App",

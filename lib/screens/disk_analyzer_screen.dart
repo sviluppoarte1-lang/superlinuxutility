@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:process_run/process_run.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
@@ -39,6 +41,11 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   // Cache
   bool _isGeneratingCache = false;
   bool _hasShownCacheMessage = false;
+  bool _isChartLoading = false;
+  /// Invalida aggiornamenti grafico du quando l'utente cambia cartella durante lo scan
+  int _chartScanToken = 0;
+  /// Evita burst di listDirectory+JSON quando si apre spesso la stessa cartella dalla cache
+  int _dirListIncrementalToken = 0;
 
   @override
   void initState() {
@@ -141,9 +148,9 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           });
           
           // Calcola le dimensioni in background
-          _calculateSizesInBackground(items);
-          // Aggiornamento incrementale: solo nuovi/cancellati (non rigenerare)
-          _updateCacheIncrementalForPath(diskPath, path);
+          _calculateSizesInBackground(items, diskPath: diskPath, listPath: normalizedPath);
+          // Aggiornamento incrementale differito (meno I/O ripetuto)
+          _scheduleDirectoryListIncrementalRefresh(diskPath, normalizedPath);
           return;
         }
       }
@@ -216,7 +223,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       
       // Se non abbiamo calcolato le dimensioni, calcolale in background
       if (!calculateSizes) {
-        _calculateSizesInBackground(items);
+        _calculateSizesInBackground(items, diskPath: diskPathForCache, listPath: normalizedPathForCache);
       }
     } catch (e) {
       setState(() {
@@ -234,6 +241,15 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     } catch (e) {
       // Ignora errori di salvataggio cache
     }
+  }
+
+  void _scheduleDirectoryListIncrementalRefresh(String diskPath, String directoryPath) {
+    final t = ++_dirListIncrementalToken;
+    Future<void>(() async {
+      await Future.delayed(const Duration(milliseconds: 1200));
+      if (!mounted || t != _dirListIncrementalToken) return;
+      await _updateCacheIncrementalForPath(diskPath, directoryPath);
+    });
   }
 
   /// Aggiorna la cache in modo incrementale (solo file/cartelle nuovi o cancellati). Non rigenera.
@@ -269,7 +285,11 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     }
   }
 
-  Future<void> _calculateSizesInBackground(List<FileSystemItem> items) async {
+  Future<void> _calculateSizesInBackground(
+    List<FileSystemItem> items, {
+    required String diskPath,
+    required String listPath,
+  }) async {
     // Filtra solo le directory che necessitano del calcolo della dimensione
     final directoriesToCalculate = items.where((item) {
       if (!_showHiddenFiles && item.name.startsWith('.')) {
@@ -282,16 +302,15 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       return;
     }
 
+    final normListPath = DiskCacheService.normalizeListedDirectoryPath(listPath);
+
     // Calcola le dimensioni in parallelo (max 5 alla volta per non sovraccaricare)
     const maxConcurrent = 5;
     for (int i = 0; i < directoriesToCalculate.length; i += maxConcurrent) {
       final batch = directoriesToCalculate.skip(i).take(maxConcurrent).toList();
-      
-      // Calcola tutte le dimensioni del batch in parallelo
-      // Usa timeout più lunghi per cartelle molto grandi (oltre 1TB)
+
       final futures = batch.map((item) async {
         try {
-          // Timeout di 60 secondi per cartelle molto grandi
           final size = await DiskAnalyzerService.getDirectorySize(item.path)
               .timeout(
                 const Duration(seconds: 60),
@@ -302,16 +321,16 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           return {'item': item, 'size': 0};
         }
       });
-      
+
       final results = await Future.wait(futures);
-      
+
       if (mounted) {
         setState(() {
           for (final result in results) {
             final item = result['item'] as FileSystemItem;
             final size = result['size'] as int;
-            
-            final index = _currentItems.indexWhere((i) => i.path == item.path);
+
+            final index = _currentItems.indexWhere((el) => el.path == item.path);
             if (index >= 0) {
               _currentItems[index] = FileSystemItem(
                 path: item.path,
@@ -323,23 +342,23 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
               );
             }
           }
-          // Riordina solo una volta dopo aver aggiornato il batch
           _sortItems();
         });
-        // Persiste le dimensioni calcolate in cache (grafico + liste directory)
-        final diskPath = _selectedBasePath.isEmpty || _selectedBasePath == '/'
-            ? '/'
-            : (_selectedBasePath.endsWith('/') && _selectedBasePath.length > 1
-                ? _selectedBasePath.substring(0, _selectedBasePath.length - 1)
-                : _selectedBasePath);
-        final dirPath = _currentPath.endsWith('/') && _currentPath.length > 1
-            ? _currentPath.substring(0, _currentPath.length - 1)
-            : _currentPath;
-        await DiskCacheService.updateDirectoryListSizes(
-          diskPath,
-          dirPath,
-          _fileSystemItemsToMaps(_currentItems),
-        );
+      }
+    }
+
+    // Un solo salvataggio cache su disco: prima si riscritta il JSON ad ogni batch (lento + blocchi UI)
+    if (mounted) {
+      final stillSameDir =
+          DiskCacheService.normalizeListedDirectoryPath(_currentPath) == normListPath;
+      if (stillSameDir) {
+        try {
+          await DiskCacheService.updateDirectoryListSizes(
+            diskPath,
+            normListPath,
+            _fileSystemItemsToMaps(_currentItems),
+          );
+        } catch (_) {}
       }
     }
   }
@@ -362,6 +381,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       _selectedDiskBytes = diskBytes;
       _directorySizes = []; // Reset per mostrare il loading
       _isGeneratingCache = !hasCache; // Mostra messaggio solo se non c'è cache
+      _isChartLoading = true;
     });
     
     // Carica la directory subito (senza resettare il grafico qui, lo facciamo sopra)
@@ -374,6 +394,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
         setState(() {
           _directorySizes = [];
           _isGeneratingCache = false;
+          _isChartLoading = false;
         });
       }
     });
@@ -397,21 +418,33 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     // Se stiamo navigando in una sottocartella, non usare la cache del disco base
     // ma genera sempre i dati per la cartella corrente
     if (!isBasePath) {
+      final chartToken = ++_chartScanToken;
       // Reset del flag per mostrare il loading durante la navigazione
       if (mounted) {
         setState(() {
           _directorySizes = [];
           _isGeneratingCache = true;
+          _isChartLoading = true;
         });
       }
       
       // Genera i dati per la cartella corrente (senza cache)
-      final directorySizes = await _getTopDirectories(normalizedPath);
+      final directorySizes = await _getTopDirectories(
+        normalizedPath,
+        chartToken: chartToken,
+        onPartial: (partial) {
+          if (!mounted || chartToken != _chartScanToken) return;
+          setState(() {
+            _directorySizes = List<Map<String, dynamic>>.from(partial);
+          });
+        },
+      );
       
       if (mounted) {
         setState(() {
           _directorySizes = directorySizes;
           _isGeneratingCache = false;
+          _isChartLoading = false;
         });
       }
       return;
@@ -429,6 +462,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
         setState(() {
           _directorySizes = cachedSizes;
           _isGeneratingCache = false;
+          _isChartLoading = false;
           _hasShownCacheMessage = true;
         });
       }
@@ -440,12 +474,23 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     if (!_hasShownCacheMessage && mounted) {
       setState(() {
         _isGeneratingCache = true;
+        _isChartLoading = true;
         _hasShownCacheMessage = true;
       });
     }
     
-    // Genera i dati
-    final directorySizes = await _getTopDirectories(normalizedPath);
+    // Genera i dati (streaming + risultati parziali per il grafico)
+    final chartToken = ++_chartScanToken;
+    final directorySizes = await _getTopDirectories(
+      normalizedPath,
+      chartToken: chartToken,
+      onPartial: (partial) {
+        if (!mounted || chartToken != _chartScanToken) return;
+        setState(() {
+          _directorySizes = List<Map<String, dynamic>>.from(partial);
+        });
+      },
+    );
     
     // Salva nella cache solo per il disco base
     await DiskCacheService.saveDirectorySizes(diskPath, directorySizes);
@@ -454,6 +499,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       setState(() {
         _directorySizes = directorySizes;
         _isGeneratingCache = false;
+        _isChartLoading = false;
       });
     }
   }
@@ -909,6 +955,13 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                       isSelected: _selectedBasePath == DiskAnalyzerService.getHomePath(),
                       onTap: () => _selectBasePath(DiskAnalyzerService.getHomePath()),
                     ),
+                    _PathButton(
+                      icon: Icons.public,
+                      label: AppLocalizations.of(context)!.filesystem,
+                      path: '/',
+                      isSelected: _selectedBasePath == '/',
+                      onTap: () => _selectBasePath('/'),
+                    ),
                     // Dischi esterni
                     ..._mountedDisks.asMap().entries.map((entry) {
                       final index = entry.key;
@@ -1133,12 +1186,19 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                         ),
                       ),
                       child: _directorySizes.isEmpty
-                          ? const SizedBox(
-                              height: 140,
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            )
+                          ? (_isChartLoading
+                              ? const SizedBox(
+                                  height: 140,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : SizedBox(
+                                  height: 140,
+                                  child: Center(
+                                    child: Text(AppLocalizations.of(context)!.emptyDirectory),
+                                  ),
+                                ))
                           : _DiskPieChart(
                               directories: _directorySizes,
                             ),
@@ -1281,75 +1341,185 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     return null;
   }
 
-  /// Ottiene le directory principali e le loro dimensioni per il grafico
-  Future<List<Map<String, dynamic>>> _getTopDirectories(String path) async {
-    try {
-      // Normalizza il percorso (espandi ~ se presente)
-      final normalizedPath = path.startsWith('~') 
-          ? path.replaceFirst('~', Platform.environment['HOME'] ?? '/home/${Platform.environment['USER'] ?? 'user'}')
-          : path;
-      
-      // Usa un comando che verifica che siano solo directory (non file)
-      // Questo evita di includere file nel grafico
-      // Esclude anche le directory virtuali che possono dare dimensioni errate
-      // Le directory virtuali (proc, sys, dev, run, tmp) vengono filtrate nel parsing
-      // Usa cd per cambiare directory e poi itera sugli elementi
-      // Usa direttamente sudo per garantire accesso a tutte le directory
-      final escapedPath = normalizedPath.replaceAll("'", "'\\''");
-      final command = "cd '$escapedPath' && for item in * .[!.]*; do [ -d \"\$item\" ] && du -sh \"\$item\" 2>/dev/null; done | sort -hr";
-      
-      // Usa direttamente sudo senza fallback
-      // Se la password non è disponibile, viene chiesta all'utente
-      final result = await _runSudoCommand(command).timeout(
-        const Duration(seconds: 12),
-        onTimeout: () => ProcessResult(1, -1, '', 'Timeout'),
-      );
-      
-      if (result.exitCode == 0) {
-        final output = (result.stdout as String).trim();
-        if (output.isNotEmpty) {
-          final parsed = _parseDirectorySizes(output, normalizedPath);
-          if (parsed.isNotEmpty) {
-            return parsed;
-          }
-        }
-      }
-    } catch (e) {
-      // Ignora errori
+  /// Comando du senza `sort` nel pipe (così l'output arriva a chunk utilizzabili per il grafico).
+  String _duStreamingInnerCommand(String normRoot) {
+    if (normRoot == '/') {
+      return 'du -h -d1 -x / '
+          '--exclude=/proc '
+          '--exclude=/sys '
+          '--exclude=/dev '
+          '--exclude=/run '
+          '--exclude=/tmp '
+          '--exclude=/snap '
+          '--exclude=/boot '
+          '--exclude=/boot/efi '
+          '--exclude=/lost+found '
+          '--exclude=/sysroot '
+          '--exclude=/var/lib/docker '
+          '--exclude=/var/lib/containers '
+          '--exclude=/var/cache '
+          '--exclude=/var/tmp '
+          '2>/dev/null';
     }
-    return [];
+    final escapedPath = normRoot.replaceAll("'", "'\\''");
+    return "cd '$escapedPath' && for item in * .[!.]*; do [ -d \"\$item\" ] && du -sh \"\$item\" 2>/dev/null; done";
   }
 
-  /// Esegue un comando con sudo usando la password salvata
-  /// Se la password non è disponibile, la chiede all'utente
-  Future<ProcessResult> _runSudoCommand(String command) async {
+  List<Map<String, dynamic>> _sortedDirectoryMapsFromAccum(
+    Map<String, Map<String, dynamic>> byPath,
+  ) {
+    final list = byPath.values.toList();
+    list.sort((a, b) => (b['size'] as int).compareTo(a['size'] as int));
+    return list;
+  }
+
+  /// Avvia bash con inner; uso sudo solo se [useSudo] e password salvata.
+  Future<Process?> _spawnDuShell({required bool useSudo, required String inner}) async {
+    if (!useSudo) {
+      return Process.start('bash', ['-c', inner], runInShell: true);
+    }
     var password = await PasswordStorage.getPassword();
-    
-    // Se la password non è disponibile, chiedila all'utente
     if (password == null || password.isEmpty) {
+      if (!mounted) return null;
       password = await _requestPasswordFromUser();
-      if (password == null || password.isEmpty) {
-        throw Exception('Password richiesta ma non fornita');
-      }
-      // Salva la password per uso futuro
+      if (password == null || password.isEmpty) return null;
       await PasswordStorage.savePassword(password);
     }
-    
     final escapedPassword = password
         .replaceAll('\\', '\\\\')
         .replaceAll('"', '\\"')
         .replaceAll('\$', '\\\$')
         .replaceAll('`', '\\`');
-    
-    // Escapa il comando per passarlo correttamente a sudo
-    final escapedCommand = command.replaceAll("'", "'\\''");
-    final fullCommand = 'printf "%s\\n" "$escapedPassword" | sudo -S bash -c \'$escapedCommand\'';
-    
-    return await Process.run(
-      'bash',
-      ['-c', fullCommand],
-      runInShell: true,
-    );
+    final escapedInner = inner.replaceAll("'", "'\\''");
+    final cmd = 'printf "%s\\n" "$escapedPassword" | sudo -S bash -c \'$escapedInner\'';
+    return Process.start('bash', ['-c', cmd], runInShell: true);
+  }
+
+  /// Legge stdout a chunk, emette risultati parziali (throttle), rispetta [maxDuration] poi termina il processo.
+  Future<List<Map<String, dynamic>>> _drainDuStdoutToMaps(
+    Process process,
+    String normRoot, {
+    required Map<String, Map<String, dynamic>> byPath,
+    int? chartToken,
+    void Function(List<Map<String, dynamic>> partial)? onPartial,
+    required Duration maxDuration,
+  }) async {
+    Timer? throttle;
+    var remainder = '';
+    final sw = Stopwatch()..start();
+
+    void schedulePartial() {
+      if (onPartial == null) return;
+      throttle?.cancel();
+      throttle = Timer(const Duration(milliseconds: 400), () {
+        throttle = null;
+        if (chartToken == null || chartToken != _chartScanToken || !mounted) return;
+        final sorted = _sortedDirectoryMapsFromAccum(byPath);
+        if (sorted.isNotEmpty) onPartial(sorted);
+      });
+    }
+
+    try {
+      await for (final chunk in process.stdout.transform(utf8.decoder)) {
+        if (sw.elapsed > maxDuration) {
+          process.kill(ProcessSignal.sigterm);
+          break;
+        }
+        remainder += chunk;
+        final parts = remainder.split('\n');
+        remainder = parts.isNotEmpty ? parts.removeLast() : '';
+        for (final rawLine in parts) {
+          final row = _tryParseDuLine(rawLine, normRoot);
+          if (row != null) {
+            byPath[row['path'] as String] = row;
+            schedulePartial();
+          }
+        }
+      }
+      if (remainder.trim().isNotEmpty) {
+        final row = _tryParseDuLine(remainder, normRoot);
+        if (row != null) byPath[row['path'] as String] = row;
+      }
+    } finally {
+      throttle?.cancel();
+      try {
+        await process.exitCode.timeout(const Duration(seconds: 2));
+      } catch (_) {
+        try {
+          process.kill(ProcessSignal.sigkill);
+        } catch (_) {}
+      }
+    }
+
+    final finalList = _sortedDirectoryMapsFromAccum(byPath);
+    if (onPartial != null && chartToken != null && chartToken == _chartScanToken && mounted && finalList.isNotEmpty) {
+      onPartial(finalList);
+    }
+    return finalList;
+  }
+
+  /// Directory principali per il grafico: streaming + timeout progressivo (prima user, poi sudo) e aggiornamenti parziali.
+  Future<List<Map<String, dynamic>>> _getTopDirectories(
+    String path, {
+    int? chartToken,
+    void Function(List<Map<String, dynamic>> partial)? onPartial,
+  }) async {
+    try {
+      final normalizedPath = path.startsWith('~')
+          ? path.replaceFirst(
+              '~',
+              Platform.environment['HOME'] ??
+                  '/home/${Platform.environment['USER'] ?? 'user'}',
+            )
+          : path;
+      final normRoot = normalizedPath.endsWith('/') && normalizedPath.length > 1
+          ? normalizedPath.substring(0, normalizedPath.length - 1)
+          : normalizedPath;
+
+      final inner = _duStreamingInnerCommand(normRoot);
+      // Timeout progressivo: tentativi più brevi senza privilegi, più lunghi con sudo / root.
+      final stages = normRoot == '/'
+          ? const [
+              (sudo: false, max: Duration(seconds: 25)),
+              (sudo: true, max: Duration(seconds: 90)),
+            ]
+          : const [
+              (sudo: false, max: Duration(seconds: 18)),
+              (sudo: true, max: Duration(seconds: 40)),
+            ];
+
+      for (final stage in stages) {
+        final proc = await _spawnDuShell(useSudo: stage.sudo, inner: inner);
+        if (proc == null) continue;
+        final byPath = <String, Map<String, dynamic>>{};
+        final got = await _drainDuStdoutToMaps(
+          proc,
+          normRoot,
+          byPath: byPath,
+          chartToken: chartToken,
+          onPartial: onPartial,
+          maxDuration: stage.max,
+        );
+        if (got.isNotEmpty) return got;
+      }
+
+      final totalFilesSize = _currentItems
+          .where((it) => !it.isDirectory)
+          .fold<int>(0, (sum, it) => sum + it.size);
+      if (totalFilesSize > 0) {
+        return [
+          {
+            'name': 'Files',
+            'path': normRoot,
+            'size': totalFilesSize,
+            'sizeFormatted': DiskAnalyzerService.formatSize(totalFilesSize),
+          }
+        ];
+      }
+    } catch (e) {
+      // Ignora errori
+    }
+    return [];
   }
 
   /// Chiede la password all'utente tramite un dialog
@@ -1415,88 +1585,52 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     return result;
   }
 
-  /// Parsa l'output di du e restituisce la lista di directory
-  List<Map<String, dynamic>> _parseDirectorySizes(String output, String basePath) {
-    final lines = output.split('\n').where((line) => line.trim().isNotEmpty).toList();
-    
-    final directories = <Map<String, dynamic>>[];
-    for (final line in lines) {
-      final trimmed = line.trim();
-      // Il formato di du -sh è: dimensione    percorso (può essere tab o spazi)
-      // Esempio: "1.5G    /home/user/Documents" o "1.5G\t/home/user/Documents"
-      // Dividi per tab o spazi multipli
-      final parts = trimmed.split(RegExp(r'\s+'));
-      if (parts.length >= 2) {
-        final sizeStr = parts[0];
-        // Prendi tutto dopo la dimensione come percorso
-        final dirPath = parts.sublist(1).join(' ').trim();
-        
-        if (dirPath.isEmpty) continue;
-        
-        // Rimuovi il trailing slash se presente
-        final cleanPath = dirPath.endsWith('/') ? dirPath.substring(0, dirPath.length - 1) : dirPath;
-        
-        // Se il percorso è relativo (solo nome), costruisci il percorso completo
-        final fullPath = cleanPath.startsWith('/') 
-            ? cleanPath 
-            : '$basePath/$cleanPath';
-        
-        // Verifica che sia effettivamente una directory (non un file)
-        try {
-          final dir = Directory(fullPath);
-          if (!dir.existsSync()) {
-            continue;
-          }
-          // Verifica che non sia un file usando stat
-          final stat = dir.statSync();
-          if (stat.type != FileSystemEntityType.directory) {
-            continue;
-          }
-        } catch (e) {
-          continue;
-        }
-        
-        // Ottieni solo il nome della directory (ultima parte del percorso)
-        final pathParts = fullPath.split('/').where((p) => p.isNotEmpty).toList();
-        final dirName = pathParts.isNotEmpty 
-            ? pathParts.last 
-            : cleanPath;
-        
-        // Escludi directory virtuali che possono dare dimensioni errate
-        // Queste directory sono filesystem virtuali e non hanno dimensioni reali sul disco
-        final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp'];
-        if (virtualDirs.contains(dirName.toLowerCase())) {
-          continue;
-        }
-        
-        // Escludi anche se il percorso completo contiene queste directory
-        // (es. /proc, /sys, /dev, /run, /tmp)
-        if (fullPath == '/proc' || fullPath == '/sys' || fullPath == '/dev' || 
-            fullPath == '/run' || fullPath == '/tmp' ||
-            fullPath.startsWith('/proc/') || fullPath.startsWith('/sys/') ||
-            fullPath.startsWith('/dev/') || fullPath.startsWith('/run/') ||
-            fullPath.startsWith('/tmp/')) {
-          continue;
-        }
-        
-        // Converti la dimensione in bytes
-        final sizeBytes = _parseSizeToBytes(sizeStr);
-        
-        // Verifica che sia una directory valida (non file, non punti, ha una dimensione)
-        // Limita anche la dimensione massima a 100TB per evitare valori errati
-        final maxSizeBytes = 100 * 1024 * 1024 * 1024 * 1024; // 100TB
-        if (sizeBytes > 0 && sizeBytes <= maxSizeBytes && dirName.isNotEmpty && dirName != '.' && dirName != '..') {
-          directories.add({
-            'name': dirName,
-            'path': fullPath,
-            'size': sizeBytes,
-            'sizeFormatted': sizeStr,
-          });
-        }
-      }
+  /// Una riga di output du (usata da streaming e batch).
+  Map<String, dynamic>? _tryParseDuLine(String line, String basePath) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) return null;
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length < 2) return null;
+    final sizeStr = parts[0];
+    final dirPath = parts.sublist(1).join(' ').trim();
+    if (dirPath.isEmpty) return null;
+
+    final cleanPath = dirPath.endsWith('/') ? dirPath.substring(0, dirPath.length - 1) : dirPath;
+    final fullPath = cleanPath.startsWith('/') ? cleanPath : '$basePath/$cleanPath';
+
+    final pathParts = fullPath.split('/').where((p) => p.isNotEmpty).toList();
+    final dirName = pathParts.isNotEmpty ? pathParts.last : cleanPath;
+
+    final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp', 'snap', 'lost+found', 'sysroot'];
+    if (virtualDirs.contains(dirName.toLowerCase())) {
+      return null;
     }
-    
-    return directories;
+
+    if (fullPath == '/' ||
+        fullPath == '/proc' || fullPath == '/sys' || fullPath == '/dev' ||
+        fullPath == '/run' || fullPath == '/tmp' ||
+        fullPath == '/snap' || fullPath == '/boot' || fullPath == '/boot/efi' ||
+        fullPath == '/lost+found' || fullPath == '/sysroot' ||
+        fullPath == '/var/lib/docker' || fullPath == '/var/lib/containers' ||
+        fullPath == '/var/cache' || fullPath == '/var/tmp' ||
+        fullPath.startsWith('/proc/') || fullPath.startsWith('/sys/') ||
+        fullPath.startsWith('/dev/') || fullPath.startsWith('/run/') ||
+        fullPath.startsWith('/tmp/') ||
+        fullPath.startsWith('/snap/') || fullPath.startsWith('/boot/')) {
+      return null;
+    }
+
+    final sizeBytes = _parseSizeToBytes(sizeStr);
+    final maxSizeBytes = 100 * 1024 * 1024 * 1024 * 1024;
+    if (sizeBytes <= 0 || sizeBytes > maxSizeBytes || dirName.isEmpty || dirName == '.' || dirName == '..') {
+      return null;
+    }
+    return {
+      'name': dirName,
+      'path': fullPath,
+      'size': sizeBytes,
+      'sizeFormatted': sizeStr,
+    };
   }
 
   /// Converte una stringa di dimensione (es. "1.5G", "500M", "2,0T") in bytes

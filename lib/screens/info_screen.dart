@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'package:super_linux_utility/config/app_build.dart';
+import 'package:super_linux_utility/config/application_constants.dart';
 import 'package:super_linux_utility/services/license_service.dart';
 import 'license_activation_dialog.dart';
 
@@ -138,6 +139,14 @@ class _InfoScreenState extends State<InfoScreen> {
             '${localizations.version} $_appVersion',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ),
+          ),
+          const SizedBox(height: 6),
+          SelectableText(
+            '${localizations.applicationIdLabel}: ${ApplicationConstants.applicationId}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.75),
+                  fontFamily: 'monospace',
                 ),
           ),
           const SizedBox(height: 8),

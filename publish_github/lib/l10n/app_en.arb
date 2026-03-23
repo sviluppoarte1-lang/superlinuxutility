@@ -5,6 +5,7 @@
   "trayCheckUpdates": "Check system updates",
   "trayCleanLinuxCache": "Clear Linux cache",
   "trayRemoveTempFiles": "Remove temporary files",
+  "trayCleanTempFilesAndCache": "Clean temporary files and cache",
   "trayCleanVram": "Clear VRAM (GPU reset)",
   "trayCpuGpuTemp": "CPU, GPU temperature",
   "trayDiskUsage": "Disk usage",
@@ -113,6 +114,111 @@
   "settingsStartAtLoginOn": "Start at login enabled. The app will start when you log in.",
   "settingsStartAtLoginOff": "Start at login disabled.",
   "settingsStartAtLoginError": "Could not change start at login setting.",
+  "settingsAutoUpdateCheckTitle": "Automatic update check",
+  "settingsAutoUpdateCheckDesc": "Check for system updates automatically at the chosen interval.",
+  "settingsAutoUpdateCheckInterval": "Check for updates",
+  "settingsAutoUpdateNever": "Never",
+  "settingsAutoUpdateEvery15Min": "Every 15 minutes",
+  "settingsAutoUpdateEvery30Min": "Every 30 minutes",
+  "settingsAutoUpdateEvery1Hour": "Every 1 hour",
+  "settingsAutoUpdateEvery6Hours": "Every 6 hours",
+  "settingsAutoUpdateEvery12Hours": "Every 12 hours",
+  "settingsAutoUpdateEveryDay": "Every day",
+  "settingsAutoAppUpdateFromGithubTitle": "Auto-update app from GitHub",
+  "settingsAutoAppUpdateFromGithubDesc": "When enabled, the app periodically downloads and installs the latest .deb for this edition from GitHub releases. Requires a saved administrator password and only runs when automatic system update checks are enabled above.",
+  "updateCheckAptNone": "APT: No updates available",
+  "updateCheckAptPhasedOnly": "APT: No updates installable right now (phased rollout only)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} update available} other{APT: {count} updates available}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} phased update detected} other{APT: {count} phased updates detected}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT: Error while checking: {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF: No updates available",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} update available} other{DNF: {count} updates available}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF: Error while checking: {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman: No updates available",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} update available} other{Pacman: {count} updates available}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman: Error while checking: {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap: No updates available",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} update available} other{Snap: {count} updates available}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap: Error while checking: {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak: No updates available",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} update available} other{Flatpak: {count} updates available}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak: Error while checking: {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 packages} one{{count} package} other{{count} packages}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updatesAvailableCount": "{count} updates available",
+  "@updatesAvailableCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updatesAvailableDialogTitle": "Updates available",
+  "updatesAvailableDialogMessage": "{count} updates are available. Do you want to apply them now?",
+  "@updatesAvailableDialogMessage": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "applyNow": "Apply now",
+  "postpone": "Postpone",
   "fontFamily": "Font Family",
   "fontSize": "Font Size",
   "fontDefault": "Default (Roboto)",
@@ -161,6 +267,13 @@
   "appDescription": "Super Linux Utility is a complete application for advanced Linux system management. It offers powerful tools to optimize performance, manage services, applications and customize the system appearance.",
   "features": "Features",
   "appExpertUsers": "Application designed for expert Linux users",
+  "infoProjectWebsite": "Project website",
+  "disclaimerLicenseTitle": "License & Disclaimer",
+  "disclaimerGplNotice": "This application is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.",
+  "disclaimerNoWarranty": "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.",
+  "disclaimerCopyright": "Copyright (c) 2024-2025 Marco Di Giangiacomo. All rights reserved under GPL-3.0.",
+  "payWithPaypal": "Pay with PayPal",
+  "purchaseLicenseViaPaypal": "The Advanced version costs 19.99 €. To purchase a license, pay via PayPal. After successful payment you will receive your license code by email. Without valid payment, the application cannot be activated.",
   "languageSelectionTitle": "Language Selection",
   "languageSelectionDesc": "Select the language for the application",
   "languageItalian": "Italian",
@@ -279,8 +392,8 @@
     }
   },
   "kernelRemoveError": "Error removing kernel",
-  "setDefaultKernel": "Set Default Kernel",
-  "setDefaultKernelQuestion": "Do you want to set {version} as the default kernel?",
+  "setDefaultKernel": "Set default kernel (GRUB)",
+  "setDefaultKernelQuestion": "Set {version} as the default kernel on next boot? GRUB will be updated using administrator commands.",
   "@setDefaultKernelQuestion": {
     "placeholders": {
       "version": {
@@ -348,7 +461,7 @@
   "rebootSystemError": "Error rebooting the system",
   "package": "Package",
   "size": "Size",
-  "setAsDefault": "Set as Default",
+  "setAsDefault": "Set as default boot",
   "refreshDimensions": "Refresh Dimensions",
   "cleanupTempFiles": "Clean Temporary Files",
   "disableApp": "Disable App",
@@ -588,6 +701,21 @@
   "recoveryCheckUpdatesDesc": "Checks for available updates for all installed package managers (APT, DNF, Pacman, Snap, Flatpak).",
   "recoveryPerformUpdates": "Perform Updates",
   "recoveryPerformUpdatesConfirm": "Do you want to perform the available updates? This operation may take some time.",
+  "recoveryTabRecovery": "Recovery",
+  "recoveryTabCheckUpdates": "Check for Updates",
+  "recoveryTabSoftwareInstaller": "System Software Installer",
+  "recoverySoftwareInstallerDesc": "Download and install essential system software automatically.",
+  "recoveryInstallFfmpeg": "FFmpeg",
+  "recoveryInstallFfmpegDesc": "Multimedia framework for encoding/decoding audio and video.",
+  "recoveryInstallYtDlp": "yt-dlp",
+  "recoveryInstallYtDlpDesc": "Video downloader supporting many sites.",
+  "recoveryInstallSystemLibs": "System libraries",
+  "recoveryInstallSystemLibsDesc": "Essential system libraries that are often required and can get corrupted.",
+  "recoveryInstallCodecs": "Video and audio codecs",
+  "recoveryInstallCodecsDesc": "Codecs for playing common video and audio formats.",
+  "recoveryInstallRsync": "rsync",
+  "recoveryInstallRsyncDesc": "Efficient file sync and transfer tool.",
+  "install": "Install",
   "execute": "Execute",
   "viewOutput": "View Output",
   "infoServices": "Services",
@@ -728,6 +856,6 @@
   "licenseActivateError": "Invalid code. Check name, surname and email.",
   "licenseActivatePremium": "Activate / Premium",
   "licenseActivateCardTitle": "Activate Advanced Version",
-  "licenseActivateCardDesc": "Enter your details and the license code you received to unlock GRUB, Kernel and Recovery tools."
+  "licenseActivateCardDesc": "The Advanced version costs 19.99 €. Enter your details and the license code you received after successful payment to unlock GRUB, Kernel and Recovery tools. Without valid payment, the application cannot be activated."
 }
 

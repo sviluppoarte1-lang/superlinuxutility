@@ -407,6 +407,136 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAutoUpdateEveryDay => 'Every day';
 
   @override
+  String get settingsAutoAppUpdateFromGithubTitle =>
+      'Auto-update app from GitHub';
+
+  @override
+  String get settingsAutoAppUpdateFromGithubDesc =>
+      'When enabled, the app periodically downloads and installs the latest .deb for this edition from GitHub releases. Requires a saved administrator password and only runs when automatic system update checks are enabled above.';
+
+  @override
+  String get updateCheckAptNone => 'APT: No updates available';
+
+  @override
+  String get updateCheckAptPhasedOnly =>
+      'APT: No updates installable right now (phased rollout only)';
+
+  @override
+  String updateCheckAptHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'APT: $count updates available',
+      one: 'APT: $count update available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckAptPhasedExtra(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'APT: $count phased updates detected',
+      one: 'APT: $count phased update detected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckAptError(String error) {
+    return 'APT: Error while checking: $error';
+  }
+
+  @override
+  String get updateCheckDnfNone => 'DNF: No updates available';
+
+  @override
+  String updateCheckDnfHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'DNF: $count updates available',
+      one: 'DNF: $count update available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckDnfError(String error) {
+    return 'DNF: Error while checking: $error';
+  }
+
+  @override
+  String get updateCheckPacmanNone => 'Pacman: No updates available';
+
+  @override
+  String updateCheckPacmanHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pacman: $count updates available',
+      one: 'Pacman: $count update available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckPacmanError(String error) {
+    return 'Pacman: Error while checking: $error';
+  }
+
+  @override
+  String get updateCheckSnapNone => 'Snap: No updates available';
+
+  @override
+  String updateCheckSnapHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Snap: $count updates available',
+      one: 'Snap: $count update available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckSnapError(String error) {
+    return 'Snap: Error while checking: $error';
+  }
+
+  @override
+  String get updateCheckFlatpakNone => 'Flatpak: No updates available';
+
+  @override
+  String updateCheckFlatpakHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Flatpak: $count updates available',
+      one: 'Flatpak: $count update available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckFlatpakError(String error) {
+    return 'Flatpak: Error while checking: $error';
+  }
+
+  @override
+  String updateCheckSummaryPackageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count packages',
+      one: '$count package',
+      zero: '0 packages',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String updatesAvailableCount(int count) {
     return '$count updates available';
   }
@@ -579,6 +709,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get infoProjectWebsite => 'Project website';
+
+  @override
+  String get applicationIdLabel => 'Application ID (desktop)';
+
+  @override
+  String get updatesPendingPackagesTitle =>
+      'Pending packages (from last check)';
+
+  @override
+  String updatesProgressCurrent(String detail) {
+    return 'Progress: $detail';
+  }
+
+  @override
+  String get updatesCommandOutputTitle => 'Command output';
 
   @override
   String get disclaimerLicenseTitle => 'License & Disclaimer';
@@ -852,11 +997,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kernelRemoveError => 'Error removing kernel';
 
   @override
-  String get setDefaultKernel => 'Set Default Kernel';
+  String get setDefaultKernel => 'Set default kernel (GRUB)';
 
   @override
   String setDefaultKernelQuestion(String version) {
-    return 'Do you want to set $version as the default kernel?';
+    return 'Set $version as the default kernel on next boot? GRUB will be updated using administrator commands.';
   }
 
   @override
@@ -948,7 +1093,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get size => 'Size';
 
   @override
-  String get setAsDefault => 'Set as Default';
+  String get setAsDefault => 'Set as default boot';
 
   @override
   String get refreshDimensions => 'Refresh Dimensions';

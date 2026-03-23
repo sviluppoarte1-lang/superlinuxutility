@@ -124,6 +124,86 @@
   "settingsAutoUpdateEvery6Hours": "Toutes les 6 heures",
   "settingsAutoUpdateEvery12Hours": "Toutes les 12 heures",
   "settingsAutoUpdateEveryDay": "Tous les jours",
+  "settingsAutoAppUpdateFromGithubTitle": "Mise à jour auto depuis GitHub",
+  "settingsAutoAppUpdateFromGithubDesc": "Si activé, l'application télécharge et installe périodiquement le dernier .deb de cette édition depuis les releases GitHub. Nécessite un mot de passe administrateur enregistré et que la vérification automatique des mises à jour ci-dessus soit active.",
+  "updateCheckAptNone": "APT : aucune mise à jour disponible",
+  "updateCheckAptPhasedOnly": "APT : aucune mise à jour installable immédiatement (déploiement uniquement par phases)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT : {count} mise à jour disponible} other{APT : {count} mises à jour disponibles}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT : {count} mise à jour échelonnée détectée} other{APT : {count} mises à jour échelonnées détectées}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT : erreur lors de la vérification : {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF : aucune mise à jour disponible",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF : {count} mise à jour disponible} other{DNF : {count} mises à jour disponibles}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF : erreur lors de la vérification : {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman : aucune mise à jour disponible",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman : {count} mise à jour disponible} other{Pacman : {count} mises à jour disponibles}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman : erreur lors de la vérification : {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap : aucune mise à jour disponible",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap : {count} mise à jour disponible} other{Snap : {count} mises à jour disponibles}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap : erreur lors de la vérification : {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak : aucune mise à jour disponible",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak : {count} mise à jour disponible} other{Flatpak : {count} mises à jour disponibles}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak : erreur lors de la vérification : {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 paquets} one{{count} paquet} other{{count} paquets}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "updatesAvailableCount": "{count} mises à jour disponibles",
   "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
   "updatesAvailableDialogTitle": "Mises à jour disponibles",
@@ -180,6 +260,17 @@
   "features": "Caractéristiques",
   "appExpertUsers": "Application conçue pour les utilisateurs experts Linux",
   "infoProjectWebsite": "Site web du projet",
+  "applicationIdLabel": "ID de l’application (bureau)",
+  "updatesPendingPackagesTitle": "Paquets en attente (dernière vérification)",
+  "updatesProgressCurrent": "Progression : {detail}",
+  "@updatesProgressCurrent": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesCommandOutputTitle": "Sortie de la commande",
   "disclaimerLicenseTitle": "Licence et Avertissement",
   "disclaimerGplNotice": "Cette application est un logiciel libre ; vous pouvez la redistribuer et/ou la modifier selon les termes de la GNU General Public License publiée par la Free Software Foundation, version 3 de la Licence ou (à votre gré) toute version ultérieure.",
   "disclaimerNoWarranty": "Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE ; sans même la garantie implicite de QUALITÉ MARCHANDE ou d'ADÉQUATION À UN USAGE PARTICULIER. Consultez la GNU General Public License pour plus de détails.",

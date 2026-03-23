@@ -17,6 +17,19 @@ import 'services/dependency_check_service.dart';
 import 'services/window_close_to_tray.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// Rilascia il lock anche se il lifecycle `detached` non viene notificato (es. terminazione da WM).
+void _registerSingleInstanceShutdownHooks() {
+  if (!Platform.isLinux) return;
+  try {
+    ProcessSignal.sigterm.watch().listen((_) {
+      releaseSingleInstanceLock();
+    });
+    ProcessSignal.sigint.watch().listen((_) {
+      releaseSingleInstanceLock();
+    });
+  } catch (_) {}
+}
+
 /// Rileva se la distro è Fedora (evita init system tray per segfault noti con appindicator su Fedora/KDE).
 Future<bool> _isFedora() async {
   try {
@@ -45,6 +58,7 @@ void main() async {
   }
 
   if (Platform.isLinux) {
+    _registerSingleInstanceShutdownHooks();
     final prefs = await SharedPreferences.getInstance();
     final trayEnabled = prefs.getBool(TrayService.prefKeySystemTrayEnabled) ?? true;
     final skipTrayEnv = Platform.environment['SUPER_LINUX_UTILITY_NO_TRAY'] == '1' ||
@@ -132,7 +146,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   ThemeMode _themeMode = ThemeMode.system;
   Locale? _locale;
   String? _fontFamily;
@@ -141,9 +155,23 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadThemeMode();
     _loadLocale();
     _loadFontSettings();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      releaseSingleInstanceLock();
+    }
   }
   
   Future<void> _loadFontSettings() async {

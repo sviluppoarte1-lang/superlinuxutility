@@ -124,6 +124,86 @@
   "settingsAutoUpdateEvery6Hours": "Alle 6 Stunden",
   "settingsAutoUpdateEvery12Hours": "Alle 12 Stunden",
   "settingsAutoUpdateEveryDay": "Täglich",
+  "settingsAutoAppUpdateFromGithubTitle": "App automatisch von GitHub aktualisieren",
+  "settingsAutoAppUpdateFromGithubDesc": "Wenn aktiviert, lädt die App regelmäßig das neueste .deb dieser Edition von den GitHub-Releases herunter und installiert es. Erfordert ein gespeichertes Administratorpasswort und die automatische Systemupdate-Prüfung oben muss aktiviert sein.",
+  "updateCheckAptNone": "APT: Keine Updates verfügbar",
+  "updateCheckAptPhasedOnly": "APT: Derzeit keine sofort installierbaren Updates (nur gestaffeltes Rollout)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} Update verfügbar} other{APT: {count} Updates verfügbar}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} gestaffeltes Update erkannt} other{APT: {count} gestaffelte Updates erkannt}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT: Fehler bei der Prüfung: {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF: Keine Updates verfügbar",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} Update verfügbar} other{DNF: {count} Updates verfügbar}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF: Fehler bei der Prüfung: {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman: Keine Updates verfügbar",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} Update verfügbar} other{Pacman: {count} Updates verfügbar}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman: Fehler bei der Prüfung: {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap: Keine Updates verfügbar",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} Update verfügbar} other{Snap: {count} Updates verfügbar}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap: Fehler bei der Prüfung: {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak: Keine Updates verfügbar",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} Update verfügbar} other{Flatpak: {count} Updates verfügbar}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak: Fehler bei der Prüfung: {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 Pakete} one{{count} Paket} other{{count} Pakete}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "updatesAvailableCount": "{count} Updates verfügbar",
   "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
   "updatesAvailableDialogTitle": "Updates verfügbar",
@@ -180,6 +260,17 @@
   "features": "Funktionen",
   "appExpertUsers": "Anwendung für Linux-Experten entwickelt",
   "infoProjectWebsite": "Projekt-Website",
+  "applicationIdLabel": "Anwendungs-ID (Desktop)",
+  "updatesPendingPackagesTitle": "Ausstehende Pakete (letzte Prüfung)",
+  "updatesProgressCurrent": "Fortschritt: {detail}",
+  "@updatesProgressCurrent": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesCommandOutputTitle": "Befehlsausgabe",
   "disclaimerLicenseTitle": "Lizenz und Haftungsausschluss",
   "disclaimerGplNotice": "Diese Anwendung ist freie Software; Sie können sie unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, Version 3 der Lizenz oder (nach Ihrer Wahl) einer späteren Version weiterverbreiten und/oder modifizieren.",
   "disclaimerNoWarranty": "Dieses Programm wird in der Hoffnung verteilt, dass es nützlich ist, aber OHNE JEDE GEWÄHRLEISTUNG; ohne sogar die implizite Gewährleistung der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Details finden Sie in der GNU General Public License.",

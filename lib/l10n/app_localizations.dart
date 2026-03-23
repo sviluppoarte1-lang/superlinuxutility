@@ -850,6 +850,126 @@ abstract class AppLocalizations {
   /// **'Ogni giorno'**
   String get settingsAutoUpdateEveryDay;
 
+  /// No description provided for @settingsAutoAppUpdateFromGithubTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento automatico app da GitHub'**
+  String get settingsAutoAppUpdateFromGithubTitle;
+
+  /// No description provided for @settingsAutoAppUpdateFromGithubDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Se attivo, l\'app scarica e installa periodicamente l\'ultimo .deb di questa edizione dalle release GitHub. Richiede password amministratore salvata e funziona solo se sopra è attiva la verifica periodica aggiornamenti di sistema.'**
+  String get settingsAutoAppUpdateFromGithubDesc;
+
+  /// No description provided for @updateCheckAptNone.
+  ///
+  /// In it, this message translates to:
+  /// **'APT: Nessun aggiornamento disponibile'**
+  String get updateCheckAptNone;
+
+  /// No description provided for @updateCheckAptPhasedOnly.
+  ///
+  /// In it, this message translates to:
+  /// **'APT: Nessun aggiornamento installabile subito (solo rollout scaglionato)'**
+  String get updateCheckAptPhasedOnly;
+
+  /// No description provided for @updateCheckAptHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{APT: {count} aggiornamento disponibile} other{APT: {count} aggiornamenti disponibili}}'**
+  String updateCheckAptHasUpdates(int count);
+
+  /// No description provided for @updateCheckAptPhasedExtra.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{APT: {count} aggiornamento scaglionato rilevato} other{APT: {count} aggiornamenti scaglionati rilevati}}'**
+  String updateCheckAptPhasedExtra(int count);
+
+  /// No description provided for @updateCheckAptError.
+  ///
+  /// In it, this message translates to:
+  /// **'APT: Errore durante la verifica: {error}'**
+  String updateCheckAptError(String error);
+
+  /// No description provided for @updateCheckDnfNone.
+  ///
+  /// In it, this message translates to:
+  /// **'DNF: Nessun aggiornamento disponibile'**
+  String get updateCheckDnfNone;
+
+  /// No description provided for @updateCheckDnfHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{DNF: {count} aggiornamento disponibile} other{DNF: {count} aggiornamenti disponibili}}'**
+  String updateCheckDnfHasUpdates(int count);
+
+  /// No description provided for @updateCheckDnfError.
+  ///
+  /// In it, this message translates to:
+  /// **'DNF: Errore durante la verifica: {error}'**
+  String updateCheckDnfError(String error);
+
+  /// No description provided for @updateCheckPacmanNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacman: Nessun aggiornamento disponibile'**
+  String get updateCheckPacmanNone;
+
+  /// No description provided for @updateCheckPacmanHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{Pacman: {count} aggiornamento disponibile} other{Pacman: {count} aggiornamenti disponibili}}'**
+  String updateCheckPacmanHasUpdates(int count);
+
+  /// No description provided for @updateCheckPacmanError.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacman: Errore durante la verifica: {error}'**
+  String updateCheckPacmanError(String error);
+
+  /// No description provided for @updateCheckSnapNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Snap: Nessun aggiornamento disponibile'**
+  String get updateCheckSnapNone;
+
+  /// No description provided for @updateCheckSnapHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{Snap: {count} aggiornamento disponibile} other{Snap: {count} aggiornamenti disponibili}}'**
+  String updateCheckSnapHasUpdates(int count);
+
+  /// No description provided for @updateCheckSnapError.
+  ///
+  /// In it, this message translates to:
+  /// **'Snap: Errore durante la verifica: {error}'**
+  String updateCheckSnapError(String error);
+
+  /// No description provided for @updateCheckFlatpakNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Flatpak: Nessun aggiornamento disponibile'**
+  String get updateCheckFlatpakNone;
+
+  /// No description provided for @updateCheckFlatpakHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{Flatpak: {count} aggiornamento disponibile} other{Flatpak: {count} aggiornamenti disponibili}}'**
+  String updateCheckFlatpakHasUpdates(int count);
+
+  /// No description provided for @updateCheckFlatpakError.
+  ///
+  /// In it, this message translates to:
+  /// **'Flatpak: Errore durante la verifica: {error}'**
+  String updateCheckFlatpakError(String error);
+
+  /// No description provided for @updateCheckSummaryPackageCount.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, =0{0 pacchetti} one{{count} pacchetto} other{{count} pacchetti}}'**
+  String updateCheckSummaryPackageCount(int count);
+
   /// No description provided for @updatesAvailableCount.
   ///
   /// In it, this message translates to:
@@ -1173,6 +1293,30 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Sito web del progetto'**
   String get infoProjectWebsite;
+
+  /// No description provided for @applicationIdLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'ID applicazione (desktop)'**
+  String get applicationIdLabel;
+
+  /// No description provided for @updatesPendingPackagesTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacchetti in coda (ultimo controllo)'**
+  String get updatesPendingPackagesTitle;
+
+  /// No description provided for @updatesProgressCurrent.
+  ///
+  /// In it, this message translates to:
+  /// **'Avanzamento: {detail}'**
+  String updatesProgressCurrent(String detail);
+
+  /// No description provided for @updatesCommandOutputTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Output del comando'**
+  String get updatesCommandOutputTitle;
 
   /// No description provided for @disclaimerLicenseTitle.
   ///
@@ -1669,13 +1813,13 @@ abstract class AppLocalizations {
   /// No description provided for @setDefaultKernel.
   ///
   /// In it, this message translates to:
-  /// **'Imposta Kernel di Default'**
+  /// **'Imposta kernel predefinito (GRUB)'**
   String get setDefaultKernel;
 
   /// No description provided for @setDefaultKernelQuestion.
   ///
   /// In it, this message translates to:
-  /// **'Vuoi impostare {version} come kernel di default?'**
+  /// **'Impostare {version} come kernel predefinito al prossimo avvio? Verranno usati comandi GRUB con privilegi di amministratore.'**
   String setDefaultKernelQuestion(String version);
 
   /// No description provided for @set.
@@ -1687,7 +1831,7 @@ abstract class AppLocalizations {
   /// No description provided for @kernelSetDefaultSuccess.
   ///
   /// In it, this message translates to:
-  /// **'Kernel {version} impostato come default'**
+  /// **'Kernel {version} impostato come predefinito in GRUB'**
   String kernelSetDefaultSuccess(String version);
 
   /// No description provided for @kernelSetDefaultError.
@@ -1831,7 +1975,7 @@ abstract class AppLocalizations {
   /// No description provided for @setAsDefault.
   ///
   /// In it, this message translates to:
-  /// **'Imposta come Default'**
+  /// **'Imposta come predefinito'**
   String get setAsDefault;
 
   /// No description provided for @refreshDimensions.

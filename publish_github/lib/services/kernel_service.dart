@@ -38,21 +38,50 @@ class KernelService {
     }
   }
 
+  /// Valore grezzo di `saved_entry` da grubenv (titolo voce GRUB, id o indice).
   static Future<String?> getDefaultKernel() async {
     try {
-      final result = await Process.run(
-        'bash',
-        ['-c', 'grub-editenv list | grep saved_entry 2>/dev/null || true'],
-      );
-      
-      if (result.exitCode == 0 && result.stdout.toString().trim().isNotEmpty) {
-        final output = result.stdout.toString().trim();
-        if (output.contains('saved_entry=')) {
-          return output.split('=')[1].trim();
+      const envPaths = ['/boot/grub/grubenv', '/boot/grub2/grubenv'];
+      for (final envPath in envPaths) {
+        final file = File(envPath);
+        if (!await file.exists()) continue;
+
+        final result = await Process.run('grub-editenv', [envPath, 'list']);
+        if (result.exitCode != 0) continue;
+
+        for (final line in (result.stdout as String).split('\n')) {
+          final t = line.trim();
+          if (t.startsWith('saved_entry=')) {
+            var v = t.substring('saved_entry='.length).trim();
+            if (v.length >= 2 &&
+                ((v.startsWith('"') && v.endsWith('"')) ||
+                    (v.startsWith("'") && v.endsWith("'")))) {
+              v = v.substring(1, v.length - 1);
+            }
+            if (v.isNotEmpty) return v;
+          }
         }
       }
 
-      // Prova con grubby (su alcune distribuzioni)
+      // Fallback: pipe (alcuni sistemi)
+      final pipeResult = await Process.run(
+        'bash',
+        ['-c', 'grub-editenv list 2>/dev/null | grep "^saved_entry=" | head -1 || true'],
+      );
+      if (pipeResult.exitCode == 0) {
+        final line = pipeResult.stdout.toString().trim();
+        if (line.startsWith('saved_entry=')) {
+          var v = line.substring('saved_entry='.length).trim();
+          if (v.length >= 2 &&
+              ((v.startsWith('"') && v.endsWith('"')) ||
+                  (v.startsWith("'") && v.endsWith("'")))) {
+            v = v.substring(1, v.length - 1);
+          }
+          if (v.isNotEmpty) return v;
+        }
+      }
+
+      // grubby (Fedora/RHEL): kernel path → versione
       try {
         final grubbyResult = await Process.run('grubby', ['--default-kernel']);
         if (grubbyResult.exitCode == 0) {
@@ -62,13 +91,46 @@ class KernelService {
           }
         }
       } catch (e) {
-        // grubby non disponibile, continua
+        // grubby non disponibile
       }
 
       return null;
     } catch (e) {
       return null;
     }
+  }
+
+  /// Confronta la versione installata (es. da dpkg) con [savedEntry] (titolo menu o id GRUB).
+  static bool kernelMatchesGrubSavedEntry(String installedVersion, String? savedEntry) {
+    if (savedEntry == null || savedEntry.isEmpty) return false;
+    final s = savedEntry.trim();
+    if (s.isEmpty) return false;
+
+    // Indice numerico: non confrontabile con la sola stringa versione
+    if (RegExp(r'^\d+$').hasMatch(s)) return false;
+
+    final iv = installedVersion.trim().toLowerCase();
+    final sv = s.toLowerCase();
+    if (iv.isEmpty) return false;
+    if (sv == iv) return true;
+    if (sv.contains(iv) || iv.contains(sv)) return true;
+
+    try {
+      if (RegExp(RegExp.escape(iv)).hasMatch(sv)) return true;
+    } catch (_) {}
+
+    // Titoli tipo "… Linux 6.18.19-rt-x64v3-xanmod1"
+    final m = RegExp(
+      r'(\d+\.\d+\.[\d.]+(?:-[\w.-]+)?)',
+    ).firstMatch(s);
+    if (m != null) {
+      final extracted = m.group(1)!.toLowerCase();
+      if (iv == extracted || iv.contains(extracted) || extracted.contains(iv)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /// Lista tutti i kernel installati
@@ -101,7 +163,7 @@ class KernelService {
             final version = packageName.replaceAll('linux-image-', '');
             
             final isActive = version == currentKernel;
-            final isDefault = defaultKernel != null && version.contains(defaultKernel);
+            final isDefault = kernelMatchesGrubSavedEntry(version, defaultKernel);
 
             int? size;
             try {
@@ -556,7 +618,10 @@ class KernelService {
     }
   }
 
-  /// Imposta il kernel di default per il prossimo avvio
+  /// Imposta il kernel predefinito al prossimo riavvio (GRUB 2).
+  /// Ordine tipico: [grub-editenv] su `saved_entry` con `GRUB_DEFAULT=saved`,
+  /// oppure [grubby --set-default], [grub-set-default], infine [GRUB_DEFAULT] in
+  /// `/etc/default/grub` + `update-grub` / `grub-mkconfig`.
   static Future<bool> setDefaultKernel(String version) async {
     String? lastError;
     

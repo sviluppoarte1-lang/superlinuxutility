@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../services/recovery_service.dart';
+import '../utils/update_check_report_formatter.dart';
+import '../widgets/updates_apply_progress_view.dart';
 
 class RecoveryScreen extends StatefulWidget {
   const RecoveryScreen({super.key});
@@ -14,6 +16,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   Map<String, String> _operationOutput = {};
   Map<String, bool> _operationLoading = {};
   int _updateCount = 0;
+  List<String> _pendingUpdates = [];
 
   @override
   void initState() {
@@ -75,6 +78,12 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
           if (result['updateCount'] != null) {
             _updateCount = result['updateCount'] as int;
           }
+          final upd = result['updates'];
+          if (upd is List) {
+            _pendingUpdates = upd.map((e) => e.toString()).toList();
+          } else {
+            _pendingUpdates = [];
+          }
           break;
         case 'ffmpeg':
           result = await RecoveryService.installFfmpeg();
@@ -95,10 +104,23 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
           result = {'success': false, 'message': 'Operazione sconosciuta'};
       }
 
+      final l10nForOutput = AppLocalizations.of(context)!;
+      String outputText;
+      if (operation == 'updates') {
+        final formatted = UpdateCheckReportFormatter.format(
+          l10nForOutput,
+          result['updateReport'] as Map<String, dynamic>?,
+        );
+        outputText = formatted.isNotEmpty
+            ? formatted
+            : (result['output']?.toString() ?? result['message']?.toString() ?? '');
+      } else {
+        outputText = result['output']?.toString() ?? result['message']?.toString() ?? '';
+      }
       setState(() {
         _operationLoading[operation] = false;
         _operationStatus[operation] = result['success'] as bool? ?? false;
-        _operationOutput[operation] = result['output']?.toString() ?? result['message']?.toString() ?? '';
+        _operationOutput[operation] = outputText;
       });
 
       if (mounted) {
@@ -178,81 +200,117 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       _operationOutput['updates'] = ''; // Reset output
     });
 
-    // Mostra dialog con output in tempo reale
+    // Mostra dialog con output in tempo reale, avanzamento e elenco pacchetti
     final outputNotifier = ValueNotifier<String>('');
+    final progressNotifier = ValueNotifier<double>(0);
+    final statusNotifier = ValueNotifier<String?>(null);
     BuildContext? dialogContext;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         dialogContext = context;
-        return ValueListenableBuilder<String>(
-          valueListenable: outputNotifier,
-          builder: (context, output, _) => AlertDialog(
-            title: Text(l10n.recoveryPerformUpdates),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 400,
-              child: SingleChildScrollView(
-                reverse: true,
-                child: SelectableText(
-                  output.isEmpty ? l10n.loading : output,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+        return AnimatedBuilder(
+          animation: Listenable.merge([outputNotifier, progressNotifier, statusNotifier]),
+          builder: (context, _) {
+            final output = outputNotifier.value;
+            return AlertDialog(
+              title: Text(l10n.recoveryPerformUpdates),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 420,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      UpdatesApplyProgressView(
+                        progress: progressNotifier.value,
+                        statusLabel: statusNotifier.value,
+                        pendingPackages: _pendingUpdates,
+                        logText: null,
+                        maxPackagesHeight: 140,
+                        maxLogHeight: 0,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        l10n.updatesCommandOutputTitle,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        child: SingleChildScrollView(
+                          reverse: true,
+                          child: SelectableText(
+                            output.isEmpty ? '…' : output,
+                            style: const TextStyle(fontFamily: 'monospace', fontSize: 11, height: 1.25),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            actions: [
-              if (!_operationLoading['updates']!)
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(l10n.close),
-                ),
-            ],
-          ),
+              actions: [
+                if (!_operationLoading['updates']!)
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(l10n.close),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
 
+    final expectedCount = _updateCount > 0 ? _updateCount : _pendingUpdates.length;
+
     try {
       final result = await RecoveryService.performUpdates(
+        expectedPackageCount: expectedCount,
         onOutput: (data) {
           outputNotifier.value += data;
           _operationOutput['updates'] = outputNotifier.value;
         },
+        onProgress: (p, label) {
+          progressNotifier.value = p;
+          statusNotifier.value = label;
+        },
       );
-      
+
       setState(() {
         _operationLoading['updates'] = false;
         _operationStatus['updates'] = result['success'] as bool? ?? false;
         _operationOutput['updates'] = result['output']?.toString() ?? result['message']?.toString() ?? '';
         if (result['success'] == true) {
           _updateCount = 0; // Reset dopo aggiornamento
+          _pendingUpdates = [];
         }
       });
-      
-      // Chiudi il dialog
+
       if (mounted && dialogContext != null) {
         Navigator.pop(dialogContext!);
       }
 
       if (mounted) {
         final messageKey = result['message']?.toString() ?? '';
-        final l10n = AppLocalizations.of(context)!;
+        final l10nSnack = AppLocalizations.of(context)!;
         String message;
-        
-        // Traduci i messaggi se sono chiavi di traduzione
+
         if (messageKey == 'recoveryCheckUpdatesComplete') {
-          message = l10n.recoveryCheckUpdatesComplete;
+          message = l10nSnack.recoveryCheckUpdatesComplete;
         } else if (messageKey == 'recoveryCheckUpdatesError') {
           final error = result['error']?.toString() ?? '';
-          message = l10n.recoveryCheckUpdatesError(error);
+          message = l10nSnack.recoveryCheckUpdatesError(error);
         } else {
           message = messageKey;
         }
-        
+
         final color = result['success'] as bool? ?? false ? Colors.green : Colors.red;
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -268,6 +326,10 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
         _operationOutput['updates'] = 'Errore: $e';
       });
 
+      if (mounted && dialogContext != null) {
+        Navigator.pop(dialogContext!);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -277,6 +339,12 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
           ),
         );
       }
+    } finally {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        progressNotifier.dispose();
+        statusNotifier.dispose();
+        outputNotifier.dispose();
+      });
     }
   }
 

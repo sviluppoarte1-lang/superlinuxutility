@@ -414,6 +414,138 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsAutoUpdateEveryDay => 'Cada día';
 
   @override
+  String get settingsAutoAppUpdateFromGithubTitle =>
+      'Actualizar la app automáticamente desde GitHub';
+
+  @override
+  String get settingsAutoAppUpdateFromGithubDesc =>
+      'Si está activo, la app descarga e instala periódicamente el último .deb de esta edición desde las releases de GitHub. Requiere la contraseña de administrador guardada y que la verificación automática de arriba esté activa.';
+
+  @override
+  String get updateCheckAptNone => 'APT: No hay actualizaciones disponibles';
+
+  @override
+  String get updateCheckAptPhasedOnly =>
+      'APT: No hay actualizaciones instalables ahora (solo despliegue por fases)';
+
+  @override
+  String updateCheckAptHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'APT: $count actualizaciones disponibles',
+      one: 'APT: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckAptPhasedExtra(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'APT: $count actualizaciones por fases detectadas',
+      one: 'APT: $count actualización por fases detectada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckAptError(String error) {
+    return 'APT: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckDnfNone => 'DNF: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckDnfHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'DNF: $count actualizaciones disponibles',
+      one: 'DNF: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckDnfError(String error) {
+    return 'DNF: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckPacmanNone =>
+      'Pacman: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckPacmanHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pacman: $count actualizaciones disponibles',
+      one: 'Pacman: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckPacmanError(String error) {
+    return 'Pacman: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckSnapNone => 'Snap: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckSnapHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Snap: $count actualizaciones disponibles',
+      one: 'Snap: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckSnapError(String error) {
+    return 'Snap: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckFlatpakNone =>
+      'Flatpak: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckFlatpakHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Flatpak: $count actualizaciones disponibles',
+      one: 'Flatpak: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckFlatpakError(String error) {
+    return 'Flatpak: Error al comprobar: $error';
+  }
+
+  @override
+  String updateCheckSummaryPackageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count paquetes',
+      one: '$count paquete',
+      zero: '0 paquetes',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String updatesAvailableCount(int count) {
     return '$count actualizaciones disponibles';
   }
@@ -587,6 +719,21 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get infoProjectWebsite => 'Sitio web del proyecto';
+
+  @override
+  String get applicationIdLabel => 'ID de la aplicación (escritorio)';
+
+  @override
+  String get updatesPendingPackagesTitle =>
+      'Paquetes pendientes (última comprobación)';
+
+  @override
+  String updatesProgressCurrent(String detail) {
+    return 'Progreso: $detail';
+  }
+
+  @override
+  String get updatesCommandOutputTitle => 'Salida del comando';
 
   @override
   String get disclaimerLicenseTitle => 'Licencia y Aviso Legal';

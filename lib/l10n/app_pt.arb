@@ -124,6 +124,86 @@
   "settingsAutoUpdateEvery6Hours": "A cada 6 horas",
   "settingsAutoUpdateEvery12Hours": "A cada 12 horas",
   "settingsAutoUpdateEveryDay": "Diariamente",
+  "settingsAutoAppUpdateFromGithubTitle": "Atualizar o app automaticamente pelo GitHub",
+  "settingsAutoAppUpdateFromGithubDesc": "Se ativado, o app baixa e instala periodicamente o .deb mais recente desta edição nas releases do GitHub. Requer senha de administrador salva e a verificação automática acima ativa.",
+  "updateCheckAptNone": "APT: Nenhuma atualização disponível",
+  "updateCheckAptPhasedOnly": "APT: Nenhuma atualização instalável agora (somente lançamento em fases)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} atualização disponível} other{APT: {count} atualizações disponíveis}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} atualização em fases detectada} other{APT: {count} atualizações em fases detectadas}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT: Erro ao verificar: {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF: Nenhuma atualização disponível",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} atualização disponível} other{DNF: {count} atualizações disponíveis}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF: Erro ao verificar: {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman: Nenhuma atualização disponível",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} atualização disponível} other{Pacman: {count} atualizações disponíveis}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman: Erro ao verificar: {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap: Nenhuma atualização disponível",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} atualização disponível} other{Snap: {count} atualizações disponíveis}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap: Erro ao verificar: {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak: Nenhuma atualização disponível",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} atualização disponível} other{Flatpak: {count} atualizações disponíveis}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak: Erro ao verificar: {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 pacotes} one{{count} pacote} other{{count} pacotes}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "updatesAvailableCount": "{count} atualizações disponíveis",
   "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
   "updatesAvailableDialogTitle": "Atualizações disponíveis",
@@ -180,6 +260,17 @@
   "features": "Recursos",
   "appExpertUsers": "Aplicativo projetado para usuários especialistas Linux",
   "infoProjectWebsite": "Site do projeto",
+  "applicationIdLabel": "ID da aplicação (ambiente gráfico)",
+  "updatesPendingPackagesTitle": "Pacotes pendentes (última verificação)",
+  "updatesProgressCurrent": "Progresso: {detail}",
+  "@updatesProgressCurrent": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesCommandOutputTitle": "Saída do comando",
   "disclaimerLicenseTitle": "Licença e Aviso Legal",
   "disclaimerGplNotice": "Esta aplicação é software livre; pode redistribuí-la e/ou modificá-la sob os termos da GNU General Public License publicada pela Free Software Foundation, versão 3 da Licença ou (à sua escolha) posterior.",
   "disclaimerNoWarranty": "Este programa é distribuído na esperança de que seja útil, mas SEM NENHUMA GARANTIA; sem mesmo a garantia implícita de COMERCIABILIDADE ou ADEQUAÇÃO A UM PROPÓSITO ESPECÍFICO. Consulte a GNU General Public License para mais detalhes.",

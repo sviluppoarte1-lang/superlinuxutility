@@ -16,7 +16,6 @@ import 'info_screen.dart';
 import 'settings_screen.dart';
 import 'disk_analyzer_screen.dart';
 import 'recovery_screen.dart';
-import 'shutdown_scheduler_screen.dart';
 import 'tray_task_manager_dialog.dart';
 import 'dart:io';
 import '../services/tray_service.dart';
@@ -24,6 +23,9 @@ import '../services/recovery_service.dart';
 import '../services/shutdown_scheduler_service.dart';
 import '../services/password_storage.dart';
 import '../services/cleanup_service.dart';
+import '../services/app_self_update_service.dart';
+import '../utils/update_check_report_formatter.dart';
+import '../widgets/updates_apply_progress_view.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(ThemeMode)? onThemeModeChanged;
@@ -44,7 +46,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Timer? _updateCheckTimer;
   static const String _keyUpdateCheckIntervalMinutes = 'update_check_interval_minutes';
   static const String _keyLastUpdateCheckTs = 'last_update_check_ts';
-
   static const int _standardTabCount = 8;
   static const int _advancedTabCount = 11;
 
@@ -75,6 +76,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final now = DateTime.now().millisecondsSinceEpoch;
     if (last > 0 && now - last < interval * 60 * 1000) return;
     try {
+      final autoAppUpdateEnabled = prefs.getBool(SettingsScreen.keyAutoAppUpdateFromGithub) ?? true;
+      if (autoAppUpdateEnabled) {
+        final appUpdateResult = await AppSelfUpdateService.checkAndAutoUpdateFromGithub();
+        if (!mounted) return;
+        if (appUpdateResult['updated'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text((appUpdateResult['message'] ?? 'Application updated. Please restart the app.').toString()),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 8),
+            ),
+          );
+        }
+      }
+
       final result = await RecoveryService.checkForUpdates();
       await prefs.setInt(_keyLastUpdateCheckTs, now);
       if (!mounted) return;
@@ -322,6 +338,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       onThemeModeChanged: widget.onThemeModeChanged,
       onLocaleChanged: widget.onLocaleChanged,
       onFontChanged: widget.onFontChanged,
+      onUpdateCheckPolicyChanged: _startUpdateCheckTimer,
     ));
     views.add(InfoScreen(
       onLicenseActivated: isAdvancedBuild ? _initializeController : null,
@@ -433,6 +450,10 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
   bool _loading = true;
   bool _applyingUpdates = false;
   Map<String, dynamic>? _result;
+  double _applyProgress = 0;
+  String? _applyStatus;
+  String _applyLog = '';
+  List<String> _applyPendingPackages = [];
 
   @override
   void initState() {
@@ -470,14 +491,49 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
     );
     if (confirm != true || !mounted) return;
 
-    setState(() => _applyingUpdates = true);
+    final rawUpd = _result?['updates'];
+    final pending = rawUpd is List
+        ? rawUpd.map((e) => e.toString()).toList()
+        : <String>[];
+    final expectedCount = (_result?['updateCount'] as int?) ?? pending.length;
+
+    setState(() {
+      _applyingUpdates = true;
+      _applyProgress = 0;
+      _applyStatus = null;
+      _applyLog = '';
+      _applyPendingPackages = List<String>.from(pending);
+    });
     try {
-      final result = await RecoveryService.performUpdates();
+      final result = await RecoveryService.performUpdates(
+        expectedPackageCount: expectedCount,
+        onOutput: (data) {
+          if (!mounted) return;
+          setState(() {
+            _applyLog += data;
+            if (_applyLog.length > 12000) {
+              _applyLog = _applyLog.substring(_applyLog.length - 12000);
+            }
+          });
+        },
+        onProgress: (p, label) {
+          if (!mounted) return;
+          setState(() {
+            _applyProgress = p;
+            _applyStatus = label;
+          });
+        },
+      );
       if (!mounted) return;
       setState(() {
         _applyingUpdates = false;
         if (result['success'] == true) {
-          _result = {'success': true, 'updateCount': 0, 'output': _result?['output'] ?? ''};
+          _result = {
+            'success': true,
+            'updateCount': 0,
+            'updateReport': <String, dynamic>{},
+            'updates': <String>[],
+          };
         }
       });
       final message = result['success'] == true ? l10n.recoveryCheckUpdatesComplete : (result['error']?.toString() ?? result['message']?.toString() ?? '');
@@ -508,6 +564,15 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
     final hasUpdates = _result != null &&
         _result!['success'] == true &&
         (_result!['updateCount'] as int? ?? 0) > 0;
+    final reportMap = _result?['updateReport'] as Map<String, dynamic>?;
+    final detailText = _result?['success'] == true
+        ? UpdateCheckReportFormatter.format(l10n, reportMap)
+        : '';
+    final legacyOutput = _result?['output'] as String?;
+    final boxText = detailText.isNotEmpty
+        ? detailText
+        : (legacyOutput?.isNotEmpty == true ? legacyOutput! : '');
+    final showDetailBox = boxText.isNotEmpty;
 
     return AlertDialog(
       title: Row(
@@ -518,23 +583,26 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
         ],
       ),
       content: SizedBox(
-        width: 400,
+        width: _applyingUpdates ? 440 : 400,
         child: _loading || _applyingUpdates
             ? Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    if (_applyingUpdates) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        l10n.recoveryPerformUpdates,
-                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8)),
+                padding: const EdgeInsets.all(16.0),
+                child: _loading
+                    ? const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                        ],
+                      )
+                    : UpdatesApplyProgressView(
+                        progress: _applyProgress,
+                        statusLabel: _applyStatus,
+                        pendingPackages: _applyPendingPackages,
+                        logText: _applyLog.isEmpty ? null : _applyLog,
+                        maxPackagesHeight: 120,
+                        maxLogHeight: 140,
                       ),
-                    ],
-                  ],
-                ),
               )
             : SingleChildScrollView(
                 child: Column(
@@ -554,7 +622,7 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
                       if (_result!['updateCount'] != null) ...[
                         const SizedBox(height: 8),
                         Text(
-                          '${_result!['updateCount']} ${l10n.package}',
+                          l10n.updateCheckSummaryPackageCount(_result!['updateCount'] as int? ?? 0),
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -568,7 +636,7 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
                         ),
                         const SizedBox(height: 8),
                       ],
-                      if (_result!['output'] != null && (_result!['output'] as String).isNotEmpty) ...[
+                      if (showDetailBox) ...[
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -577,7 +645,7 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: SelectableText(
-                            _result!['output'] as String,
+                            boxText,
                             style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
                           ),
                         ),

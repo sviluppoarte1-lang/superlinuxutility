@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:isolate';
 import 'password_storage.dart';
 
 /// Modello per rappresentare un file o directory
@@ -42,16 +43,8 @@ class DirectorySize {
 
 class DiskAnalyzerService {
   static const List<String> _rootSkipPaths = [
-    '/proc', '/sys', '/dev', '/run', '/snap', '/boot', '/boot/efi', '/lost+found', '/sysroot',
+    '/proc', '/sys', '/dev', '/run', '/snap', '/boot', '/boot/efi', '/lost+found', '/sysroot', '/tmp',
   ];
-
-  static bool _shouldSkipForRoot(String path) {
-    if (path == '/proc' || path == '/sys' || path == '/dev' || path == '/run') return true;
-    if (path == '/snap' || path == '/boot' || path == '/boot/efi' || path == '/lost+found' || path == '/sysroot') return true;
-    if (path.startsWith('/proc/') || path.startsWith('/sys/') || path.startsWith('/dev/') || path.startsWith('/run/')) return true;
-    if (path.startsWith('/snap/') || path.startsWith('/boot/')) return true;
-    return false;
-  }
 
   static Future<ProcessResult> _runSudoCommand(String command) async {
     final password = await PasswordStorage.getPassword();
@@ -171,116 +164,49 @@ class DiskAnalyzerService {
   }
 
   /// Lista i file e directory in un percorso (senza calcolare dimensioni per velocità)
-  /// Per la root (/) usa prima ls con sudo per evitare blocchi di Directory.list()
+  /// Sudo resta sul main isolate (password SharedPreferences); parsing e [Directory.list] in un worker isolate.
   static Future<List<FileSystemItem>> listDirectory(String path, {bool calculateSizes = false}) async {
-    final items = <FileSystemItem>[];
-
     try {
       final dir = Directory(path);
       if (!await dir.exists()) {
-        return items;
+        return [];
       }
 
-      bool listed = false;
+      late final List<Map<String, dynamic>> rawMaps;
+      var listed = false;
+
       if (path == '/' || path.startsWith('/sys') || path.startsWith('/proc') || path.startsWith('/dev')) {
         try {
-          final result = await _runSudoCommand('ls -la "$path" 2>/dev/null')
-              .timeout(const Duration(seconds: 15), onTimeout: () => ProcessResult(1, -1, 'timeout', 'timeout'));
+          final result = await _runSudoCommand('ls -la "$path" 2>/dev/null').timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => ProcessResult(1, -1, 'timeout', 'timeout'),
+          );
           if (result.exitCode == 0) {
             final output = result.stdout as String;
-            final lines = output.split('\n').skip(1);
-            for (final line in lines) {
-              if (line.trim().isEmpty) continue;
-              final parts = line.trim().split(RegExp(r'\s+'));
-              if (parts.length >= 9) {
-                final isDir = parts[0].startsWith('d');
-                final name = parts.sublist(8).join(' ');
-                if (name == '.' || name == '..') continue;
-                final fullPath = path == '/' ? '/$name' : '$path/$name';
-                if (path == '/' && _shouldSkipForRoot(fullPath)) continue;
-                String? mimeType;
-                if (!isDir) {
-                  final ext = name.split('.').last.toLowerCase();
-                  mimeType = _getMimeType(ext);
-                }
-                int size = 0;
-                if (isDir && calculateSizes && !_shouldSkipForRoot(fullPath)) {
-                  size = await getDirectorySize(fullPath).timeout(
-                    const Duration(seconds: 5),
-                    onTimeout: () => 0,
-                  );
-                }
-                items.add(FileSystemItem(
-                  path: fullPath,
-                  name: name,
-                  size: size,
-                  isDirectory: isDir,
-                  mimeType: mimeType,
-                ));
-              }
-            }
+            rawMaps = await Isolate.run(
+              () => _isolateParseLsListing(
+                lsStdout: output,
+                path: path,
+                calculateSizes: calculateSizes,
+              ),
+            );
             listed = true;
           }
         } catch (_) {}
       }
 
       if (!listed) {
-        try {
-          await for (final entity in dir.list(recursive: false).timeout(
-                Duration(seconds: path == '/' ? 12 : 30),
-                onTimeout: (sink) => sink.close(),
-              )) {
-            try {
-              if (path == '/' && _rootSkipPaths.contains(entity.path)) continue;
-              final stat = await entity.stat().timeout(
-                const Duration(milliseconds: 500),
-                onTimeout: () => throw TimeoutException('Stat timeout'),
-              );
-              final isDir = entity is Directory;
-              final name = entity.path.split('/').last;
-              String? mimeType;
-              if (!isDir) {
-                final extension = name.split('.').last.toLowerCase();
-                mimeType = _getMimeType(extension);
-              }
-              int size = 0;
-              if (!isDir) {
-                size = stat.size;
-              } else if (calculateSizes && !_shouldSkipForRoot(entity.path)) {
-                size = await getDirectorySize(entity.path).timeout(
-                  const Duration(seconds: 5),
-                  onTimeout: () => 0,
-                );
-              }
-              items.add(FileSystemItem(
-                path: entity.path,
-                name: name,
-                size: size,
-                isDirectory: isDir,
-                modified: stat.modified,
-                mimeType: mimeType,
-              ));
-            } catch (e) {
-              continue;
-            }
-          }
-        } catch (e) {
-          // timeout o altro: restituisci comunque items (eventualmente vuoti)
-        }
+        rawMaps = await Isolate.run(
+          () => _isolateListViaDirectoryList(
+            path: path,
+            calculateSizes: calculateSizes,
+          ),
+        );
       }
 
-      // Ordina: directory prima (per nome), poi file (per nome)
-      // L'ordinamento per dimensione verrà fatto dopo che le dimensioni sono state calcolate
-      items.sort((a, b) {
-        if (a.isDirectory && !b.isDirectory) return -1;
-        if (!a.isDirectory && b.isDirectory) return 1;
-        // Entrambi directory o entrambi file: ordina per nome (alfabetico)
-        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
-
-      return items;
+      return rawMaps.map(_mapJsonToFileSystemItem).toList();
     } catch (e) {
-      return items;
+      return [];
     }
   }
 
@@ -1408,4 +1334,166 @@ DeletionDate=${DateTime.now().toIso8601String()}
   static String getRootPath() {
     return '/';
   }
+}
+
+// -----------------------------------------------------------------------------
+// Isolate workers: parsing ls e scansione directory (non bloccano l'UI isolate)
+// -----------------------------------------------------------------------------
+
+const List<String> _isolateRootSkipPaths = [
+  '/proc', '/sys', '/dev', '/run', '/snap', '/boot', '/boot/efi', '/lost+found', '/sysroot', '/tmp',
+];
+
+bool _isolateShouldSkipForRoot(String p) {
+  if (p == '/proc' || p == '/sys' || p == '/dev' || p == '/run' || p == '/tmp') return true;
+  if (p == '/snap' || p == '/boot' || p == '/boot/efi' || p == '/lost+found' || p == '/sysroot') return true;
+  if (p.startsWith('/proc/') || p.startsWith('/sys/') || p.startsWith('/dev/') || p.startsWith('/run/')) {
+    return true;
+  }
+  if (p.startsWith('/tmp/')) return true;
+  if (p.startsWith('/snap/') || p.startsWith('/boot/')) return true;
+  return false;
+}
+
+void _isolateSortEntries(List<Map<String, dynamic>> items) {
+  items.sort((a, b) {
+    final ad = a['isDirectory'] == true;
+    final bd = b['isDirectory'] == true;
+    if (ad && !bd) return -1;
+    if (!ad && bd) return 1;
+    final an = (a['name'] as String).toLowerCase();
+    final bn = (b['name'] as String).toLowerCase();
+    return an.compareTo(bn);
+  });
+}
+
+String? _isolateMimeType(String extension) {
+  const mimeTypes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'bmp': 'image/bmp',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'txt': 'text/plain',
+    'md': 'text/markdown',
+    'html': 'text/html',
+    'mp4': 'video/mp4',
+    'avi': 'video/x-msvideo',
+    'mp3': 'audio/mpeg',
+    'zip': 'application/zip',
+  };
+  return mimeTypes[extension];
+}
+
+Future<List<Map<String, dynamic>>> _isolateParseLsListing({
+  required String lsStdout,
+  required String path,
+  required bool calculateSizes,
+}) async {
+  final items = <Map<String, dynamic>>[];
+  final lines = lsStdout.split('\n').skip(1);
+  for (final line in lines) {
+    if (line.trim().isEmpty) continue;
+    final parts = line.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 9) {
+      final isDir = parts[0].startsWith('d');
+      final name = parts.sublist(8).join(' ');
+      if (name == '.' || name == '..') continue;
+      final fullPath = path == '/' ? '/$name' : '$path/$name';
+      if (path == '/' && _isolateShouldSkipForRoot(fullPath)) continue;
+      String? mimeType;
+      if (!isDir) {
+        final ext = name.split('.').last.toLowerCase();
+        mimeType = _isolateMimeType(ext);
+      }
+      var size = 0;
+      if (isDir && calculateSizes && !_isolateShouldSkipForRoot(fullPath)) {
+        size = await DiskAnalyzerService.getDirectorySize(fullPath).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => 0,
+        );
+      }
+      items.add({
+        'path': fullPath,
+        'name': name,
+        'size': size,
+        'isDirectory': isDir,
+        'modifiedMs': null,
+        'mimeType': mimeType,
+      });
+    }
+  }
+  _isolateSortEntries(items);
+  return items;
+}
+
+Future<List<Map<String, dynamic>>> _isolateListViaDirectoryList({
+  required String path,
+  required bool calculateSizes,
+}) async {
+  final items = <Map<String, dynamic>>[];
+  final dir = Directory(path);
+  try {
+    await for (final entity in dir.list(recursive: false).timeout(
+          Duration(seconds: path == '/' ? 12 : 30),
+          onTimeout: (sink) => sink.close(),
+        )) {
+      try {
+        if (path == '/' && _isolateRootSkipPaths.contains(entity.path)) continue;
+        final stat = await entity.stat().timeout(
+          const Duration(milliseconds: 500),
+          onTimeout: () => throw TimeoutException('Stat timeout'),
+        );
+        final isDir = entity is Directory;
+        final name = entity.path.split('/').last;
+        String? mimeType;
+        if (!isDir) {
+          final extension = name.split('.').last.toLowerCase();
+          mimeType = _isolateMimeType(extension);
+        }
+        var size = 0;
+        if (!isDir) {
+          size = stat.size;
+        } else if (calculateSizes && !_isolateShouldSkipForRoot(entity.path)) {
+          size = await DiskAnalyzerService.getDirectorySize(entity.path).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => 0,
+          );
+        }
+        items.add({
+          'path': entity.path,
+          'name': name,
+          'size': size,
+          'isDirectory': isDir,
+          'modifiedMs': stat.modified.millisecondsSinceEpoch,
+          'mimeType': mimeType,
+        });
+      } catch (_) {
+        continue;
+      }
+    }
+  } catch (_) {
+    // timeout o accesso: restituisci parziale
+  }
+  _isolateSortEntries(items);
+  return items;
+}
+
+FileSystemItem _mapJsonToFileSystemItem(Map<String, dynamic> m) {
+  final mod = m['modifiedMs'];
+  return FileSystemItem(
+    path: m['path'] as String,
+    name: m['name'] as String,
+    size: m['size'] as int? ?? 0,
+    isDirectory: m['isDirectory'] as bool? ?? false,
+    modified: mod is int ? DateTime.fromMillisecondsSinceEpoch(mod) : null,
+    mimeType: m['mimeType'] as String?,
+  );
 }

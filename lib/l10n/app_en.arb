@@ -124,6 +124,86 @@
   "settingsAutoUpdateEvery6Hours": "Every 6 hours",
   "settingsAutoUpdateEvery12Hours": "Every 12 hours",
   "settingsAutoUpdateEveryDay": "Every day",
+  "settingsAutoAppUpdateFromGithubTitle": "Auto-update app from GitHub",
+  "settingsAutoAppUpdateFromGithubDesc": "When enabled, the app periodically downloads and installs the latest .deb for this edition from GitHub releases. Requires a saved administrator password and only runs when automatic system update checks are enabled above.",
+  "updateCheckAptNone": "APT: No updates available",
+  "updateCheckAptPhasedOnly": "APT: No updates installable right now (phased rollout only)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} update available} other{APT: {count} updates available}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} phased update detected} other{APT: {count} phased updates detected}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT: Error while checking: {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF: No updates available",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} update available} other{DNF: {count} updates available}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF: Error while checking: {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman: No updates available",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} update available} other{Pacman: {count} updates available}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman: Error while checking: {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap: No updates available",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} update available} other{Snap: {count} updates available}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap: Error while checking: {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak: No updates available",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} update available} other{Flatpak: {count} updates available}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak: Error while checking: {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 packages} one{{count} package} other{{count} packages}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "updatesAvailableCount": "{count} updates available",
   "@updatesAvailableCount": {
     "placeholders": {
@@ -188,6 +268,17 @@
   "features": "Features",
   "appExpertUsers": "Application designed for expert Linux users",
   "infoProjectWebsite": "Project website",
+  "applicationIdLabel": "Application ID (desktop)",
+  "updatesPendingPackagesTitle": "Pending packages (from last check)",
+  "updatesProgressCurrent": "Progress: {detail}",
+  "@updatesProgressCurrent": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesCommandOutputTitle": "Command output",
   "disclaimerLicenseTitle": "License & Disclaimer",
   "disclaimerGplNotice": "This application is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.",
   "disclaimerNoWarranty": "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.",
@@ -312,8 +403,8 @@
     }
   },
   "kernelRemoveError": "Error removing kernel",
-  "setDefaultKernel": "Set Default Kernel",
-  "setDefaultKernelQuestion": "Do you want to set {version} as the default kernel?",
+  "setDefaultKernel": "Set default kernel (GRUB)",
+  "setDefaultKernelQuestion": "Set {version} as the default kernel on next boot? GRUB will be updated using administrator commands.",
   "@setDefaultKernelQuestion": {
     "placeholders": {
       "version": {
@@ -381,7 +472,7 @@
   "rebootSystemError": "Error rebooting the system",
   "package": "Package",
   "size": "Size",
-  "setAsDefault": "Set as Default",
+  "setAsDefault": "Set as default boot",
   "refreshDimensions": "Refresh Dimensions",
   "cleanupTempFiles": "Clean Temporary Files",
   "disableApp": "Disable App",

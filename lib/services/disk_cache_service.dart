@@ -28,6 +28,14 @@ class DiskCacheService {
     return t.endsWith('/') && t.length > 1 ? t.substring(0, t.length - 1) : t;
   }
 
+  /// Stessa chiave usata in tutta la cache per una cartella elencata (evita miss per trailing slash)
+  static String normalizeListedDirectoryPath(String directoryPath) {
+    final t = directoryPath.trim();
+    if (t.isEmpty) return '/';
+    if (t == '/') return '/';
+    return t.endsWith('/') ? t.substring(0, t.length - 1) : t;
+  }
+
   /// Genera una chiave di cache basata sul percorso del disco
   static String _getCacheKey(String diskPath) {
     final normalizedPath = _normalizeDiskPath(diskPath);
@@ -103,12 +111,15 @@ class DiskCacheService {
   }
   
   /// Salva le dimensioni delle directory nella cache
+  /// IMPORTANTE: unisce al JSON esistente così non si cancellano directoryLists e altre chiavi.
   static Future<void> saveDirectorySizes(
     String diskPath,
     List<Map<String, dynamic>> directorySizes,
   ) async {
     final path = _normalizeDiskPath(diskPath);
+    final existing = await loadCache(path) ?? {};
     await saveCache(path, {
+      ...existing,
       'directorySizes': directorySizes,
     });
   }
@@ -135,8 +146,9 @@ class DiskCacheService {
   ) async {
     final cache = await loadCache(diskPath) ?? {};
     final directoryLists = (cache['directoryLists'] as Map<String, dynamic>?) ?? {};
-    
-    directoryLists[directoryPath] = items;
+    final key = normalizeListedDirectoryPath(directoryPath);
+
+    directoryLists[key] = items;
     
     await saveCache(diskPath, {
       ...cache,
@@ -155,7 +167,12 @@ class DiskCacheService {
     final directoryLists = cache['directoryLists'] as Map<String, dynamic>?;
     if (directoryLists == null) return null;
 
-    final items = directoryLists[directoryPath];
+    final key = normalizeListedDirectoryPath(directoryPath);
+    dynamic items = directoryLists[key];
+    // Compatibilità cache vecchia: chiavi con slash finale o non normalizzate
+    if (items == null && directoryPath != key) {
+      items = directoryLists[directoryPath];
+    }
     if (items is List) {
       return items.cast<Map<String, dynamic>>();
     }
@@ -174,7 +191,8 @@ class DiskCacheService {
     if (cache == null) return;
 
     final directoryLists = Map<String, dynamic>.from(cache['directoryLists'] as Map<String, dynamic>? ?? {});
-    final cachedList = (directoryLists[directoryPath] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final key = normalizeListedDirectoryPath(directoryPath);
+    final cachedList = (directoryLists[key] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final fsByPath = {for (final e in currentFromFs) e['path'] as String: e};
     final cachedPaths = cachedList.map((e) => e['path'] as String).toSet();
 
@@ -201,7 +219,7 @@ class DiskCacheService {
         merged.add(Map<String, dynamic>.from(f));
       }
     }
-    directoryLists[directoryPath] = merged;
+    directoryLists[key] = merged;
     await saveCache(diskPath, { ...cache, 'directoryLists': directoryLists });
   }
 
@@ -216,7 +234,8 @@ class DiskCacheService {
     if (cache == null) return;
 
     final directoryLists = Map<String, dynamic>.from(cache['directoryLists'] as Map<String, dynamic>? ?? {});
-    final cachedList = (directoryLists[directoryPath] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final key = normalizeListedDirectoryPath(directoryPath);
+    final cachedList = (directoryLists[key] as List?)?.cast<Map<String, dynamic>>() ?? [];
     if (cachedList.isEmpty) return;
 
     final sizeByPath = {for (final e in itemsWithSizes) e['path'] as String: e};
@@ -234,7 +253,7 @@ class DiskCacheService {
       }
     }
 
-    directoryLists[directoryPath] = cachedList;
+    directoryLists[key] = cachedList;
     await saveCache(diskPath, { ...cache, 'directoryLists': directoryLists });
   }
 

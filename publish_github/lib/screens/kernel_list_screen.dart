@@ -667,33 +667,52 @@ class _KernelListScreenState extends State<KernelListScreen> {
             ),
           ],
         ),
-        trailing: PopupMenuButton(
+        trailing: PopupMenuButton<String>(
           itemBuilder: (context) => [
-            if (!kernel.isDefault)
-              PopupMenuItem(
-                value: 'set_default',
-                child: Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Text(AppLocalizations.of(context)!.setAsDefault),
-                  ],
-                ),
-              ),
-            if (!kernel.isActive)
-              PopupMenuItem(
-                value: 'remove',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)!.remove,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+            PopupMenuItem(
+              value: 'set_default',
+              enabled: !kernel.isDefault,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: kernel.isDefault
+                        ? theme.disabledColor
+                        : Colors.blue,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context)!.setAsDefault,
+                    style: TextStyle(
+                      color: kernel.isDefault ? theme.disabledColor : null,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
+            PopupMenuItem(
+              value: 'remove',
+              enabled: !kernel.isActive,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.delete,
+                    color: kernel.isActive
+                        ? theme.disabledColor
+                        : theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context)!.remove,
+                    style: TextStyle(
+                      color: kernel.isActive
+                          ? theme.disabledColor
+                          : theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
           onSelected: (value) {
             if (value == 'set_default') {

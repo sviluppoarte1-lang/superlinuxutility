@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:flutter/services.dart';
 import 'system_monitor.dart';
+import 'single_instance_service.dart';
 
 class TrayMenuLabels {
   final String checkUpdates;
@@ -232,7 +233,10 @@ class TrayService {
         _appWindow?.show();
       }),
       MenuSeparator(),
-      MenuItemLabel(label: l.exit, onClicked: (_) => _onExit()),
+      MenuItemLabel(label: l.exit, onClicked: (_) async {
+        await releaseSingleInstanceLock();
+        _onExit();
+      }),
     ]);
     await _systemTray!.setContextMenu(menu);
   }
