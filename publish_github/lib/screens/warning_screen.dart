@@ -129,12 +129,6 @@ class _WarningScreenState extends State<WarningScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildWarningItem(
-                          Icons.delete_outline,
-                          AppLocalizations.of(context)!.warningKernel,
-                          AppLocalizations.of(context)!.warningKernelDesc,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildWarningItem(
                           Icons.settings_power,
                           AppLocalizations.of(context)!.warningServices,
                           AppLocalizations.of(context)!.warningServicesDesc,

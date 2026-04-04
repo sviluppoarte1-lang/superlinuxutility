@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../services/recovery_service.dart';
 import '../utils/update_check_report_formatter.dart';
+import '../utils/update_preview_helper.dart';
 import '../widgets/updates_apply_progress_view.dart';
 
 class RecoveryScreen extends StatefulWidget {
@@ -107,13 +108,20 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       final l10nForOutput = AppLocalizations.of(context)!;
       String outputText;
       if (operation == 'updates') {
+        final preview = UpdatePreviewHelper.plainText(
+          l10nForOutput,
+          result,
+          heading: l10nForOutput.updatesCheckPreviewHeading,
+        );
         final formatted = UpdateCheckReportFormatter.format(
           l10nForOutput,
           result['updateReport'] as Map<String, dynamic>?,
         );
-        outputText = formatted.isNotEmpty
-            ? formatted
-            : (result['output']?.toString() ?? result['message']?.toString() ?? '');
+        final fallback = result['output']?.toString() ?? result['message']?.toString() ?? '';
+        final parts = <String>[];
+        if (preview.isNotEmpty) parts.add(preview);
+        if (formatted.isNotEmpty) parts.add(formatted);
+        outputText = parts.isNotEmpty ? parts.join('\n\n') : fallback;
       } else {
         outputText = result['output']?.toString() ?? result['message']?.toString() ?? '';
       }

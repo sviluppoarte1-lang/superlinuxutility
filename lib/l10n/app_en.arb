@@ -217,6 +217,17 @@
       "count": {"type": "int"}
     }
   },
+  "updatesAvailableDetectedListHeading": "Detected:",
+  "updateLabelPhased": "{name} (phased rollout — not installable yet)",
+  "@updateLabelPhased": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "updatesPreviewTruncated": "… and {count} more",
+  "@updatesPreviewTruncated": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "updatesAvailablePhasedFooter": "Phased packages cannot be installed yet. \"Apply now\" only applies what your system allows.",
+  "updatesCheckPreviewHeading": "Affected items:",
   "applyNow": "Apply now",
   "postpone": "Postpone",
   "fontFamily": "Font Family",
@@ -820,6 +831,83 @@
   "hardwareSuggestionsPriorityLow": "Low",
   "hardwareSuggestionsApply": "Apply",
   "hardwareSuggestionsCancel": "Cancel",
+  "hardwareSuggestionsAlreadyPresent": "Already present",
+  "hardwareSuggestionsCurrentValue": "Current value: {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Suggested: {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Analyzing hardware...",
+  "hardwareSuggestionsNoAvailable": "No hardware suggestions available.",
+  "hardwareSuggestionsApplied": "Suggestion applied: {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Error applying suggestion: {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Error generating suggestions: {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU with {count} cores: adding threadirqs can improve multi-core scheduling",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "Modern CPU: mitigations=off may improve performance (only if you accept the security trade-offs)",
+  "grubSuggestionCpuIntelIommu": "Intel CPU: enable IOMMU for virtualization and device isolation",
+  "grubSuggestionCpuAmdIommu": "AMD CPU: enable IOMMU for virtualization and device isolation",
+  "grubSuggestionRamZswapDisable": "System with {gb} GB RAM: zswap is often unnecessary",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "System with {gb} GB RAM: zswap may help when memory is tight",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "NVIDIA GPU detected: enable nvidia-drm modeset for better display performance",
+  "grubSuggestionGpuNvidiaVideoMemory": "NVIDIA GPU: preserve video memory allocations across suspend/resume",
+  "grubSuggestionGpuAmdPpfeaturemask": "AMD GPU: enable the full power-management feature mask",
+  "grubSuggestionGpuVideoMode": "Set a fixed video mode to reduce early-boot display issues",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI: quiet splash can improve the boot experience",
+  "grubSuggestionPerfElevatorNone": "SSD-focused storage: elevator=none can improve I/O performance",
+  "grubSuggestionPerfVmSwappiness": "Lower swappiness when the system has enough RAM",
   "settingsPasswordSecurityMessage": "The password is saved securely using the system keyring.",
   "tabShutdownScheduler": "Automatic Shutdown",
   "shutdownInfoTitle": "Automatic Shutdown",

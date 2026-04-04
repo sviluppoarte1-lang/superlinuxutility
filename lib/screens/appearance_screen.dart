@@ -11,7 +11,7 @@ class AppearanceScreen extends StatefulWidget {
   State<AppearanceScreen> createState() => _AppearanceScreenState();
 }
 
-class _AppearanceScreenState extends State<AppearanceScreen> with AutomaticKeepAliveClientMixin {
+class _AppearanceScreenState extends State<AppearanceScreen> {
   bool _isLoading = false;
   bool _hasLoadedOnce = false;
   String? _error;
@@ -50,9 +50,6 @@ class _AppearanceScreenState extends State<AppearanceScreen> with AutomaticKeepA
   bool _resizeWithSecondaryClick = false;
   String _windowFocus = 'click';
   bool _raiseOnFocus = false;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -316,8 +313,6 @@ class _AppearanceScreenState extends State<AppearanceScreen> with AutomaticKeepA
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Richiesto per AutomaticKeepAliveClientMixin
-    
     // Mostra loading solo al primo caricamento, non ai successivi
     if (_isLoading && !_hasLoadedOnce) {
       return Scaffold(

@@ -33,7 +33,6 @@
   "tabInfo": "Info",
   "tabRecovery": "System Recovery",
   "tabGrub": "GRUB",
-  "tabKernel": "Kernel",
   "tabSettings": "Settings",
   "modeStandard": "Standard",
   "modeAdvanced": "Advanced",
@@ -42,8 +41,6 @@
   "warningMessage": "This application allows you to modify critical Linux operating system configurations.",
   "warningGrub": "GRUB Modifications",
   "warningGrubDesc": "Incorrect modification of the bootloader may prevent the system from booting.",
-  "warningKernel": "Kernel Removal",
-  "warningKernelDesc": "Removing essential kernels may render the system unusable.",
   "warningServices": "Service Management",
   "warningServicesDesc": "Disabling critical services may cause system malfunctions.",
   "warningCleanup": "File Cleanup",
@@ -217,6 +214,17 @@
       "count": {"type": "int"}
     }
   },
+  "updatesAvailableDetectedListHeading": "Detected:",
+  "updateLabelPhased": "{name} (phased rollout — not installable yet)",
+  "@updateLabelPhased": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "updatesPreviewTruncated": "… and {count} more",
+  "@updatesPreviewTruncated": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "updatesAvailablePhasedFooter": "Phased packages cannot be installed yet. \"Apply now\" only applies what your system allows.",
+  "updatesCheckPreviewHeading": "Affected items:",
   "applyNow": "Apply now",
   "postpone": "Postpone",
   "fontFamily": "Font Family",
@@ -268,6 +276,17 @@
   "features": "Features",
   "appExpertUsers": "Application designed for expert Linux users",
   "infoProjectWebsite": "Project website",
+  "applicationIdLabel": "Application ID (desktop)",
+  "updatesPendingPackagesTitle": "Pending packages (from last check)",
+  "updatesProgressCurrent": "Progress: {detail}",
+  "@updatesProgressCurrent": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesCommandOutputTitle": "Command output",
   "disclaimerLicenseTitle": "License & Disclaimer",
   "disclaimerGplNotice": "This application is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.",
   "disclaimerNoWarranty": "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.",
@@ -369,88 +388,6 @@
   "restore": "Restore",
   "backupRestoredSuccess": "Backup restored successfully",
   "backupRestoreError": "Error restoring backup",
-  "kernelCannotRemoveActive": "Cannot remove the currently active kernel",
-  "removeKernel": "Remove Kernel",
-  "removeKernelQuestion": "Do you want to remove kernel {version}?",
-  "@removeKernelQuestion": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "thisOperation": "This operation:",
-  "willRemovePackage": "• Will remove the kernel package",
-  "willUpdateGrub": "• Will update GRUB",
-  "kernelWarning": "WARNING: Make sure you have at least one working kernel!",
-  "kernelRemovedSuccess": "Kernel {version} removed successfully",
-  "@kernelRemovedSuccess": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "kernelRemoveError": "Error removing kernel",
-  "setDefaultKernel": "Set default kernel (GRUB)",
-  "setDefaultKernelQuestion": "Set {version} as the default kernel on next boot? GRUB will be updated using administrator commands.",
-  "@setDefaultKernelQuestion": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "set": "Set",
-  "kernelSetDefaultSuccess": "Kernel {version} set as default",
-  "@kernelSetDefaultSuccess": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "kernelSetDefaultError": "Error setting default kernel",
-  "keepMax": "Keep max:",
-  "cleanupKernels": "Kernel Cleanup",
-  "keepOnlyRecentKernels": "Do you want to keep only the {count} most recent kernels?",
-  "@keepOnlyRecentKernels": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "totalKernels": "Total kernels: {count}",
-  "@totalKernels": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "kernelsToKeep": "Kernels to keep: {count}",
-  "@kernelsToKeep": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "kernelsToRemove": "Kernels to remove: {count}",
-  "@kernelsToRemove": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cleanupKernelsWarning": "WARNING: Only unused kernels will be removed.",
-  "cleanup": "Cleanup",
-  "kernelCleanupSuccess": "Kernel cleanup completed successfully",
-  "kernelCleanupError": "Error during kernel cleanup",
-  "invalidKernelCount": "Enter a valid number of kernels to keep",
-  "noKernelsFound": "No installed kernels found",
   "updateGrub": "Update GRUB",
   "updateGrubQuestion": "Do you want to update GRUB? This operation will update the bootloader configuration.",
   "grubUpdateSuccess": "GRUB updated successfully",
@@ -459,9 +396,7 @@
   "rebootSystemQuestion": "Do you want to reboot the system? All open applications will be closed.",
   "rebootSystemSuccess": "The system is rebooting...",
   "rebootSystemError": "Error rebooting the system",
-  "package": "Package",
   "size": "Size",
-  "setAsDefault": "Set as default boot",
   "refreshDimensions": "Refresh Dimensions",
   "cleanupTempFiles": "Clean Temporary Files",
   "disableApp": "Disable App",
@@ -775,22 +710,13 @@
   "infoGrubUpdateDesc": "Applies changes and updates the bootloader",
   "infoGrubRestore": "Backup restore",
   "infoGrubRestoreDesc": "Easily restore a previous configuration",
-  "infoKernel": "Kernel Management (Advanced Mode)",
-  "infoKernelList": "Installed kernel list",
-  "infoKernelListDesc": "View all installed kernels with version and size",
-  "infoKernelRemoval": "Kernel removal",
-  "infoKernelRemovalDesc": "Safely remove old kernels (protects current kernel)",
-  "infoKernelDefault": "Default kernel setting",
-  "infoKernelDefaultDesc": "Choose which kernel to boot by default",
-  "infoKernelCleanup": "Automatic cleanup",
-  "infoKernelCleanupDesc": "Keep only a specified number of most recent kernels",
   "infoSecurity": "Security",
   "infoSecurityPassword": "Password management",
   "infoSecurityPasswordDesc": "Safely save administrator password for sudo operations",
   "infoSecurityWarning": "Expert users warning",
   "infoSecurityWarningDesc": "Initial warning screen for expert users",
   "infoSecurityMode": "Standard/Advanced Mode",
-  "infoSecurityModeDesc": "Separates basic features from advanced ones (GRUB, Kernel)",
+  "infoSecurityModeDesc": "Separates basic features from advanced ones (GRUB, System Recovery)",
   "recoveryCheckUpdatesComplete": "Update search completed",
   "recoveryCheckUpdatesError": "Error during update search: {error}",
   "@recoveryCheckUpdatesError": {
@@ -809,6 +735,83 @@
   "hardwareSuggestionsPriorityLow": "Low",
   "hardwareSuggestionsApply": "Apply",
   "hardwareSuggestionsCancel": "Cancel",
+  "hardwareSuggestionsAlreadyPresent": "Already present",
+  "hardwareSuggestionsCurrentValue": "Current value: {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Suggested: {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Analyzing hardware...",
+  "hardwareSuggestionsNoAvailable": "No hardware suggestions available.",
+  "hardwareSuggestionsApplied": "Suggestion applied: {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Error applying suggestion: {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Error generating suggestions: {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU with {count} cores: adding threadirqs can improve multi-core scheduling",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "Modern CPU: mitigations=off may improve performance (only if you accept the security trade-offs)",
+  "grubSuggestionCpuIntelIommu": "Intel CPU: enable IOMMU for virtualization and device isolation",
+  "grubSuggestionCpuAmdIommu": "AMD CPU: enable IOMMU for virtualization and device isolation",
+  "grubSuggestionRamZswapDisable": "System with {gb} GB RAM: zswap is often unnecessary",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "System with {gb} GB RAM: zswap may help when memory is tight",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "NVIDIA GPU detected: enable nvidia-drm modeset for better display performance",
+  "grubSuggestionGpuNvidiaVideoMemory": "NVIDIA GPU: preserve video memory allocations across suspend/resume",
+  "grubSuggestionGpuAmdPpfeaturemask": "AMD GPU: enable the full power-management feature mask",
+  "grubSuggestionGpuVideoMode": "Set a fixed video mode to reduce early-boot display issues",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI: quiet splash can improve the boot experience",
+  "grubSuggestionPerfElevatorNone": "SSD-focused storage: elevator=none can improve I/O performance",
+  "grubSuggestionPerfVmSwappiness": "Lower swappiness when the system has enough RAM",
   "settingsPasswordSecurityMessage": "The password is saved securely using the system keyring.",
   "tabShutdownScheduler": "Automatic Shutdown",
   "shutdownInfoTitle": "Automatic Shutdown",
@@ -856,6 +859,6 @@
   "licenseActivateError": "Invalid code. Check name, surname and email.",
   "licenseActivatePremium": "Activate / Premium",
   "licenseActivateCardTitle": "Activate Advanced Version",
-  "licenseActivateCardDesc": "The Advanced version costs 19.99 €. Enter your details and the license code you received after successful payment to unlock GRUB, Kernel and Recovery tools. Without valid payment, the application cannot be activated."
+  "licenseActivateCardDesc": "The Advanced version costs 19.99 €. Enter your details and the license code you received after successful payment to unlock GRUB and System Recovery tools. Without valid payment, the application cannot be activated."
 }
 

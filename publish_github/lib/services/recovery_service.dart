@@ -1,9 +1,12 @@
-import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'password_storage.dart';
 import 'system_detector.dart';
 
 class RecoveryService {
+  /// Esegue [command] interamente come root. Necessario per script con `&&` / `|`: senza
+  /// `bash -c`, solo il primo comando dopo `printf … | sudo -S` è elevato (es. apt-get install senza sudo).
   static Future<ProcessResult> _runSudoCommand(String command) async {
     final password = await PasswordStorage.getPassword();
     if (password == null || password.isEmpty) {
@@ -16,13 +19,19 @@ class RecoveryService {
         .replaceAll('\$', '\\\$')
         .replaceAll('`', '\\`');
     
-    final fullCommand = 'printf "%s\\n" "$escapedPassword" | sudo -S $command';
+    final fullCommand =
+        'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(command)}';
     
     return await Process.run(
       'bash',
       ['-c', fullCommand],
       runInShell: true,
     );
+  }
+
+  static String shellQuote(String s) {
+    if (s.isEmpty) return "''";
+    return "'${s.replaceAll("'", "'\\''")}'";
   }
 
   static Future<Map<String, dynamic>> restartPipewire() async {
@@ -150,12 +159,13 @@ class RecoveryService {
       String output = '';
       final distLower = systemInfo.distribution.toLowerCase();
       
-      // Backup del grub.cfg esistente
+      // Backup del grub.cfg esistente (timestamp da Dart: con bash -c quotato, $(date) nella shell non verrebbe espanso)
       try {
+        final stamp = _grubBackupTimestamp();
         if (distLower.contains('fedora') || distLower.contains('rhel') || distLower.contains('centos')) {
-          await _runSudoCommand(r'cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.backup.$(date +%Y%m%d_%H%M%S)');
+          await _runSudoCommand('cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.backup.$stamp');
         } else {
-          await _runSudoCommand(r'cp /boot/grub/grub.cfg /boot/grub/grub.cfg.backup.$(date +%Y%m%d_%H%M%S)');
+          await _runSudoCommand('cp /boot/grub/grub.cfg /boot/grub/grub.cfg.backup.$stamp');
         }
       } catch (e) {
         // Continua anche se il backup fallisce
@@ -342,376 +352,710 @@ class RecoveryService {
   static Future<Map<String, dynamic>> checkForUpdates() async {
     try {
       final systemInfo = await SystemDetector.detectSystem();
-      String output = '';
-      List<String> updates = [];
+      final updates = <String>[];
+      final updateReport = <String, dynamic>{};
 
-      // APT (Ubuntu/Debian/Mint)
       if (systemInfo.hasApt) {
-        try {
-          // Usa una simulazione per evitare falsi positivi con "phasing" (deferred due to phasing):
-          // anche se apt mostra aggiornamenti "posticipati", spesso non verranno installati subito.
-          final simResult = await Process.run(
-            'bash',
-            ['-c', 'apt-get -s -y upgrade 2>&1'],
-            runInShell: false,
-          );
-          final simOutput = (simResult.stdout.toString() + '\n' + simResult.stderr.toString()).trim();
-          if (simOutput.isNotEmpty) {
-            final pkgTokenRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+$');
-
-            // 1) Prova ad estrarre i pacchetti che verrebbero installati ora (tipicamente righe "Inst ...").
-            final instRegex = RegExp(r'^\s*Inst\s+([a-zA-Z0-9][a-zA-Z0-9+\-._]+)\b');
-            final instPkgs = <String>{};
-            for (final rawLine in simOutput.split('\n')) {
-              final line = rawLine.trimRight();
-              final match = instRegex.firstMatch(line);
-              if (match != null) {
-                final pkg = match.group(1)!.trim();
-                instPkgs.add(pkg);
-              }
-            }
-
-            // 2) Estrai eventuali pacchetti "deferred/postponed due to phasing" per sottrarli.
-            final deferredTriggerRegex = RegExp(
-              r'(deferred|postponed).{0,60}phasing|scaglionamento',
-              caseSensitive: false,
-            );
-            final deferredPkgs = <String>{};
-            bool inDeferredBlock = false;
-            for (final rawLine in simOutput.split('\n')) {
-              final trimmed = rawLine.trim();
-              if (trimmed.isEmpty) {
-                inDeferredBlock = false;
-                continue;
-              }
-
-              if (deferredTriggerRegex.hasMatch(trimmed)) {
-                inDeferredBlock = true;
-              }
-
-              if (!inDeferredBlock && !deferredTriggerRegex.hasMatch(trimmed)) continue;
-
-              // Tenta di trovare token che assomigliano a nomi pacchetto.
-              final parts = trimmed
-                  .replaceAll(':', ' ')
-                  .replaceAll(';', ' ')
-                  .replaceAll(',', ' ')
-                  .split(RegExp(r'\s+'));
-              for (final part in parts) {
-                final token = part.trim();
-                if (pkgTokenRegex.hasMatch(token)) {
-                  deferredPkgs.add(token);
-                }
-              }
-            }
-
-            // Se abbiamo "Inst ...", usiamo quelli come verità principale.
-            if (instPkgs.isNotEmpty) {
-              final effectivePkgs = instPkgs.where((p) => !deferredPkgs.contains(p)).toList()..sort();
-              updates = effectivePkgs;
-              output += effectivePkgs.isNotEmpty
-                  ? 'APT: ${effectivePkgs.length} aggiornamenti disponibili\n'
-                  : 'APT: Nessun aggiornamento disponibile (solo scaglionati)\n';
-            } else {
-              // Fallback: usa la sezione "The following packages will be upgraded:" e sottrai quelli deferred.
-              final willUpgradeHeader = RegExp(r'^The following packages will be upgraded:\s*$');
-              bool inWillUpgradeBlock = false;
-              final willUpgradedPkgs = <String>{};
-
-              final pkgPrefixRegex = RegExp(r'^([a-zA-Z0-9][a-zA-Z0-9+\-._]+)');
-              for (final rawLine in simOutput.split('\n')) {
-                final trimmed = rawLine.trim();
-                if (willUpgradeHeader.hasMatch(trimmed)) {
-                  inWillUpgradeBlock = true;
-                  continue;
-                }
-                if (inWillUpgradeBlock) {
-                  if (trimmed.isEmpty) {
-                    inWillUpgradeBlock = false;
-                    continue;
-                  }
-                  final match = pkgPrefixRegex.firstMatch(trimmed);
-                  if (match != null) {
-                    willUpgradedPkgs.add(match.group(1)!.trim());
-                  }
-                }
-              }
-
-              final effectivePkgs = willUpgradedPkgs.difference(deferredPkgs).toList()..sort();
-              updates = effectivePkgs;
-              output += effectivePkgs.isNotEmpty
-                  ? 'APT: ${effectivePkgs.length} aggiornamenti disponibili\n'
-                  : 'APT: Nessun aggiornamento disponibile (solo scaglionati)\n';
-            }
-          } else {
-            output += 'APT: Nessun aggiornamento disponibile\n';
-          }
-        } catch (e) {
-          // Fallback: ripiego sul vecchio metodo se la simulazione fallisce.
-          try {
-            // apt list --upgradable non richiede sudo
-            final result = await Process.run(
-              'apt',
-              ['list', '--upgradable'],
-              runInShell: false,
-            );
-            final aptOutput = result.stdout.toString();
-            if (aptOutput.isNotEmpty) {
-              final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+/[^\s,]+');
-              final lines = aptOutput.split('\n')
-                  .where((line) {
-                    final trimmed = line.trim();
-                    return trimmed.isNotEmpty &&
-                        !trimmed.contains('Listing...') &&
-                        !trimmed.contains('WARNING:') &&
-                        !trimmed.startsWith('WARNING:') &&
-                        !trimmed.startsWith('...') &&
-                        packageRegex.hasMatch(trimmed) &&
-                        (trimmed.contains('upgradable') || trimmed.contains('/'));
-                  })
-                  .toList();
-              updates.addAll(lines);
-              output += 'APT: ${lines.length} aggiornamenti disponibili\n';
-            } else {
-              output += 'APT: Nessun aggiornamento disponibile\n';
-            }
-          } catch (_) {
-            output += 'APT: Errore durante la verifica: $e\n';
-          }
-        }
+        updateReport['apt'] = await _checkAptUpdatesReport(updates);
       }
-
-      // DNF (Fedora/RHEL/CentOS)
       if (systemInfo.hasDnf) {
-        try {
-          final result = await _runSudoCommand(r'dnf check-update --quiet 2>&1 | grep -v "^$" || true');
-          final dnfOutput = result.stdout.toString();
-          if (dnfOutput.isNotEmpty && !dnfOutput.contains('No updates')) {
-            // Filtra solo le righe che sono pacchetti (escludi header, metadata, messaggi)
-            // I pacchetti DNF hanno formato: nome.arch versione repository
-            final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\.[a-zA-Z0-9]+\s+');
-            final lines = dnfOutput.split('\n')
-                .where((line) {
-                  final trimmed = line.trim();
-                  return trimmed.isNotEmpty && 
-                      !trimmed.contains('Last metadata') &&
-                      !trimmed.contains('Last metadata expiration') &&
-                      !trimmed.contains('Error') &&
-                      packageRegex.hasMatch(trimmed);
-                })
-                .toList();
-            updates.addAll(lines);
-            output += 'DNF: ${lines.length} aggiornamenti disponibili\n';
-          } else {
-            output += 'DNF: Nessun aggiornamento disponibile\n';
-          }
-        } catch (e) {
-          output += 'DNF: Errore durante la verifica\n';
-        }
+        updateReport['dnf'] = await _checkDnfUpdatesReport(updates);
       }
-
-      // Pacman (Arch/Manjaro)
       if (systemInfo.hasPacman) {
-        try {
-          final result = await _runSudoCommand('pacman -Qu 2>/dev/null || true');
-          final pacmanOutput = result.stdout.toString();
-          if (pacmanOutput.isNotEmpty) {
-            final lines = pacmanOutput.split('\n').where((line) => line.trim().isNotEmpty).toList();
-            updates.addAll(lines);
-            output += 'Pacman: ${lines.length} aggiornamenti disponibili\n';
-          } else {
-            output += 'Pacman: Nessun aggiornamento disponibile\n';
-          }
-        } catch (e) {
-          output += 'Pacman: Errore durante la verifica\n';
-        }
+        updateReport['pacman'] = await _checkPacmanUpdatesReport(updates);
       }
-
-      // Snap
       if (systemInfo.hasSnap) {
-        try {
-          final result = await _runSudoCommand('snap refresh --list 2>&1');
-          final snapOutput = result.stdout.toString();
-          if (snapOutput.isNotEmpty && !snapOutput.contains('All snaps up to date')) {
-            // Filtra solo le righe che sono snap packages validi
-            // Il formato è: nome versione da versione
-            final snapRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\s+\d+\.\d+');
-            final lines = snapOutput.split('\n')
-                .where((line) {
-                  final trimmed = line.trim();
-                  return trimmed.isNotEmpty && 
-                      !trimmed.contains('error') &&
-                      !trimmed.contains('Error') &&
-                      !trimmed.contains('Name') &&
-                      !trimmed.startsWith('--') &&
-                      snapRegex.hasMatch(trimmed);
-                })
-                .toList();
-            updates.addAll(lines);
-            output += 'Snap: ${lines.length} aggiornamenti disponibili\n';
-          } else {
-            output += 'Snap: Nessun aggiornamento disponibile\n';
-          }
-        } catch (e) {
-          output += 'Snap: Errore durante la verifica\n';
-        }
+        updateReport['snap'] = await _checkSnapUpdatesReport(updates);
+      }
+      if (systemInfo.hasFlatpak) {
+        updateReport['flatpak'] = await _checkFlatpakUpdatesReport(updates);
       }
 
-      // Flatpak
-      if (systemInfo.hasFlatpak) {
-        try {
-          final result = await _runSudoCommand('flatpak remote-ls --updates 2>&1');
-          final flatpakOutput = result.stdout.toString();
-          if (flatpakOutput.isNotEmpty && !flatpakOutput.contains('Nothing to update')) {
-            // Filtra solo le righe che sono applicazioni flatpak valide
-            // Il formato è: nome versione branch
-            final flatpakRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\s+');
-            final lines = flatpakOutput.split('\n')
-                .where((line) {
-                  final trimmed = line.trim();
-                  return trimmed.isNotEmpty && 
-                      !trimmed.contains('Looking for') &&
-                      !trimmed.contains('Error') &&
-                      !trimmed.contains('error') &&
-                      flatpakRegex.hasMatch(trimmed);
-                })
-                .toList();
-            updates.addAll(lines);
-            output += 'Flatpak: ${lines.length} aggiornamenti disponibili\n';
-          } else {
-            output += 'Flatpak: Nessun aggiornamento disponibile\n';
-          }
-        } catch (e) {
-          output += 'Flatpak: Errore durante la verifica\n';
-        }
+      final aptPhased =
+          (updateReport['apt'] as Map<String, dynamic>?)?['phasedCount'] as int? ?? 0;
+      final summaryPackageCount = updates.length + aptPhased;
+
+      final installableLabels =
+          updates.map((u) => shortUpdateDisplayName(u.toString())).toList();
+      final aptMap = updateReport['apt'] as Map<String, dynamic>?;
+      List<String> phasedLabels = [];
+      if (aptMap != null && aptMap['phasedPackages'] is List) {
+        phasedLabels = (aptMap['phasedPackages'] as List)
+            .map((e) => shortUpdateDisplayName(e.toString()))
+            .toList();
       }
 
       return {
         'success': true,
-        'message': 'recoveryCheckUpdatesComplete', // Chiave di traduzione
-        'output': output,
+        'message': 'recoveryCheckUpdatesComplete',
+        'updateReport': updateReport,
         'updates': updates,
         'updateCount': updates.length,
+        'summaryPackageCount': summaryPackageCount,
+        'updateInstallableLabels': installableLabels,
+        'updatePhasedLabels': phasedLabels,
       };
     } catch (e) {
       return {
         'success': false,
-        'message': 'recoveryCheckUpdatesError', // Chiave di traduzione
+        'message': 'recoveryCheckUpdatesError',
         'error': e.toString(),
       };
     }
   }
 
+  /// Human-readable short name for UI (APT/DNF/snap/Flatpak/pacman raw lines).
+  static String shortUpdateDisplayName(String raw) {
+    var s = raw.trim();
+    if (s.isEmpty) return s;
+    final parts = s.split(RegExp(r'\s+'));
+    final first = parts.first;
+    if (first.contains('/') && !first.startsWith('/')) {
+      final idx = first.indexOf('/');
+      if (idx > 0) {
+        return first.substring(0, idx);
+      }
+    }
+    if (first.contains('.') && first.contains('/')) {
+      return first.split('/').first;
+    }
+    return first;
+  }
+
+  static Future<Map<String, dynamic>> _checkAptUpdatesReport(List<String> updatesOut) async {
+    try {
+      void addAptSimPackageLineTokens(String trimmed, Set<String> target) {
+        final tokenRe =
+            RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]*(?::[a-zA-Z0-9][a-zA-Z0-9+\-._]*)?$');
+        for (final rawTok in trimmed.split(RegExp(r'\s+'))) {
+          if (rawTok.isEmpty) continue;
+          final tok = rawTok.trim();
+          if (tok.length < 2) continue;
+          if (!tokenRe.hasMatch(tok)) continue;
+          target.add(tok);
+        }
+      }
+
+      final simResult = await Process.run(
+        'bash',
+        ['-c', 'apt-get -s -y upgrade 2>&1'],
+        runInShell: false,
+      );
+      final simOutput = '${simResult.stdout}\n${simResult.stderr}'.trim();
+      if (simOutput.isEmpty) {
+        updatesOut.clear();
+        return {
+          'mode': 'none',
+          'installableCount': 0,
+          'phasedCount': 0,
+          'phasedPackages': <String>[],
+        };
+      }
+
+      final instRegex = RegExp(r'^\s*Inst\s+([a-zA-Z0-9][a-zA-Z0-9+\-._]+)\b');
+      final instPkgs = <String>{};
+      for (final rawLine in simOutput.split('\n')) {
+        final line = rawLine.trimRight();
+        final match = instRegex.firstMatch(line);
+        if (match != null) {
+          instPkgs.add(match.group(1)!.trim());
+        }
+      }
+
+      final deferredHeader = RegExp(
+        r'(upgrades?\s+have\s+been\s+deferred|deferred.*phasing|postponed.*phasing|posticipat|scaglion|phasing:\s*$)',
+        caseSensitive: false,
+      );
+      final deferredPkgs = <String>{};
+      var inDeferredBlock = false;
+      for (final rawLine in simOutput.split('\n')) {
+        final line = rawLine.trim();
+        if (deferredHeader.hasMatch(line)) {
+          inDeferredBlock = true;
+          continue;
+        }
+        if (inDeferredBlock) {
+          if (line.isEmpty) {
+            inDeferredBlock = false;
+            continue;
+          }
+          final isIndented = rawLine.startsWith(' ') || rawLine.startsWith('\t');
+          if (!isIndented) {
+            inDeferredBlock = false;
+            continue;
+          }
+          addAptSimPackageLineTokens(line, deferredPkgs);
+        }
+      }
+
+      if (instPkgs.isNotEmpty) {
+        final effectivePkgs = instPkgs.toList()..sort();
+        final phasedList = deferredPkgs.toList()..sort();
+        updatesOut
+          ..clear()
+          ..addAll(effectivePkgs);
+        return {
+          'mode': 'installable',
+          'installableCount': effectivePkgs.length,
+          'phasedCount': deferredPkgs.length,
+          'phasedPackages': phasedList,
+        };
+      }
+
+      final willUpgradeHeader = RegExp(
+        r'(The following packages will be upgraded|following packages will be upgraded|pacchetti saranno aggiornati|Paquetes que serán actualizados|serán actualizados|seront mis à jour|werden aktualisiert|Pacotes a serem atualizados|saranno aggiornati)',
+        caseSensitive: false,
+      );
+      var inWillUpgradeBlock = false;
+      final willUpgradedPkgs = <String>{};
+      for (final rawLine in simOutput.split('\n')) {
+        final line = rawLine.trim();
+        if (willUpgradeHeader.hasMatch(line)) {
+          inWillUpgradeBlock = true;
+          continue;
+        }
+        if (inWillUpgradeBlock) {
+          if (line.isEmpty) {
+            inWillUpgradeBlock = false;
+            continue;
+          }
+          final isIndented = rawLine.startsWith(' ') || rawLine.startsWith('\t');
+          if (!isIndented) {
+            inWillUpgradeBlock = false;
+            continue;
+          }
+          addAptSimPackageLineTokens(line, willUpgradedPkgs);
+        }
+      }
+
+      if (willUpgradedPkgs.isNotEmpty) {
+        final effectivePkgs = willUpgradedPkgs.toList()..sort();
+        final phasedList = deferredPkgs.toList()..sort();
+        updatesOut
+          ..clear()
+          ..addAll(effectivePkgs);
+        return {
+          'mode': 'installable',
+          'installableCount': effectivePkgs.length,
+          'phasedCount': deferredPkgs.length,
+          'phasedPackages': phasedList,
+        };
+      }
+
+      updatesOut.clear();
+      final phasedList = deferredPkgs.toList()..sort();
+      return {
+        'mode': deferredPkgs.isNotEmpty ? 'phased_only' : 'none',
+        'installableCount': 0,
+        'phasedCount': deferredPkgs.length,
+        'phasedPackages': phasedList,
+      };
+    } catch (e) {
+      try {
+        final result = await Process.run(
+          'apt',
+          ['list', '--upgradable'],
+          runInShell: false,
+        );
+        final aptOutput = result.stdout.toString();
+        final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+/[^\s,]+');
+        final lines = aptOutput
+            .split('\n')
+            .where((line) {
+              final trimmed = line.trim();
+              return trimmed.isNotEmpty &&
+                  !trimmed.contains('Listing...') &&
+                  !trimmed.contains('WARNING:') &&
+                  !trimmed.startsWith('WARNING:') &&
+                  !trimmed.startsWith('...') &&
+                  packageRegex.hasMatch(trimmed) &&
+                  (trimmed.contains('upgradable') || trimmed.contains('/'));
+            })
+            .toList();
+        updatesOut
+          ..clear()
+          ..addAll(lines);
+        return {
+          'mode': lines.isNotEmpty ? 'installable' : 'none',
+          'installableCount': lines.length,
+          'phasedCount': 0,
+          'phasedPackages': <String>[],
+        };
+      } catch (_) {
+        updatesOut.clear();
+        return {
+          'mode': 'error',
+          'installableCount': 0,
+          'phasedCount': 0,
+          'phasedPackages': <String>[],
+          'errorMessage': '$e',
+        };
+      }
+    }
+  }
+
+  static Future<Map<String, dynamic>> _checkDnfUpdatesReport(List<String> updatesOut) async {
+    try {
+      final result = await _runSudoCommand(r"dnf check-update --quiet 2>&1 | grep -v '^$' || true");
+      final dnfOutput = result.stdout.toString();
+      if (dnfOutput.isNotEmpty && !dnfOutput.contains('No updates')) {
+        final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\.[a-zA-Z0-9]+\s+');
+        final lines = dnfOutput
+            .split('\n')
+            .where((line) {
+              final trimmed = line.trim();
+              return trimmed.isNotEmpty &&
+                  !trimmed.contains('Last metadata') &&
+                  !trimmed.contains('Last metadata expiration') &&
+                  !trimmed.contains('Error') &&
+                  packageRegex.hasMatch(trimmed);
+            })
+            .toList();
+        updatesOut.addAll(lines);
+        return {'mode': 'installable', 'count': lines.length};
+      }
+      return {'mode': 'none', 'count': 0};
+    } catch (e) {
+      return {'mode': 'error', 'count': 0, 'errorMessage': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> _checkPacmanUpdatesReport(List<String> updatesOut) async {
+    try {
+      final result = await _runSudoCommand('pacman -Qu 2>/dev/null || true');
+      final pacmanOutput = result.stdout.toString();
+      if (pacmanOutput.isNotEmpty) {
+        final lines = pacmanOutput.split('\n').where((line) => line.trim().isNotEmpty).toList();
+        updatesOut.addAll(lines);
+        return {'mode': 'installable', 'count': lines.length};
+      }
+      return {'mode': 'none', 'count': 0};
+    } catch (e) {
+      return {'mode': 'error', 'count': 0, 'errorMessage': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> _checkSnapUpdatesReport(List<String> updatesOut) async {
+    try {
+      final result = await _runSudoCommand('snap refresh --list 2>&1');
+      final snapOutput = result.stdout.toString();
+      if (snapOutput.isNotEmpty && !snapOutput.contains('All snaps up to date')) {
+        final snapRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\s+\d+\.\d+');
+        final lines = snapOutput
+            .split('\n')
+            .where((line) {
+              final trimmed = line.trim();
+              return trimmed.isNotEmpty &&
+                  !trimmed.contains('error') &&
+                  !trimmed.contains('Error') &&
+                  !trimmed.contains('Name') &&
+                  !trimmed.startsWith('--') &&
+                  snapRegex.hasMatch(trimmed);
+            })
+            .toList();
+        updatesOut.addAll(lines);
+        return {'mode': 'installable', 'count': lines.length};
+      }
+      return {'mode': 'none', 'count': 0};
+    } catch (e) {
+      return {'mode': 'error', 'count': 0, 'errorMessage': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> _checkFlatpakUpdatesReport(List<String> updatesOut) async {
+    try {
+      final found = <String>{};
+
+      void parseOutput(String out) {
+        final lines = out.split('\n');
+        for (final rawLine in lines) {
+          final trimmed = rawLine.trim();
+          if (trimmed.isEmpty) continue;
+          if (trimmed.contains('Nothing to update')) continue;
+          if (trimmed.startsWith('Looking for')) continue;
+          if (trimmed.startsWith('Updating')) continue;
+          if (trimmed.startsWith('Info:')) continue;
+          if (trimmed.startsWith('Warning:')) continue;
+          if (trimmed.startsWith('--')) continue;
+          if (trimmed.startsWith('Error') || trimmed.contains('error')) continue;
+          if (trimmed.startsWith('Ref ') || trimmed.startsWith('Name ')) continue;
+
+          // Con `--columns=ref` ogni riga è già un ref. Se però arrivano warning/testo extra,
+          // scartiamo tutto ciò che non assomiglia ad un ref Flatpak.
+          if (!trimmed.contains('/')) continue;
+          if (trimmed.contains(' ')) continue;
+          found.add(trimmed);
+        }
+      }
+
+      // Flatpak può avere installazioni "user" e "system": gli aggiornamenti tipo
+      // Freedesktop Platform spesso sono a livello system, quindi controlliamo entrambi.
+      try {
+        final userRes = await Process.run(
+          'bash',
+          ['-c', 'flatpak --user remote-ls --updates --columns=ref 2>&1'],
+          runInShell: false,
+        );
+        parseOutput('${userRes.stdout}\n${userRes.stderr}');
+      } catch (_) {}
+
+      try {
+        final sysRes = await _runSudoCommand('flatpak --system remote-ls --updates --columns=ref 2>&1');
+        parseOutput('${sysRes.stdout}\n${sysRes.stderr}');
+      } catch (_) {}
+
+      final count = found.length;
+      if (count > 0) {
+        updatesOut.addAll(found);
+        return {'mode': 'installable', 'count': count};
+      }
+
+      return {'mode': 'none', 'count': 0};
+    } catch (e) {
+      return {'mode': 'error', 'count': 0, 'errorMessage': e.toString()};
+    }
+  }
+
+  /// Da output apt/dpkg: nome pacchetto in corso (per UI).
+  static String? _aptProgressPackageLine(String line) {
+    final s = line.trimLeft();
+    var m = RegExp(r'^Setting up\s+(\S+)').firstMatch(s);
+    if (m != null) return m.group(1);
+    m = RegExp(r'^Unpacking\s+(\S+)').firstMatch(s);
+    if (m != null) return m.group(1);
+    m = RegExp(r'^Preparing to unpack\s+\S+_(\S+?)_[\d.]+_').firstMatch(s);
+    if (m != null) return m.group(1);
+    return null;
+  }
+
+  /// Legge solo stdout (usa `2>&1` nel comando per unire gli stream).
+  static Future<int> _pumpStdoutLines(
+    Process process, {
+    required void Function(String chunk) onChunk,
+    void Function(String line)? onLine,
+  }) async {
+    final buf = StringBuffer();
+    await for (final chunk in process.stdout.transform(utf8.decoder)) {
+      onChunk(chunk);
+      buf.write(chunk);
+      var str = buf.toString();
+      var nl = str.indexOf('\n');
+      while (nl >= 0) {
+        onLine?.call(str.substring(0, nl));
+        str = str.substring(nl + 1);
+        nl = str.indexOf('\n');
+      }
+      buf.clear();
+      buf.write(str);
+    }
+    final tail = buf.toString();
+    if (tail.isNotEmpty) onLine?.call(tail);
+    await process.stderr.drain();
+    return await process.exitCode;
+  }
+
+  static String _sudoBashCommand(String escapedPassword, String remoteCommand) {
+    return 'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(remoteCommand)}';
+  }
+
+  static String _grubBackupTimestamp() {
+    final n = DateTime.now();
+    String p2(int x) => x.toString().padLeft(2, '0');
+    return '${n.year}${p2(n.month)}${p2(n.day)}_${p2(n.hour)}${p2(n.minute)}${p2(n.second)}';
+  }
+
   static Future<Map<String, dynamic>> performUpdates({
     Function(String)? onOutput,
+    void Function(double progress, String? statusLabel)? onProgress,
+    int expectedPackageCount = 0,
   }) async {
     try {
       final systemInfo = await SystemDetector.detectSystem();
-      String output = '';
-      List<String> updated = [];
+      var output = '';
+      final updated = <String>[];
 
-      // APT (Ubuntu/Debian/Mint)
+      var numManagers = 0;
+      if (systemInfo.hasApt) numManagers++;
+      if (systemInfo.hasDnf) numManagers++;
+      if (systemInfo.hasPacman) numManagers++;
+      if (systemInfo.hasSnap) numManagers++;
+      if (systemInfo.hasFlatpak) numManagers++;
+
+      if (numManagers == 0) {
+        return {
+          'success': false,
+          'message': 'Nessun gestore pacchetti supportato (APT/DNF/Pacman/Snap/Flatpak)',
+          'output': output,
+        };
+      }
+
+      var managerIndex = 0;
+      double segStart() => managerIndex / numManagers;
+      double segEnd() => (managerIndex + 1) / numManagers;
+
+      final password = await PasswordStorage.getPassword();
+      if (password == null || password.isEmpty) {
+        throw Exception('Password non salvata. Salva la password nelle impostazioni.');
+      }
+      final escapedPassword = password
+          .replaceAll('\\', '\\\\')
+          .replaceAll('"', '\\"')
+          .replaceAll('\$', '\\\$')
+          .replaceAll('`', '\\`');
+
+      // APT (Ubuntu/Debian/Mint): apt update separato + upgrade con avanzamento
       if (systemInfo.hasApt) {
+        final a = segStart();
+        final b = segEnd();
+        final span = b - a;
         try {
-          final password = await PasswordStorage.getPassword();
-          if (password == null || password.isEmpty) {
-            throw Exception('Password non salvata. Salva la password nelle impostazioni.');
-          }
-          
-          final escapedPassword = password
-              .replaceAll('\\', '\\\\')
-              .replaceAll('"', '\\"')
-              .replaceAll('\$', '\\\$')
-              .replaceAll('`', '\\`');
-          
-          // Usa Process.start per avere output in tempo reale
-          final process = await Process.start(
-            'bash',
-            ['-c', 'printf "%s\\n" "$escapedPassword" | sudo -S bash -c "apt update && apt upgrade -y"'],
-            runInShell: true,
+          onProgress?.call(a, 'APT: apt update');
+          var cmd = _sudoBashCommand(escapedPassword, 'apt update 2>&1');
+          var process = await Process.start('bash', ['-c', cmd], runInShell: true);
+          var updateExit = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
           );
-          
-          // Leggi l'output in tempo reale
-          process.stdout.transform(const SystemEncoding().decoder).listen((data) {
-            output += data;
-            onOutput?.call(data);
-          });
-          
-          process.stderr.transform(const SystemEncoding().decoder).listen((data) {
-            output += data;
-            onOutput?.call(data);
-          });
-          
-          final exitCode = await process.exitCode;
-          if (exitCode == 0) {
+
+          if (updateExit != 0) {
+            output += '\nAPT: apt update exit $updateExit\n';
+          }
+
+          onProgress?.call(a + span * 0.1, 'APT: apt upgrade');
+          var aptSteps = 0;
+          final denom = expectedPackageCount > 0 ? expectedPackageCount : 32;
+
+          cmd = _sudoBashCommand(escapedPassword, 'DEBIAN_FRONTEND=noninteractive apt upgrade -y 2>&1');
+          process = await Process.start('bash', ['-c', cmd], runInShell: true);
+          final aptExit = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
+            onLine: (line) {
+              final pkg = _aptProgressPackageLine(line);
+              if (pkg != null) {
+                aptSteps++;
+                final localT = (aptSteps / denom).clamp(0.0, 1.0);
+                final p = a + span * (0.1 + 0.88 * localT);
+                onProgress?.call(p.clamp(0.0, 0.995), 'APT: $pkg');
+              }
+            },
+          );
+
+          if (aptExit == 0) {
             updated.add('APT');
           } else {
-            output += '\nAPT: Comando terminato con codice $exitCode\n';
+            output += '\nAPT: apt upgrade exit $aptExit\n';
           }
         } catch (e) {
           output += 'APT: Errore durante l\'aggiornamento: $e\n';
         }
+        managerIndex++;
       }
 
       // DNF (Fedora/RHEL/CentOS)
       if (systemInfo.hasDnf) {
+        final a = segStart();
+        final b = segEnd();
+        final span = b - a;
         try {
-          final result = await _runSudoCommand('dnf update -y');
-          output += 'DNF: ${result.stdout}\n';
-          if (result.exitCode == 0) {
+          onProgress?.call(a, 'DNF: update');
+          var dnfLines = 0;
+          final cmd = _sudoBashCommand(escapedPassword, 'dnf update -y 2>&1');
+          final process = await Process.start('bash', ['-c', cmd], runInShell: true);
+          final code = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
+            onLine: (line) {
+              final t = line.trim();
+              if (t.isEmpty) return;
+              if (t.startsWith('Last metadata') ||
+                  t.startsWith('Dependencies resolved') ||
+                  t.startsWith('Transaction Summary') ||
+                  t.startsWith('Complete!')) {
+                return;
+              }
+              dnfLines++;
+              final localT = (dnfLines / 80.0).clamp(0.0, 1.0);
+              onProgress?.call(
+                (a + span * localT).clamp(0.0, 0.995),
+                'DNF: $t',
+              );
+            },
+          );
+          if (code == 0) {
             updated.add('DNF');
           } else {
-            output += 'DNF: ${result.stderr}\n';
+            output += 'DNF: exit $code\n';
           }
         } catch (e) {
           output += 'DNF: Errore durante l\'aggiornamento: $e\n';
         }
+        managerIndex++;
       }
 
       // Pacman (Arch/Manjaro)
       if (systemInfo.hasPacman) {
+        final a = segStart();
+        final b = segEnd();
+        final span = b - a;
         try {
-          final result = await _runSudoCommand('pacman -Syu --noconfirm');
-          output += 'Pacman: ${result.stdout}\n';
-          if (result.exitCode == 0) {
+          onProgress?.call(a, 'Pacman: -Syu');
+          var n = 0;
+          final cmd = _sudoBashCommand(escapedPassword, 'pacman -Syu --noconfirm 2>&1');
+          final process = await Process.start('bash', ['-c', cmd], runInShell: true);
+          final code = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
+            onLine: (line) {
+              final t = line.trim();
+              if (t.isEmpty) return;
+              n++;
+              final localT = (n / 100.0).clamp(0.0, 1.0);
+              onProgress?.call(
+                (a + span * localT).clamp(0.0, 0.995),
+                'Pacman: $t',
+              );
+            },
+          );
+          output += 'Pacman: exit $code\n';
+          if (code == 0) {
             updated.add('Pacman');
-          } else {
-            output += 'Pacman: ${result.stderr}\n';
           }
         } catch (e) {
           output += 'Pacman: Errore durante l\'aggiornamento: $e\n';
         }
+        managerIndex++;
       }
 
       // Snap
       if (systemInfo.hasSnap) {
+        final a = segStart();
+        final b = segEnd();
+        final span = b - a;
         try {
-          final result = await _runSudoCommand('snap refresh 2>&1');
-          output += 'Snap: ${result.stdout}\n';
-          if (result.exitCode == 0) {
+          onProgress?.call(a, 'Snap: refresh');
+          var n = 0;
+          final cmd = _sudoBashCommand(escapedPassword, 'snap refresh 2>&1');
+          final process = await Process.start('bash', ['-c', cmd], runInShell: true);
+          final code = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
+            onLine: (line) {
+              final t = line.trim();
+              if (t.isEmpty) return;
+              n++;
+              final localT = (n / 40.0).clamp(0.0, 1.0);
+              onProgress?.call(
+                (a + span * localT).clamp(0.0, 0.995),
+                'Snap: $t',
+              );
+            },
+          );
+          if (code == 0) {
             updated.add('Snap');
           } else {
-            output += 'Snap: ${result.stderr}\n';
+            output += 'Snap: stderr/exit $code\n';
           }
         } catch (e) {
           output += 'Snap: Errore durante l\'aggiornamento: $e\n';
         }
+        managerIndex++;
       }
 
       // Flatpak
       if (systemInfo.hasFlatpak) {
+        final a = segStart();
+        final b = segEnd();
+        final span = b - a;
+        final userSpan = span * 0.5;
+        final sysSpan = span - userSpan;
+        var ranAny = false;
         try {
-          final result = await _runSudoCommand('flatpak update -y 2>&1');
-          output += 'Flatpak: ${result.stdout}\n';
-          if (result.exitCode == 0) {
-            updated.add('Flatpak');
-          } else {
-            output += 'Flatpak: ${result.stderr}\n';
-          }
+          // Update "user" (non usa sudo, per non cambiare HOME).
+          onProgress?.call(a, 'Flatpak: user update');
+          var n = 0;
+          final process = await Process.start(
+            'bash',
+            ['-c', 'flatpak --user update -y 2>&1'],
+            runInShell: false,
+          );
+          final code = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
+            onLine: (line) {
+              final t = line.trim();
+              if (t.isEmpty) return;
+              n++;
+              final localT = (n / 60.0).clamp(0.0, 1.0);
+              onProgress?.call(
+                (a + userSpan * localT).clamp(0.0, 0.995),
+                'Flatpak: $t',
+              );
+            },
+          );
+          if (code == 0) ranAny = true;
+          if (code != 0) output += 'Flatpak (user): exit $code\n';
         } catch (e) {
-          output += 'Flatpak: Errore durante l\'aggiornamento: $e\n';
+          output += 'Flatpak (user): Errore durante l\'aggiornamento: $e\n';
         }
+
+        try {
+          // Update "system" (Freedesktop Platform spesso è a livello system).
+          onProgress?.call(a + userSpan * 0.98, 'Flatpak: system update');
+          var n = 0;
+          final cmd = _sudoBashCommand(
+            escapedPassword,
+            'flatpak --system update -y 2>&1',
+          );
+          final process = await Process.start('bash', ['-c', cmd], runInShell: true);
+          final code = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
+            onLine: (line) {
+              final t = line.trim();
+              if (t.isEmpty) return;
+              n++;
+              final localT = (n / 60.0).clamp(0.0, 1.0);
+              onProgress?.call(
+                (a + userSpan + sysSpan * localT).clamp(0.0, 0.995),
+                'Flatpak: $t',
+              );
+            },
+          );
+          if (code == 0) ranAny = true;
+          if (code != 0) output += 'Flatpak (system): exit $code\n';
+        } catch (e) {
+          output += 'Flatpak (system): Errore durante l\'aggiornamento: $e\n';
+        }
+
+        if (ranAny) {
+          updated.add('Flatpak');
+        }
+        managerIndex++;
       }
+
+      onProgress?.call(1.0, null);
 
       if (updated.isEmpty) {
         return {
@@ -733,6 +1077,121 @@ class RecoveryService {
         'message': 'Errore durante l\'esecuzione degli aggiornamenti: $e',
       };
     }
+  }
+
+  /// Installs a list of packages using the system package manager. Returns { success, message, output }.
+  static Future<Map<String, dynamic>> _installPackages(List<String> packages, String operationName) async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      String output = '';
+      String command;
+
+      if (systemInfo.hasApt) {
+        command = 'apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ${packages.join(" ")}';
+      } else if (systemInfo.hasDnf) {
+        command = 'dnf install -y ${packages.join(" ")}';
+      } else if (systemInfo.hasPacman) {
+        command = 'pacman -S --noconfirm ${packages.join(" ")}';
+      } else {
+        return {
+          'success': false,
+          'message': 'Nessun package manager supportato (APT/DNF/Pacman)',
+        };
+      }
+
+      final result = await _runSudoCommand(command);
+      output = result.stdout.toString();
+      final err = result.stderr.toString();
+      if (err.isNotEmpty) {
+        if (output.isNotEmpty) output += '\n';
+        output += err;
+      }
+      if (result.exitCode != 0) {
+        return {
+          'success': false,
+          'message': 'Errore durante l\'installazione di $operationName',
+          'output': output,
+        };
+      }
+      return {
+        'success': true,
+        'message': '$operationName installato con successo',
+        'output': output,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Errore: $e',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> installFfmpeg() async {
+    return _installPackages(['ffmpeg'], 'FFmpeg');
+  }
+
+  static Future<Map<String, dynamic>> installYtDlp() async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      if (systemInfo.hasApt) {
+        return _installPackages(['yt-dlp'], 'yt-dlp');
+      }
+      if (systemInfo.hasDnf) {
+        return _installPackages(['yt-dlp'], 'yt-dlp');
+      }
+      if (systemInfo.hasPacman) {
+        return _installPackages(['yt-dlp'], 'yt-dlp');
+      }
+      return {'success': false, 'message': 'Package manager non supportato per yt-dlp'};
+    } catch (e) {
+      return {'success': false, 'message': 'Errore: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> installSystemLibraries() async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      List<String> packages;
+      if (systemInfo.hasApt) {
+        packages = ['build-essential', 'libc6-dev', 'pkg-config'];
+      } else if (systemInfo.hasDnf) {
+        packages = ['@development-tools', 'glibc-devel'];
+      } else if (systemInfo.hasPacman) {
+        packages = ['base-devel'];
+      } else {
+        return {'success': false, 'message': 'Package manager non supportato'};
+      }
+      return _installPackages(packages, 'Librerie di sistema');
+    } catch (e) {
+      return {'success': false, 'message': 'Errore: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> installCodecs() async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      List<String> packages;
+      if (systemInfo.hasApt) {
+        packages = [
+          'gstreamer1.0-libav',
+          'gstreamer1.0-plugins-bad',
+          'gstreamer1.0-plugins-ugly',
+        ];
+      } else if (systemInfo.hasDnf) {
+        packages = ['ffmpeg', 'gstreamer1-plugins-ugly', 'gstreamer1-plugins-bad-free'];
+      } else if (systemInfo.hasPacman) {
+        packages = ['gst-libav', 'gst-plugins-bad', 'gst-plugins-ugly'];
+      } else {
+        return {'success': false, 'message': 'Package manager non supportato'};
+      }
+      return _installPackages(packages, 'Codec video e audio');
+    } catch (e) {
+      return {'success': false, 'message': 'Errore: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> installRsync() async {
+    return _installPackages(['rsync'], 'rsync');
   }
 }
 

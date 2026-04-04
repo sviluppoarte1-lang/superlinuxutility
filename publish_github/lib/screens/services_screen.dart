@@ -10,7 +10,7 @@ class ServicesScreen extends StatefulWidget {
   State<ServicesScreen> createState() => _ServicesScreenState();
 }
 
-class _ServicesScreenState extends State<ServicesScreen> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+class _ServicesScreenState extends State<ServicesScreen> with SingleTickerProviderStateMixin {
   List<SystemdService> _services = [];
   List<SystemdService> _slowServices = [];
   List<SystemdService> _disabledServices = [];
@@ -18,9 +18,6 @@ class _ServicesScreenState extends State<ServicesScreen> with SingleTickerProvid
   bool _isAnalyzing = false;
   String? _error;
   late TabController _tabController;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -331,7 +328,6 @@ class _ServicesScreenState extends State<ServicesScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Richiesto per AutomaticKeepAliveClientMixin
     return Scaffold(
       body: Column(
         children: [

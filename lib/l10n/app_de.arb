@@ -209,6 +209,13 @@
   "updatesAvailableDialogTitle": "Updates verfügbar",
   "updatesAvailableDialogMessage": "{count} Updates verfügbar. Möchten Sie sie jetzt anwenden?",
   "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDetectedListHeading": "Erkannt:",
+  "updateLabelPhased": "{name} (gestaffelt — noch nicht installierbar)",
+  "@updateLabelPhased": {"placeholders": {"name": {"type": "String"}}},
+  "updatesPreviewTruncated": "… und {count} weitere",
+  "@updatesPreviewTruncated": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailablePhasedFooter": "Gestaffelte Pakete können noch nicht installiert werden. „Jetzt anwenden“ installiert nur, was das System zulässt.",
+  "updatesCheckPreviewHeading": "Betroffene Einträge:",
   "applyNow": "Jetzt anwenden",
   "postpone": "Später",
   "fontFamily": "Schriftfamilie",
@@ -812,6 +819,83 @@
   "hardwareSuggestionsPriorityLow": "Niedrig",
   "hardwareSuggestionsApply": "Anwenden",
   "hardwareSuggestionsCancel": "Abbrechen",
+  "hardwareSuggestionsAlreadyPresent": "Bereits vorhanden",
+  "hardwareSuggestionsCurrentValue": "Aktueller Wert: {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Vorgeschlagen: {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Hardware wird analysiert...",
+  "hardwareSuggestionsNoAvailable": "Keine Hardwarevorschläge verfügbar.",
+  "hardwareSuggestionsApplied": "Vorschlag angewendet: {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Fehler beim Anwenden des Vorschlags: {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Fehler beim Erstellen der Vorschläge: {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU mit {count} Kernen: threadirqs kann das Multi-Core-Scheduling verbessern",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "Moderne CPU: mitigations=off kann die Leistung erhöhen (nur wenn Sie Sicherheitskompromisse akzeptieren)",
+  "grubSuggestionCpuIntelIommu": "Intel-CPU: IOMMU aktivieren für Virtualisierung und Geräteisolierung",
+  "grubSuggestionCpuAmdIommu": "AMD-CPU: IOMMU aktivieren für Virtualisierung und Geräteisolierung",
+  "grubSuggestionRamZswapDisable": "System mit {gb} GB RAM: zswap ist oft unnötig",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "System mit {gb} GB RAM: zswap kann helfen, wenn der Speicher knapp wird",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "NVIDIA-GPU erkannt: nvidia-drm modeset für bessere Display-Leistung aktivieren",
+  "grubSuggestionGpuNvidiaVideoMemory": "NVIDIA-GPU: Videospeicherzuweisungen über Suspend/Fortsetzen beibehalten",
+  "grubSuggestionGpuAmdPpfeaturemask": "AMD-GPU: vollständige Power-Management-Featuremaske aktivieren",
+  "grubSuggestionGpuVideoMode": "Festen Videomodus setzen, um frühe Boot-Anzeigeprobleme zu reduzieren",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI: quiet splash kann das Boot-Erlebnis verbessern",
+  "grubSuggestionPerfElevatorNone": "SSD-fokussierter Speicher: elevator=none kann die I/O-Leistung verbessern",
+  "grubSuggestionPerfVmSwappiness": "Swappiness senken, wenn genug RAM vorhanden ist",
   "settingsPasswordSecurityMessage": "Das Passwort wird sicher im System-Keyring gespeichert.",
   "tabShutdownScheduler": "Automatisches Herunterfahren",
   "shutdownInfoTitle": "Automatisches Herunterfahren",

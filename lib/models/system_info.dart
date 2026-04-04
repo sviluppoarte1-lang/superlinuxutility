@@ -119,3 +119,16 @@ class GpuInfo {
   }
 }
 
+/// Dati minimi per il menu di sistema tray (evita lscpu/mpstat/df globale/dmidecode/catena GPU).
+class TrayCpuGpuStats {
+  final double cpuUsagePercent;
+  final double? gpuUsagePercent;
+  final double? gpuTemp;
+
+  const TrayCpuGpuStats({
+    required this.cpuUsagePercent,
+    this.gpuUsagePercent,
+    this.gpuTemp,
+  });
+}
+

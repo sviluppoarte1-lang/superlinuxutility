@@ -11,7 +11,7 @@ class InstalledAppsScreen extends StatefulWidget {
   State<InstalledAppsScreen> createState() => _InstalledAppsScreenState();
 }
 
-class _InstalledAppsScreenState extends State<InstalledAppsScreen> with AutomaticKeepAliveClientMixin {
+class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
   List<InstalledApp> _apps = [];
   List<InstalledApp> _filteredApps = [];
   bool _isLoading = false;
@@ -23,9 +23,6 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> with Automati
   // Memoization
   String? _cachedSearchQuery;
   PackageManager? _cachedPackageManager;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -316,7 +313,6 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> with Automati
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Richiesto per AutomaticKeepAliveClientMixin
     return Scaffold(
       body: Column(
         children: [
@@ -512,13 +508,16 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> with Automati
                             ),
                             trailing: PopupMenuButton(
                               itemBuilder: (context) => [
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'remove',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.delete, color: Colors.red),
-                                      SizedBox(width: 8),
-                                      Text('Rimuovi', style: TextStyle(color: Colors.red)),
+                                      const Icon(Icons.delete, color: Colors.red),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        AppLocalizations.of(context)!.remove,
+                                        style: const TextStyle(color: Colors.red),
+                                      ),
                                     ],
                                   ),
                                 ),

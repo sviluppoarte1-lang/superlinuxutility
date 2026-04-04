@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
+import 'app_memory_maintenance.dart';
 import 'tray_service.dart';
 
 class _CloseToTrayListener extends WindowListener {
@@ -10,6 +11,7 @@ class _CloseToTrayListener extends WindowListener {
     final closeToTray = prefs.getBool(TrayService.prefKeyCloseToTray) ?? true;
     if (closeToTray && TrayService.isInitialized) {
       await windowManager.hide();
+      AppMemoryMaintenance.notifyMainWindowHiddenToTray();
     }
   }
 
@@ -19,6 +21,7 @@ class _CloseToTrayListener extends WindowListener {
     final closeToTray = prefs.getBool(TrayService.prefKeyCloseToTray) ?? true;
     if (closeToTray && TrayService.isInitialized) {
       await windowManager.hide();
+      AppMemoryMaintenance.notifyMainWindowHiddenToTray();
     }
   }
 }

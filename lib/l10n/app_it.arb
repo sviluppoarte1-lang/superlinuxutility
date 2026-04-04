@@ -212,6 +212,17 @@
   "updatesAvailableDialogTitle": "Aggiornamenti disponibili",
   "updatesAvailableDialogMessage": "{count} aggiornamenti disponibili. Vuoi applicarli ora?",
   "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDetectedListHeading": "Rilevati:",
+  "updateLabelPhased": "{name} (scaglionato — non ancora installabile)",
+  "@updateLabelPhased": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "updatesPreviewTruncated": "… e altri {count}",
+  "@updatesPreviewTruncated": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "updatesAvailablePhasedFooter": "I pacchetti in rollout graduale non si possono installare subito. \"Applica ora\" aggiorna solo ciò che il sistema consente.",
+  "updatesCheckPreviewHeading": "Elementi interessati:",
   "applyNow": "Applica ora",
   "postpone": "Rimanda",
   "fontFamily": "Famiglia Font",
@@ -818,6 +829,83 @@
   "hardwareSuggestionsPriorityLow": "Bassa",
   "hardwareSuggestionsApply": "Applica",
   "hardwareSuggestionsCancel": "Annulla",
+  "hardwareSuggestionsAlreadyPresent": "Già presente",
+  "hardwareSuggestionsCurrentValue": "Valore corrente: {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Suggerito: {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Analisi hardware in corso...",
+  "hardwareSuggestionsNoAvailable": "Nessun suggerimento disponibile per il tuo hardware.",
+  "hardwareSuggestionsApplied": "Suggerimento applicato: {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Errore nell'applicazione del suggerimento: {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Errore nella generazione dei suggerimenti: {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU con {count} core: threadirqs può migliorare lo scheduling multi-core",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "CPU moderna: mitigations=off può migliorare le prestazioni (solo se accetti i compromessi di sicurezza)",
+  "grubSuggestionCpuIntelIommu": "CPU Intel: abilita IOMMU per virtualizzazione e isolamento dispositivi",
+  "grubSuggestionCpuAmdIommu": "CPU AMD: abilita IOMMU per virtualizzazione e isolamento dispositivi",
+  "grubSuggestionRamZswapDisable": "Sistema con {gb} GB RAM: zswap spesso non è necessario",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "Sistema con {gb} GB RAM: zswap può aiutare quando la memoria è sotto pressione",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "GPU NVIDIA rilevata: abilita nvidia-drm modeset per migliori prestazioni video",
+  "grubSuggestionGpuNvidiaVideoMemory": "GPU NVIDIA: preserva le allocazioni di memoria video tra sospensione/ripresa",
+  "grubSuggestionGpuAmdPpfeaturemask": "GPU AMD: abilita la maschera completa delle funzioni di power management",
+  "grubSuggestionGpuVideoMode": "Imposta una modalità video fissa per ridurre problemi di schermo all’avvio",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI: quiet splash può migliorare l’esperienza di boot",
+  "grubSuggestionPerfElevatorNone": "Storage orientato agli SSD: elevator=none può migliorare le prestazioni I/O",
+  "grubSuggestionPerfVmSwappiness": "Riduci lo swappiness quando il sistema ha RAM sufficiente",
   "settingsPasswordSecurityMessage": "La password viene salvata in modo sicuro utilizzando il keyring del sistema.",
   "tabShutdownScheduler": "Spegnimento Automatico",
   "shutdownInfoTitle": "Spegnimento Automatico",

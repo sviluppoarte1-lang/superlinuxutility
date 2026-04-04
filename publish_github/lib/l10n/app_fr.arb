@@ -5,6 +5,7 @@
   "trayCheckUpdates": "Vérifier les mises à jour du système",
   "trayCleanLinuxCache": "Vider le cache Linux",
   "trayRemoveTempFiles": "Supprimer les fichiers temporaires",
+  "trayCleanTempFilesAndCache": "Nettoyer les fichiers temporaires et le cache",
   "trayCleanVram": "Vider la VRAM (redémarrage GPU)",
   "trayCpuGpuTemp": "Température CPU, GPU",
   "trayDiskUsage": "Utilisation du disque",
@@ -31,7 +32,6 @@
   "tabAppearance": "Apparence GNOME",
   "tabInfo": "Info",
   "tabGrub": "GRUB",
-  "tabKernel": "Noyau",
   "tabRecovery": "Récupération Système",
   "tabSettings": "Paramètres",
   "modeStandard": "Standard",
@@ -41,8 +41,6 @@
   "warningMessage": "Cette application permet de modifier des configurations critiques du système d'exploitation Linux.",
   "warningGrub": "Modifications GRUB",
   "warningGrubDesc": "Une modification incorrecte du chargeur de démarrage peut empêcher le système de démarrer.",
-  "warningKernel": "Suppression du Noyau",
-  "warningKernelDesc": "Supprimer des noyaux essentiels peut rendre le système inutilisable.",
   "warningServices": "Gestion des Services",
   "warningServicesDesc": "Désactiver des services critiques peut causer des dysfonctionnements du système.",
   "warningCleanup": "Nettoyage des Fichiers",
@@ -113,6 +111,110 @@
   "settingsStartAtLoginOn": "Démarrage à la connexion activé.",
   "settingsStartAtLoginOff": "Démarrage à la connexion désactivé.",
   "settingsStartAtLoginError": "Impossible de modifier le démarrage à la connexion.",
+  "settingsAutoUpdateCheckTitle": "Vérification automatique des mises à jour",
+  "settingsAutoUpdateCheckDesc": "Vérifier les mises à jour du système automatiquement à l'intervalle choisi.",
+  "settingsAutoUpdateCheckInterval": "Vérifier les mises à jour",
+  "settingsAutoUpdateNever": "Jamais",
+  "settingsAutoUpdateEvery15Min": "Toutes les 15 minutes",
+  "settingsAutoUpdateEvery30Min": "Toutes les 30 minutes",
+  "settingsAutoUpdateEvery1Hour": "Toutes les heures",
+  "settingsAutoUpdateEvery6Hours": "Toutes les 6 heures",
+  "settingsAutoUpdateEvery12Hours": "Toutes les 12 heures",
+  "settingsAutoUpdateEveryDay": "Tous les jours",
+  "settingsAutoAppUpdateFromGithubTitle": "Mise à jour auto depuis GitHub",
+  "settingsAutoAppUpdateFromGithubDesc": "Si activé, l'application télécharge et installe périodiquement le dernier .deb de cette édition depuis les releases GitHub. Nécessite un mot de passe administrateur enregistré et que la vérification automatique des mises à jour ci-dessus soit active.",
+  "updateCheckAptNone": "APT : aucune mise à jour disponible",
+  "updateCheckAptPhasedOnly": "APT : aucune mise à jour installable immédiatement (déploiement uniquement par phases)",
+  "updateCheckAptHasUpdates": "{count, plural, one{APT : {count} mise à jour disponible} other{APT : {count} mises à jour disponibles}}",
+  "@updateCheckAptHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptPhasedExtra": "{count, plural, one{APT : {count} mise à jour échelonnée détectée} other{APT : {count} mises à jour échelonnées détectées}}",
+  "@updateCheckAptPhasedExtra": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckAptError": "APT : erreur lors de la vérification : {error}",
+  "@updateCheckAptError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckDnfNone": "DNF : aucune mise à jour disponible",
+  "updateCheckDnfHasUpdates": "{count, plural, one{DNF : {count} mise à jour disponible} other{DNF : {count} mises à jour disponibles}}",
+  "@updateCheckDnfHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckDnfError": "DNF : erreur lors de la vérification : {error}",
+  "@updateCheckDnfError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckPacmanNone": "Pacman : aucune mise à jour disponible",
+  "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman : {count} mise à jour disponible} other{Pacman : {count} mises à jour disponibles}}",
+  "@updateCheckPacmanHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckPacmanError": "Pacman : erreur lors de la vérification : {error}",
+  "@updateCheckPacmanError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSnapNone": "Snap : aucune mise à jour disponible",
+  "updateCheckSnapHasUpdates": "{count, plural, one{Snap : {count} mise à jour disponible} other{Snap : {count} mises à jour disponibles}}",
+  "@updateCheckSnapHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckSnapError": "Snap : erreur lors de la vérification : {error}",
+  "@updateCheckSnapError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckFlatpakNone": "Flatpak : aucune mise à jour disponible",
+  "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak : {count} mise à jour disponible} other{Flatpak : {count} mises à jour disponibles}}",
+  "@updateCheckFlatpakHasUpdates": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updateCheckFlatpakError": "Flatpak : erreur lors de la vérification : {error}",
+  "@updateCheckFlatpakError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "updateCheckSummaryPackageCount": "{count, plural, =0{0 paquets} one{{count} paquet} other{{count} paquets}}",
+  "@updateCheckSummaryPackageCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "updatesAvailableCount": "{count} mises à jour disponibles",
+  "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDialogTitle": "Mises à jour disponibles",
+  "updatesAvailableDialogMessage": "{count} mises à jour disponibles. Voulez-vous les appliquer maintenant ?",
+  "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDetectedListHeading": "Détectés :",
+  "updateLabelPhased": "{name} (déploiement progressif — pas encore installable)",
+  "@updateLabelPhased": {"placeholders": {"name": {"type": "String"}}},
+  "updatesPreviewTruncated": "… et {count} de plus",
+  "@updatesPreviewTruncated": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailablePhasedFooter": "Les paquets en déploiement progressif ne peuvent pas encore être installés. « Appliquer maintenant » n’applique que ce que le système autorise.",
+  "updatesCheckPreviewHeading": "Éléments concernés :",
+  "applyNow": "Appliquer maintenant",
+  "postpone": "Plus tard",
   "fontFamily": "Famille de Police",
   "fontSize": "Taille de Police",
   "fontDefault": "Par défaut (Roboto)",
@@ -161,6 +263,24 @@
   "appDescription": "Super Linux Utility est une application complète pour la gestion avancée du système Linux. Elle offre des outils puissants pour optimiser les performances, gérer les services, les applications et personnaliser l'apparence du système.",
   "features": "Caractéristiques",
   "appExpertUsers": "Application conçue pour les utilisateurs experts Linux",
+  "infoProjectWebsite": "Site web du projet",
+  "applicationIdLabel": "ID de l’application (bureau)",
+  "updatesPendingPackagesTitle": "Paquets en attente (dernière vérification)",
+  "updatesProgressCurrent": "Progression : {detail}",
+  "@updatesProgressCurrent": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesCommandOutputTitle": "Sortie de la commande",
+  "disclaimerLicenseTitle": "Licence et Avertissement",
+  "disclaimerGplNotice": "Cette application est un logiciel libre ; vous pouvez la redistribuer et/ou la modifier selon les termes de la GNU General Public License publiée par la Free Software Foundation, version 3 de la Licence ou (à votre gré) toute version ultérieure.",
+  "disclaimerNoWarranty": "Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE ; sans même la garantie implicite de QUALITÉ MARCHANDE ou d'ADÉQUATION À UN USAGE PARTICULIER. Consultez la GNU General Public License pour plus de détails.",
+  "disclaimerCopyright": "Copyright (c) 2024-2025 Marco Di Giangiacomo. Tous droits réservés sous GPL-3.0.",
+  "payWithPaypal": "Payer avec PayPal",
+  "purchaseLicenseViaPaypal": "La version Advanced coûte 19,99 €. Pour acheter une licence, payez via PayPal. Après le paiement réussi vous recevrez votre code de licence par e-mail. Sans paiement valide, l'application ne peut pas être activée.",
   "languageSelectionTitle": "Sélection de la Langue",
   "languageSelectionDesc": "Sélectionnez la langue de l'application",
   "languageItalian": "Italien",
@@ -256,88 +376,6 @@
   "restore": "Restaurer",
   "backupRestoredSuccess": "Sauvegarde restaurée avec succès",
   "backupRestoreError": "Erreur lors de la restauration de la sauvegarde",
-  "kernelCannotRemoveActive": "Impossible de supprimer le noyau actuellement actif",
-  "removeKernel": "Supprimer le noyau",
-  "removeKernelQuestion": "Voulez-vous supprimer le noyau {version}?",
-  "@removeKernelQuestion": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "thisOperation": "Cette opération:",
-  "willRemovePackage": "• Supprimera le paquet du noyau",
-  "willUpdateGrub": "• Mettra à jour GRUB",
-  "kernelWarning": "ATTENTION: Assurez-vous d'avoir au moins un noyau fonctionnel!",
-  "kernelRemovedSuccess": "Noyau {version} supprimé avec succès",
-  "@kernelRemovedSuccess": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "kernelRemoveError": "Erreur lors de la suppression du noyau",
-  "setDefaultKernel": "Définir le noyau par défaut",
-  "setDefaultKernelQuestion": "Voulez-vous définir {version} comme noyau par défaut?",
-  "@setDefaultKernelQuestion": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "set": "Définir",
-  "kernelSetDefaultSuccess": "Noyau {version} défini comme par défaut",
-  "@kernelSetDefaultSuccess": {
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "kernelSetDefaultError": "Erreur lors de la définition du noyau par défaut",
-  "keepMax": "Conserver max:",
-  "cleanupKernels": "Nettoyage du noyau",
-  "keepOnlyRecentKernels": "Voulez-vous conserver uniquement les {count} noyaux les plus récents?",
-  "@keepOnlyRecentKernels": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "totalKernels": "Noyaux totaux: {count}",
-  "@totalKernels": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "kernelsToKeep": "Noyaux à conserver: {count}",
-  "@kernelsToKeep": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "kernelsToRemove": "Noyaux à supprimer: {count}",
-  "@kernelsToRemove": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cleanupKernelsWarning": "ATTENTION: Seuls les noyaux non utilisés seront supprimés.",
-  "cleanup": "Nettoyer",
-  "kernelCleanupSuccess": "Nettoyage du noyau terminé avec succès",
-  "kernelCleanupError": "Erreur lors du nettoyage du noyau",
-  "invalidKernelCount": "Entrez un nombre valide de noyaux à conserver",
-  "noKernelsFound": "Aucun noyau installé trouvé",
   "updateGrub": "Mettre à jour GRUB",
   "updateGrubQuestion": "Voulez-vous mettre à jour GRUB? Cette opération mettra à jour la configuration du chargeur de démarrage.",
   "grubUpdateSuccess": "GRUB mis à jour avec succès",
@@ -346,9 +384,7 @@
   "rebootSystemQuestion": "Voulez-vous redémarrer le système? Toutes les applications ouvertes seront fermées.",
   "rebootSystemSuccess": "Le système redémarre...",
   "rebootSystemError": "Erreur lors du redémarrage du système",
-  "package": "Paquet",
   "size": "Taille",
-  "setAsDefault": "Définir comme par défaut",
   "refreshDimensions": "Actualiser les dimensions",
   "cleanupTempFiles": "Nettoyer les fichiers temporaires",
   "disableApp": "Désactiver l'application",
@@ -630,22 +666,13 @@
   "infoGrubUpdateDesc": "Applique les modifications et met à jour le chargeur de démarrage",
   "infoGrubRestore": "Restauration de sauvegarde",
   "infoGrubRestoreDesc": "Restaure facilement une configuration précédente",
-  "infoKernel": "Gestion du Kernel (Mode Avancé)",
-  "infoKernelList": "Liste des kernels installés",
-  "infoKernelListDesc": "Voir tous les kernels installés avec version et taille",
-  "infoKernelRemoval": "Suppression du kernel",
-  "infoKernelRemovalDesc": "Supprime les anciens kernels en toute sécurité (protège le kernel actuel)",
-  "infoKernelDefault": "Paramètre kernel par défaut",
-  "infoKernelDefaultDesc": "Choisit quel kernel démarrer par défaut",
-  "infoKernelCleanup": "Nettoyage automatique",
-  "infoKernelCleanupDesc": "Conserve uniquement un nombre spécifié de kernels les plus récents",
   "infoSecurity": "Sécurité",
   "infoSecurityPassword": "Gestion des mots de passe",
   "infoSecurityPasswordDesc": "Enregistre le mot de passe administrateur en toute sécurité pour les opérations sudo",
   "infoSecurityWarning": "Avertissement utilisateurs experts",
   "infoSecurityWarningDesc": "Écran d'avertissement initial pour utilisateurs experts",
   "infoSecurityMode": "Mode Standard/Avancé",
-  "infoSecurityModeDesc": "Sépare les fonctionnalités de base des avancées (GRUB, Kernel)",
+  "infoSecurityModeDesc": "Sépare les fonctionnalités de base des avancées (GRUB, récupération système)",
   "recoveryDescription": "Cette section contient des outils pour restaurer les fonctions système altérées. Les commandes sont automatiquement adaptées en fonction de la distribution Linux détectée.",
   "recoveryRestartPipewire": "Redémarrer Pipewire",
   "recoveryRestartPipewireDesc": "Redémarre les services Pipewire, Pipewire-Pulse et Wireplumber pour corriger les problèmes audio.",
@@ -661,6 +688,21 @@
   "recoveryCheckUpdatesDesc": "Vérifie les mises à jour disponibles pour tous les gestionnaires de paquets installés (APT, DNF, Pacman, Snap, Flatpak).",
   "recoveryPerformUpdates": "Effectuer les Mises à Jour",
   "recoveryPerformUpdatesConfirm": "Voulez-vous effectuer les mises à jour disponibles? Cette opération peut prendre un certain temps.",
+  "recoveryTabRecovery": "Recovery",
+  "recoveryTabCheckUpdates": "Vérifier les mises à jour",
+  "recoveryTabSoftwareInstaller": "Installateur de logiciels système",
+  "recoverySoftwareInstallerDesc": "Télécharge et installe automatiquement les logiciels système essentiels.",
+  "recoveryInstallFfmpeg": "FFmpeg",
+  "recoveryInstallFfmpegDesc": "Framework multimédia pour l'encodage/décodage audio et vidéo.",
+  "recoveryInstallYtDlp": "yt-dlp",
+  "recoveryInstallYtDlpDesc": "Téléchargeur vidéo pour de nombreux sites.",
+  "recoveryInstallSystemLibs": "Bibliothèques système",
+  "recoveryInstallSystemLibsDesc": "Bibliothèques essentielles qui peuvent se corrompre.",
+  "recoveryInstallCodecs": "Codecs vidéo et audio",
+  "recoveryInstallCodecsDesc": "Codecs pour les formats vidéo et audio courants.",
+  "recoveryInstallRsync": "rsync",
+  "recoveryInstallRsyncDesc": "Outil efficace pour la synchronisation et le transfert de fichiers.",
+  "install": "Installer",
   "execute": "Exécuter",
   "viewOutput": "Voir la Sortie",
   "recoveryCheckUpdatesComplete": "Recherche de mises à jour terminée",
@@ -681,6 +723,83 @@
   "hardwareSuggestionsPriorityLow": "Faible",
   "hardwareSuggestionsApply": "Appliquer",
   "hardwareSuggestionsCancel": "Annuler",
+  "hardwareSuggestionsAlreadyPresent": "Déjà présent",
+  "hardwareSuggestionsCurrentValue": "Valeur actuelle : {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Suggéré : {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Analyse du matériel en cours...",
+  "hardwareSuggestionsNoAvailable": "Aucune suggestion matérielle disponible.",
+  "hardwareSuggestionsApplied": "Suggestion appliquée : {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Erreur lors de l'application de la suggestion : {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Erreur lors de la génération des suggestions : {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU à {count} cœurs : ajouter threadirqs peut améliorer l’ordonnancement multi-cœurs",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "CPU moderne : mitigations=off peut améliorer les performances (seulement si vous acceptez le compromis sécurité)",
+  "grubSuggestionCpuIntelIommu": "CPU Intel : activer l’IOMMU pour la virtualisation et l’isolation des périphériques",
+  "grubSuggestionCpuAmdIommu": "CPU AMD : activer l’IOMMU pour la virtualisation et l’isolation des périphériques",
+  "grubSuggestionRamZswapDisable": "Système avec {gb} Go de RAM : zswap est souvent inutile",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "Système avec {gb} Go de RAM : zswap peut aider quand la mémoire est tendue",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "GPU NVIDIA détectée : activer nvidia-drm modeset pour de meilleures performances d’affichage",
+  "grubSuggestionGpuNvidiaVideoMemory": "GPU NVIDIA : conserver les allocations mémoire vidéo entre veille/reprise",
+  "grubSuggestionGpuAmdPpfeaturemask": "GPU AMD : activer le masque complet des fonctions de gestion d’énergie",
+  "grubSuggestionGpuVideoMode": "Définir un mode vidéo fixe pour réduire les problèmes d’affichage au démarrage",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI : quiet splash peut améliorer l’expérience de démarrage",
+  "grubSuggestionPerfElevatorNone": "Stockage orienté SSD : elevator=none peut améliorer les performances d’E/S",
+  "grubSuggestionPerfVmSwappiness": "Réduire le swappiness lorsque la RAM est suffisante",
   "settingsPasswordSecurityMessage": "Le mot de passe est enregistré en toute sécurité à l'aide du trousseau système.",
   "tabShutdownScheduler": "Arrêt Automatique",
   "shutdownInfoTitle": "Arrêt Automatique",
@@ -728,6 +847,6 @@
   "licenseActivateError": "Code invalide. Vérifiez nom, prénom et e-mail.",
   "licenseActivatePremium": "Activer / Premium",
   "licenseActivateCardTitle": "Activer la version avancée",
-  "licenseActivateCardDesc": "Entrez vos informations et le code de licence reçu pour débloquer GRUB, Kernel et Recovery."
+  "licenseActivateCardDesc": "La version Advanced coûte 19,99 €. Entrez vos informations et le code de licence reçu après le paiement réussi pour débloquer GRUB et la récupération système. Sans paiement valide, l'application ne peut pas être activée."
 }
 

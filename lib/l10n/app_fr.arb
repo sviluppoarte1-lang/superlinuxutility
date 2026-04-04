@@ -209,6 +209,13 @@
   "updatesAvailableDialogTitle": "Mises à jour disponibles",
   "updatesAvailableDialogMessage": "{count} mises à jour disponibles. Voulez-vous les appliquer maintenant ?",
   "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDetectedListHeading": "Détectés :",
+  "updateLabelPhased": "{name} (déploiement progressif — pas encore installable)",
+  "@updateLabelPhased": {"placeholders": {"name": {"type": "String"}}},
+  "updatesPreviewTruncated": "… et {count} de plus",
+  "@updatesPreviewTruncated": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailablePhasedFooter": "Les paquets en déploiement progressif ne peuvent pas encore être installés. « Appliquer maintenant » n’applique que ce que le système autorise.",
+  "updatesCheckPreviewHeading": "Éléments concernés :",
   "applyNow": "Appliquer maintenant",
   "postpone": "Plus tard",
   "fontFamily": "Famille de Police",
@@ -812,6 +819,83 @@
   "hardwareSuggestionsPriorityLow": "Faible",
   "hardwareSuggestionsApply": "Appliquer",
   "hardwareSuggestionsCancel": "Annuler",
+  "hardwareSuggestionsAlreadyPresent": "Déjà présent",
+  "hardwareSuggestionsCurrentValue": "Valeur actuelle : {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Suggéré : {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Analyse du matériel en cours...",
+  "hardwareSuggestionsNoAvailable": "Aucune suggestion matérielle disponible.",
+  "hardwareSuggestionsApplied": "Suggestion appliquée : {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Erreur lors de l'application de la suggestion : {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Erreur lors de la génération des suggestions : {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU à {count} cœurs : ajouter threadirqs peut améliorer l’ordonnancement multi-cœurs",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "CPU moderne : mitigations=off peut améliorer les performances (seulement si vous acceptez le compromis sécurité)",
+  "grubSuggestionCpuIntelIommu": "CPU Intel : activer l’IOMMU pour la virtualisation et l’isolation des périphériques",
+  "grubSuggestionCpuAmdIommu": "CPU AMD : activer l’IOMMU pour la virtualisation et l’isolation des périphériques",
+  "grubSuggestionRamZswapDisable": "Système avec {gb} Go de RAM : zswap est souvent inutile",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "Système avec {gb} Go de RAM : zswap peut aider quand la mémoire est tendue",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "GPU NVIDIA détectée : activer nvidia-drm modeset pour de meilleures performances d’affichage",
+  "grubSuggestionGpuNvidiaVideoMemory": "GPU NVIDIA : conserver les allocations mémoire vidéo entre veille/reprise",
+  "grubSuggestionGpuAmdPpfeaturemask": "GPU AMD : activer le masque complet des fonctions de gestion d’énergie",
+  "grubSuggestionGpuVideoMode": "Définir un mode vidéo fixe pour réduire les problèmes d’affichage au démarrage",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI : quiet splash peut améliorer l’expérience de démarrage",
+  "grubSuggestionPerfElevatorNone": "Stockage orienté SSD : elevator=none peut améliorer les performances d’E/S",
+  "grubSuggestionPerfVmSwappiness": "Réduire le swappiness lorsque la RAM est suffisante",
   "settingsPasswordSecurityMessage": "Le mot de passe est enregistré en toute sécurité à l'aide du trousseau système.",
   "tabShutdownScheduler": "Arrêt Automatique",
   "shutdownInfoTitle": "Arrêt Automatique",

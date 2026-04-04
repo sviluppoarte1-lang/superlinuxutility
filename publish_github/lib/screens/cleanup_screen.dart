@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../services/cleanup_service.dart';
+import '../services/tray_service.dart';
 
 class CleanupScreen extends StatefulWidget {
   const CleanupScreen({super.key});
@@ -16,7 +17,6 @@ class _CleanupScreenState extends State<CleanupScreen> {
   bool _isLoading = false;
   bool _isCleaning = false;
   bool _isCleaningCache = false;
-  bool _isCleaningVram = false;
   String? _error;
   Set<String> _excludedPaths = {};
 
@@ -25,6 +25,12 @@ class _CleanupScreenState extends State<CleanupScreen> {
     super.initState();
     _loadExcludedPaths();
     _loadSizes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (TrayService.runCleanupWhenScreenShown) {
+        TrayService.runCleanupWhenScreenShown = false;
+        _cleanupFromTray();
+      }
+    });
   }
 
   Future<void> _loadExcludedPaths() async {
@@ -151,6 +157,50 @@ class _CleanupScreenState extends State<CleanupScreen> {
     }
   }
 
+  /// Esegue la pulizia quando la schermata è stata aperta dalla system tray (senza dialog).
+  Future<void> _cleanupFromTray() async {
+    setState(() {
+      _isCleaning = true;
+      _error = null;
+      _cleanupResults = null;
+    });
+
+    try {
+      final results = await CleanupService.cleanupTempFiles();
+      if (mounted) {
+        setState(() {
+          _cleanupResults = results;
+          _isCleaning = false;
+        });
+        await _loadSizes();
+        final allSuccess = results.values.every((success) => success);
+        final message = allSuccess
+            ? (AppLocalizations.of(context)!.cleanupSuccess)
+            : (AppLocalizations.of(context)!.cleanupPartialSuccess);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: allSuccess ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isCleaning = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocalizations.of(context)!.error}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _cleanup() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -269,69 +319,6 @@ class _CleanupScreenState extends State<CleanupScreen> {
     }
   }
 
-  Future<void> _cleanVram() async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.cleanupVramConfirmTitle),
-        content: Text(l10n.cleanupVramConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    setState(() {
-      _isCleaningVram = true;
-      _error = null;
-    });
-
-    try {
-      final result = await CleanupService.cleanVram();
-      if (!mounted) return;
-      setState(() => _isCleaningVram = false);
-
-      final success = result['success'] == true;
-      final details = result['message']?.toString() ?? '';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success
-                ? l10n.cleanupVramSuccess
-                : '${l10n.cleanupVramError}${details.isNotEmpty ? '\n$details' : ''}',
-          ),
-          backgroundColor: success ? Colors.green : Colors.red,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isCleaningVram = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${l10n.cleanupVramError}\n$e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    }
-  }
-
   int _getTotalSize() {
     return _sizes.values.fold(0, (sum, size) => sum + size);
   }
@@ -380,7 +367,7 @@ class _CleanupScreenState extends State<CleanupScreen> {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  onPressed: (_isLoading || _isCleaning || _isCleaningCache || _isCleaningVram)
+                  onPressed: (_isLoading || _isCleaning || _isCleaningCache)
                       ? null
                       : _cleanLinuxCache,
                   icon: _isCleaningCache
@@ -394,24 +381,6 @@ class _CleanupScreenState extends State<CleanupScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.tertiary,
                     foregroundColor: Theme.of(context).colorScheme.onTertiary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: (_isLoading || _isCleaning || _isCleaningCache || _isCleaningVram)
-                      ? null
-                      : _cleanVram,
-                  icon: _isCleaningVram
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.memory),
-                  label: Text(AppLocalizations.of(context)!.cleanupVram),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                    foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
                 ),
               ],

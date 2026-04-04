@@ -136,6 +136,12 @@ abstract class AppLocalizations {
   /// **'Rimuovi File temporanei'**
   String get trayRemoveTempFiles;
 
+  /// No description provided for @trayCleanTempFilesAndCache.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulisci file temporanei e cache'**
+  String get trayCleanTempFilesAndCache;
+
   /// No description provided for @trayCleanVram.
   ///
   /// In it, this message translates to:
@@ -298,12 +304,6 @@ abstract class AppLocalizations {
   /// **'GRUB'**
   String get tabGrub;
 
-  /// No description provided for @tabKernel.
-  ///
-  /// In it, this message translates to:
-  /// **'Kernel'**
-  String get tabKernel;
-
   /// No description provided for @tabSettings.
   ///
   /// In it, this message translates to:
@@ -351,18 +351,6 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'La modifica errata del bootloader può impedire l\'avvio del sistema.'**
   String get warningGrubDesc;
-
-  /// No description provided for @warningKernel.
-  ///
-  /// In it, this message translates to:
-  /// **'Rimozione Kernel'**
-  String get warningKernel;
-
-  /// No description provided for @warningKernelDesc.
-  ///
-  /// In it, this message translates to:
-  /// **'Rimuovere kernel essenziali può rendere il sistema inutilizzabile.'**
-  String get warningKernelDesc;
 
   /// No description provided for @warningServices.
   ///
@@ -784,6 +772,246 @@ abstract class AppLocalizations {
   /// **'Impossibile modificare l\'avvio al login.'**
   String get settingsStartAtLoginError;
 
+  /// No description provided for @settingsAutoUpdateCheckTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Verifica aggiornamenti automatica'**
+  String get settingsAutoUpdateCheckTitle;
+
+  /// No description provided for @settingsAutoUpdateCheckDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Controlla gli aggiornamenti di sistema automaticamente con la frequenza scelta.'**
+  String get settingsAutoUpdateCheckDesc;
+
+  /// No description provided for @settingsAutoUpdateCheckInterval.
+  ///
+  /// In it, this message translates to:
+  /// **'Verifica aggiornamenti'**
+  String get settingsAutoUpdateCheckInterval;
+
+  /// No description provided for @settingsAutoUpdateNever.
+  ///
+  /// In it, this message translates to:
+  /// **'Mai'**
+  String get settingsAutoUpdateNever;
+
+  /// No description provided for @settingsAutoUpdateEvery15Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 15 minuti'**
+  String get settingsAutoUpdateEvery15Min;
+
+  /// No description provided for @settingsAutoUpdateEvery30Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 30 minuti'**
+  String get settingsAutoUpdateEvery30Min;
+
+  /// No description provided for @settingsAutoUpdateEvery1Hour.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 1 ora'**
+  String get settingsAutoUpdateEvery1Hour;
+
+  /// No description provided for @settingsAutoUpdateEvery6Hours.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 6 ore'**
+  String get settingsAutoUpdateEvery6Hours;
+
+  /// No description provided for @settingsAutoUpdateEvery12Hours.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 12 ore'**
+  String get settingsAutoUpdateEvery12Hours;
+
+  /// No description provided for @settingsAutoUpdateEveryDay.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni giorno'**
+  String get settingsAutoUpdateEveryDay;
+
+  /// No description provided for @settingsAutoAppUpdateFromGithubTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento automatico app da GitHub'**
+  String get settingsAutoAppUpdateFromGithubTitle;
+
+  /// No description provided for @settingsAutoAppUpdateFromGithubDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Se attivo, l\'app scarica e installa periodicamente l\'ultimo .deb di questa edizione dalle release GitHub. Richiede password amministratore salvata e funziona solo se sopra è attiva la verifica periodica aggiornamenti di sistema.'**
+  String get settingsAutoAppUpdateFromGithubDesc;
+
+  /// No description provided for @updateCheckAptNone.
+  ///
+  /// In it, this message translates to:
+  /// **'APT: Nessun aggiornamento disponibile'**
+  String get updateCheckAptNone;
+
+  /// No description provided for @updateCheckAptPhasedOnly.
+  ///
+  /// In it, this message translates to:
+  /// **'APT: Nessun aggiornamento installabile subito (solo rollout scaglionato)'**
+  String get updateCheckAptPhasedOnly;
+
+  /// No description provided for @updateCheckAptHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{APT: {count} aggiornamento disponibile} other{APT: {count} aggiornamenti disponibili}}'**
+  String updateCheckAptHasUpdates(int count);
+
+  /// No description provided for @updateCheckAptPhasedExtra.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{APT: {count} aggiornamento scaglionato rilevato} other{APT: {count} aggiornamenti scaglionati rilevati}}'**
+  String updateCheckAptPhasedExtra(int count);
+
+  /// No description provided for @updateCheckAptError.
+  ///
+  /// In it, this message translates to:
+  /// **'APT: Errore durante la verifica: {error}'**
+  String updateCheckAptError(String error);
+
+  /// No description provided for @updateCheckDnfNone.
+  ///
+  /// In it, this message translates to:
+  /// **'DNF: Nessun aggiornamento disponibile'**
+  String get updateCheckDnfNone;
+
+  /// No description provided for @updateCheckDnfHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{DNF: {count} aggiornamento disponibile} other{DNF: {count} aggiornamenti disponibili}}'**
+  String updateCheckDnfHasUpdates(int count);
+
+  /// No description provided for @updateCheckDnfError.
+  ///
+  /// In it, this message translates to:
+  /// **'DNF: Errore durante la verifica: {error}'**
+  String updateCheckDnfError(String error);
+
+  /// No description provided for @updateCheckPacmanNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacman: Nessun aggiornamento disponibile'**
+  String get updateCheckPacmanNone;
+
+  /// No description provided for @updateCheckPacmanHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{Pacman: {count} aggiornamento disponibile} other{Pacman: {count} aggiornamenti disponibili}}'**
+  String updateCheckPacmanHasUpdates(int count);
+
+  /// No description provided for @updateCheckPacmanError.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacman: Errore durante la verifica: {error}'**
+  String updateCheckPacmanError(String error);
+
+  /// No description provided for @updateCheckSnapNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Snap: Nessun aggiornamento disponibile'**
+  String get updateCheckSnapNone;
+
+  /// No description provided for @updateCheckSnapHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{Snap: {count} aggiornamento disponibile} other{Snap: {count} aggiornamenti disponibili}}'**
+  String updateCheckSnapHasUpdates(int count);
+
+  /// No description provided for @updateCheckSnapError.
+  ///
+  /// In it, this message translates to:
+  /// **'Snap: Errore durante la verifica: {error}'**
+  String updateCheckSnapError(String error);
+
+  /// No description provided for @updateCheckFlatpakNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Flatpak: Nessun aggiornamento disponibile'**
+  String get updateCheckFlatpakNone;
+
+  /// No description provided for @updateCheckFlatpakHasUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, one{Flatpak: {count} aggiornamento disponibile} other{Flatpak: {count} aggiornamenti disponibili}}'**
+  String updateCheckFlatpakHasUpdates(int count);
+
+  /// No description provided for @updateCheckFlatpakError.
+  ///
+  /// In it, this message translates to:
+  /// **'Flatpak: Errore durante la verifica: {error}'**
+  String updateCheckFlatpakError(String error);
+
+  /// No description provided for @updateCheckSummaryPackageCount.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, =0{0 pacchetti} one{{count} pacchetto} other{{count} pacchetti}}'**
+  String updateCheckSummaryPackageCount(int count);
+
+  /// No description provided for @updatesAvailableCount.
+  ///
+  /// In it, this message translates to:
+  /// **'{count} aggiornamenti disponibili'**
+  String updatesAvailableCount(int count);
+
+  /// No description provided for @updatesAvailableDialogTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti disponibili'**
+  String get updatesAvailableDialogTitle;
+
+  /// No description provided for @updatesAvailableDialogMessage.
+  ///
+  /// In it, this message translates to:
+  /// **'{count} aggiornamenti disponibili. Vuoi applicarli ora?'**
+  String updatesAvailableDialogMessage(int count);
+
+  /// No description provided for @updatesAvailableDetectedListHeading.
+  ///
+  /// In it, this message translates to:
+  /// **'Rilevati:'**
+  String get updatesAvailableDetectedListHeading;
+
+  /// No description provided for @updateLabelPhased.
+  ///
+  /// In it, this message translates to:
+  /// **'{name} (scaglionato — non ancora installabile)'**
+  String updateLabelPhased(String name);
+
+  /// No description provided for @updatesPreviewTruncated.
+  ///
+  /// In it, this message translates to:
+  /// **'… e altri {count}'**
+  String updatesPreviewTruncated(int count);
+
+  /// No description provided for @updatesAvailablePhasedFooter.
+  ///
+  /// In it, this message translates to:
+  /// **'I pacchetti in rollout graduale non si possono installare subito. \"Applica ora\" aggiorna solo ciò che il sistema consente.'**
+  String get updatesAvailablePhasedFooter;
+
+  /// No description provided for @updatesCheckPreviewHeading.
+  ///
+  /// In it, this message translates to:
+  /// **'Elementi interessati:'**
+  String get updatesCheckPreviewHeading;
+
+  /// No description provided for @applyNow.
+  ///
+  /// In it, this message translates to:
+  /// **'Applica ora'**
+  String get applyNow;
+
+  /// No description provided for @postpone.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimanda'**
+  String get postpone;
+
   /// No description provided for @fontFamily.
   ///
   /// In it, this message translates to:
@@ -1071,6 +1299,72 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Applicazione progettata per utenti esperti Linux'**
   String get appExpertUsers;
+
+  /// No description provided for @infoProjectWebsite.
+  ///
+  /// In it, this message translates to:
+  /// **'Sito web del progetto'**
+  String get infoProjectWebsite;
+
+  /// No description provided for @applicationIdLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'ID applicazione (desktop)'**
+  String get applicationIdLabel;
+
+  /// No description provided for @updatesPendingPackagesTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacchetti in coda (ultimo controllo)'**
+  String get updatesPendingPackagesTitle;
+
+  /// No description provided for @updatesProgressCurrent.
+  ///
+  /// In it, this message translates to:
+  /// **'Avanzamento: {detail}'**
+  String updatesProgressCurrent(String detail);
+
+  /// No description provided for @updatesCommandOutputTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Output del comando'**
+  String get updatesCommandOutputTitle;
+
+  /// No description provided for @disclaimerLicenseTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Licenza e Disclaimer'**
+  String get disclaimerLicenseTitle;
+
+  /// No description provided for @disclaimerGplNotice.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa applicazione è software libero; puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, versione 3 della Licenza o (a tua scelta) successiva.'**
+  String get disclaimerGplNotice;
+
+  /// No description provided for @disclaimerNoWarranty.
+  ///
+  /// In it, this message translates to:
+  /// **'Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA GARANZIA; senza nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedere la GNU General Public License per i dettagli.'**
+  String get disclaimerNoWarranty;
+
+  /// No description provided for @disclaimerCopyright.
+  ///
+  /// In it, this message translates to:
+  /// **'Copyright (c) 2024-2025 Marco Di Giangiacomo. Tutti i diritti riservati sotto GPL-3.0.'**
+  String get disclaimerCopyright;
+
+  /// No description provided for @payWithPaypal.
+  ///
+  /// In it, this message translates to:
+  /// **'Paga con PayPal'**
+  String get payWithPaypal;
+
+  /// No description provided for @purchaseLicenseViaPaypal.
+  ///
+  /// In it, this message translates to:
+  /// **'La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email. Senza un pagamento valido l\'app non può essere attivata.'**
+  String get purchaseLicenseViaPaypal;
 
   /// No description provided for @languageSelectionTitle.
   ///
@@ -1474,162 +1768,6 @@ abstract class AppLocalizations {
   /// **'Errore durante il ripristino del backup'**
   String get backupRestoreError;
 
-  /// No description provided for @kernelCannotRemoveActive.
-  ///
-  /// In it, this message translates to:
-  /// **'Non è possibile rimuovere il kernel attualmente in uso'**
-  String get kernelCannotRemoveActive;
-
-  /// No description provided for @removeKernel.
-  ///
-  /// In it, this message translates to:
-  /// **'Rimuovi Kernel'**
-  String get removeKernel;
-
-  /// No description provided for @removeKernelQuestion.
-  ///
-  /// In it, this message translates to:
-  /// **'Vuoi rimuovere il kernel {version}?'**
-  String removeKernelQuestion(String version);
-
-  /// No description provided for @thisOperation.
-  ///
-  /// In it, this message translates to:
-  /// **'Questa operazione:'**
-  String get thisOperation;
-
-  /// No description provided for @willRemovePackage.
-  ///
-  /// In it, this message translates to:
-  /// **'• Rimuoverà il pacchetto del kernel'**
-  String get willRemovePackage;
-
-  /// No description provided for @willUpdateGrub.
-  ///
-  /// In it, this message translates to:
-  /// **'• Aggiornerà GRUB'**
-  String get willUpdateGrub;
-
-  /// No description provided for @kernelWarning.
-  ///
-  /// In it, this message translates to:
-  /// **'ATTENZIONE: Assicurati di avere almeno un kernel funzionante!'**
-  String get kernelWarning;
-
-  /// No description provided for @kernelRemovedSuccess.
-  ///
-  /// In it, this message translates to:
-  /// **'Kernel {version} rimosso con successo'**
-  String kernelRemovedSuccess(String version);
-
-  /// No description provided for @kernelRemoveError.
-  ///
-  /// In it, this message translates to:
-  /// **'Errore durante la rimozione del kernel'**
-  String get kernelRemoveError;
-
-  /// No description provided for @setDefaultKernel.
-  ///
-  /// In it, this message translates to:
-  /// **'Imposta Kernel di Default'**
-  String get setDefaultKernel;
-
-  /// No description provided for @setDefaultKernelQuestion.
-  ///
-  /// In it, this message translates to:
-  /// **'Vuoi impostare {version} come kernel di default?'**
-  String setDefaultKernelQuestion(String version);
-
-  /// No description provided for @set.
-  ///
-  /// In it, this message translates to:
-  /// **'Imposta'**
-  String get set;
-
-  /// No description provided for @kernelSetDefaultSuccess.
-  ///
-  /// In it, this message translates to:
-  /// **'Kernel {version} impostato come default'**
-  String kernelSetDefaultSuccess(String version);
-
-  /// No description provided for @kernelSetDefaultError.
-  ///
-  /// In it, this message translates to:
-  /// **'Errore durante l\'impostazione del kernel default'**
-  String get kernelSetDefaultError;
-
-  /// No description provided for @keepMax.
-  ///
-  /// In it, this message translates to:
-  /// **'Mantieni max:'**
-  String get keepMax;
-
-  /// No description provided for @cleanupKernels.
-  ///
-  /// In it, this message translates to:
-  /// **'Pulizia Kernel'**
-  String get cleanupKernels;
-
-  /// No description provided for @keepOnlyRecentKernels.
-  ///
-  /// In it, this message translates to:
-  /// **'Vuoi mantenere solo i {count} kernel più recenti?'**
-  String keepOnlyRecentKernels(int count);
-
-  /// No description provided for @totalKernels.
-  ///
-  /// In it, this message translates to:
-  /// **'Kernel totali: {count}'**
-  String totalKernels(int count);
-
-  /// No description provided for @kernelsToKeep.
-  ///
-  /// In it, this message translates to:
-  /// **'Kernel da mantenere: {count}'**
-  String kernelsToKeep(int count);
-
-  /// No description provided for @kernelsToRemove.
-  ///
-  /// In it, this message translates to:
-  /// **'Kernel da rimuovere: {count}'**
-  String kernelsToRemove(int count);
-
-  /// No description provided for @cleanupKernelsWarning.
-  ///
-  /// In it, this message translates to:
-  /// **'ATTENZIONE: Verranno rimossi solo i kernel non in uso.'**
-  String get cleanupKernelsWarning;
-
-  /// No description provided for @cleanup.
-  ///
-  /// In it, this message translates to:
-  /// **'Pulisci'**
-  String get cleanup;
-
-  /// No description provided for @kernelCleanupSuccess.
-  ///
-  /// In it, this message translates to:
-  /// **'Pulizia kernel completata con successo'**
-  String get kernelCleanupSuccess;
-
-  /// No description provided for @kernelCleanupError.
-  ///
-  /// In it, this message translates to:
-  /// **'Errore durante la pulizia dei kernel'**
-  String get kernelCleanupError;
-
-  /// No description provided for @invalidKernelCount.
-  ///
-  /// In it, this message translates to:
-  /// **'Inserisci un numero valido di kernel da mantenere'**
-  String get invalidKernelCount;
-
-  /// No description provided for @noKernelsFound.
-  ///
-  /// In it, this message translates to:
-  /// **'Nessun kernel installato trovato'**
-  String get noKernelsFound;
-
   /// No description provided for @updateGrub.
   ///
   /// In it, this message translates to:
@@ -1678,23 +1816,11 @@ abstract class AppLocalizations {
   /// **'Errore durante il riavvio del sistema'**
   String get rebootSystemError;
 
-  /// No description provided for @package.
-  ///
-  /// In it, this message translates to:
-  /// **'Pacchetto'**
-  String get package;
-
   /// No description provided for @size.
   ///
   /// In it, this message translates to:
   /// **'Dimensione'**
   String get size;
-
-  /// No description provided for @setAsDefault.
-  ///
-  /// In it, this message translates to:
-  /// **'Imposta come Default'**
-  String get setAsDefault;
 
   /// No description provided for @refreshDimensions.
   ///
@@ -2716,6 +2842,96 @@ abstract class AppLocalizations {
   /// **'Vuoi eseguire gli aggiornamenti disponibili? Questa operazione potrebbe richiedere del tempo.'**
   String get recoveryPerformUpdatesConfirm;
 
+  /// No description provided for @recoveryTabRecovery.
+  ///
+  /// In it, this message translates to:
+  /// **'Recovery'**
+  String get recoveryTabRecovery;
+
+  /// No description provided for @recoveryTabCheckUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'Verifica Aggiornamenti'**
+  String get recoveryTabCheckUpdates;
+
+  /// No description provided for @recoveryTabSoftwareInstaller.
+  ///
+  /// In it, this message translates to:
+  /// **'Installatore Software di Sistema'**
+  String get recoveryTabSoftwareInstaller;
+
+  /// No description provided for @recoverySoftwareInstallerDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Scarica e installa automaticamente software di sistema essenziale.'**
+  String get recoverySoftwareInstallerDesc;
+
+  /// No description provided for @recoveryInstallFfmpeg.
+  ///
+  /// In it, this message translates to:
+  /// **'FFmpeg'**
+  String get recoveryInstallFfmpeg;
+
+  /// No description provided for @recoveryInstallFfmpegDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Framework multimediale per codifica/decodifica audio e video.'**
+  String get recoveryInstallFfmpegDesc;
+
+  /// No description provided for @recoveryInstallYtDlp.
+  ///
+  /// In it, this message translates to:
+  /// **'yt-dlp'**
+  String get recoveryInstallYtDlp;
+
+  /// No description provided for @recoveryInstallYtDlpDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Scaricatore video per molti siti.'**
+  String get recoveryInstallYtDlpDesc;
+
+  /// No description provided for @recoveryInstallSystemLibs.
+  ///
+  /// In it, this message translates to:
+  /// **'Librerie di sistema'**
+  String get recoveryInstallSystemLibs;
+
+  /// No description provided for @recoveryInstallSystemLibsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Librerie di sistema essenziali che spesso si possono corrompere.'**
+  String get recoveryInstallSystemLibsDesc;
+
+  /// No description provided for @recoveryInstallCodecs.
+  ///
+  /// In it, this message translates to:
+  /// **'Codec video e audio'**
+  String get recoveryInstallCodecs;
+
+  /// No description provided for @recoveryInstallCodecsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Codec per riprodurre formati video e audio comuni.'**
+  String get recoveryInstallCodecsDesc;
+
+  /// No description provided for @recoveryInstallRsync.
+  ///
+  /// In it, this message translates to:
+  /// **'rsync'**
+  String get recoveryInstallRsync;
+
+  /// No description provided for @recoveryInstallRsyncDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Strumento efficiente per sincronizzazione e trasferimento file.'**
+  String get recoveryInstallRsyncDesc;
+
+  /// No description provided for @install.
+  ///
+  /// In it, this message translates to:
+  /// **'Installa'**
+  String get install;
+
   /// No description provided for @execute.
   ///
   /// In it, this message translates to:
@@ -3070,60 +3286,6 @@ abstract class AppLocalizations {
   /// **'Ripristina facilmente una configurazione precedente'**
   String get infoGrubRestoreDesc;
 
-  /// No description provided for @infoKernel.
-  ///
-  /// In it, this message translates to:
-  /// **'Gestione Kernel (Modalità Avanzata)'**
-  String get infoKernel;
-
-  /// No description provided for @infoKernelList.
-  ///
-  /// In it, this message translates to:
-  /// **'Lista kernel installati'**
-  String get infoKernelList;
-
-  /// No description provided for @infoKernelListDesc.
-  ///
-  /// In it, this message translates to:
-  /// **'Visualizza tutti i kernel installati con versione e dimensione'**
-  String get infoKernelListDesc;
-
-  /// No description provided for @infoKernelRemoval.
-  ///
-  /// In it, this message translates to:
-  /// **'Rimozione kernel'**
-  String get infoKernelRemoval;
-
-  /// No description provided for @infoKernelRemovalDesc.
-  ///
-  /// In it, this message translates to:
-  /// **'Rimuovi kernel vecchi in modo sicuro (protegge il kernel corrente)'**
-  String get infoKernelRemovalDesc;
-
-  /// No description provided for @infoKernelDefault.
-  ///
-  /// In it, this message translates to:
-  /// **'Impostazione kernel predefinito'**
-  String get infoKernelDefault;
-
-  /// No description provided for @infoKernelDefaultDesc.
-  ///
-  /// In it, this message translates to:
-  /// **'Scegli quale kernel avviare di default'**
-  String get infoKernelDefaultDesc;
-
-  /// No description provided for @infoKernelCleanup.
-  ///
-  /// In it, this message translates to:
-  /// **'Pulizia automatica'**
-  String get infoKernelCleanup;
-
-  /// No description provided for @infoKernelCleanupDesc.
-  ///
-  /// In it, this message translates to:
-  /// **'Mantieni solo un numero specificato di kernel più recenti'**
-  String get infoKernelCleanupDesc;
-
   /// No description provided for @infoSecurity.
   ///
   /// In it, this message translates to:
@@ -3163,7 +3325,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoSecurityModeDesc.
   ///
   /// In it, this message translates to:
-  /// **'Separa funzionalità base da quelle avanzate (GRUB, Kernel)'**
+  /// **'Separa funzionalità base da quelle avanzate (GRUB, Recovery di sistema)'**
   String get infoSecurityModeDesc;
 
   /// No description provided for @recoveryCheckUpdatesComplete.
@@ -3225,6 +3387,132 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Annulla'**
   String get hardwareSuggestionsCancel;
+
+  /// No description provided for @hardwareSuggestionsAlreadyPresent.
+  ///
+  /// In it, this message translates to:
+  /// **'Già presente'**
+  String get hardwareSuggestionsAlreadyPresent;
+
+  /// No description provided for @hardwareSuggestionsCurrentValue.
+  ///
+  /// In it, this message translates to:
+  /// **'Valore corrente: {value}'**
+  String hardwareSuggestionsCurrentValue(String value);
+
+  /// No description provided for @hardwareSuggestionsSuggestedValue.
+  ///
+  /// In it, this message translates to:
+  /// **'Suggerito: {value}'**
+  String hardwareSuggestionsSuggestedValue(String value);
+
+  /// No description provided for @hardwareSuggestionsAnalyzing.
+  ///
+  /// In it, this message translates to:
+  /// **'Analisi hardware in corso...'**
+  String get hardwareSuggestionsAnalyzing;
+
+  /// No description provided for @hardwareSuggestionsNoAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun suggerimento disponibile per il tuo hardware.'**
+  String get hardwareSuggestionsNoAvailable;
+
+  /// No description provided for @hardwareSuggestionsApplied.
+  ///
+  /// In it, this message translates to:
+  /// **'Suggerimento applicato: {parameter}'**
+  String hardwareSuggestionsApplied(String parameter);
+
+  /// No description provided for @hardwareSuggestionsApplyError.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore nell\'applicazione del suggerimento: {error}'**
+  String hardwareSuggestionsApplyError(String error);
+
+  /// No description provided for @hardwareSuggestionsGenerationError.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore nella generazione dei suggerimenti: {error}'**
+  String hardwareSuggestionsGenerationError(String error);
+
+  /// No description provided for @grubSuggestionCpuThreadirqs.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU con {count} core: threadirqs può migliorare lo scheduling multi-core'**
+  String grubSuggestionCpuThreadirqs(int count);
+
+  /// No description provided for @grubSuggestionCpuMitigationsOff.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU moderna: mitigations=off può migliorare le prestazioni (solo se accetti i compromessi di sicurezza)'**
+  String get grubSuggestionCpuMitigationsOff;
+
+  /// No description provided for @grubSuggestionCpuIntelIommu.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU Intel: abilita IOMMU per virtualizzazione e isolamento dispositivi'**
+  String get grubSuggestionCpuIntelIommu;
+
+  /// No description provided for @grubSuggestionCpuAmdIommu.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU AMD: abilita IOMMU per virtualizzazione e isolamento dispositivi'**
+  String get grubSuggestionCpuAmdIommu;
+
+  /// No description provided for @grubSuggestionRamZswapDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Sistema con {gb} GB RAM: zswap spesso non è necessario'**
+  String grubSuggestionRamZswapDisable(String gb);
+
+  /// No description provided for @grubSuggestionRamZswapEnable.
+  ///
+  /// In it, this message translates to:
+  /// **'Sistema con {gb} GB RAM: zswap può aiutare quando la memoria è sotto pressione'**
+  String grubSuggestionRamZswapEnable(String gb);
+
+  /// No description provided for @grubSuggestionGpuNvidiaModeset.
+  ///
+  /// In it, this message translates to:
+  /// **'GPU NVIDIA rilevata: abilita nvidia-drm modeset per migliori prestazioni video'**
+  String get grubSuggestionGpuNvidiaModeset;
+
+  /// No description provided for @grubSuggestionGpuNvidiaVideoMemory.
+  ///
+  /// In it, this message translates to:
+  /// **'GPU NVIDIA: preserva le allocazioni di memoria video tra sospensione/ripresa'**
+  String get grubSuggestionGpuNvidiaVideoMemory;
+
+  /// No description provided for @grubSuggestionGpuAmdPpfeaturemask.
+  ///
+  /// In it, this message translates to:
+  /// **'GPU AMD: abilita la maschera completa delle funzioni di power management'**
+  String get grubSuggestionGpuAmdPpfeaturemask;
+
+  /// No description provided for @grubSuggestionGpuVideoMode.
+  ///
+  /// In it, this message translates to:
+  /// **'Imposta una modalità video fissa per ridurre problemi di schermo all’avvio'**
+  String get grubSuggestionGpuVideoMode;
+
+  /// No description provided for @grubSuggestionFirmwareUefiQuietSplash.
+  ///
+  /// In it, this message translates to:
+  /// **'UEFI: quiet splash può migliorare l’esperienza di boot'**
+  String get grubSuggestionFirmwareUefiQuietSplash;
+
+  /// No description provided for @grubSuggestionPerfElevatorNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Storage orientato agli SSD: elevator=none può migliorare le prestazioni I/O'**
+  String get grubSuggestionPerfElevatorNone;
+
+  /// No description provided for @grubSuggestionPerfVmSwappiness.
+  ///
+  /// In it, this message translates to:
+  /// **'Riduci lo swappiness quando il sistema ha RAM sufficiente'**
+  String get grubSuggestionPerfVmSwappiness;
 
   /// No description provided for @settingsPasswordSecurityMessage.
   ///
@@ -3511,7 +3799,7 @@ abstract class AppLocalizations {
   /// No description provided for @licenseActivateCardDesc.
   ///
   /// In it, this message translates to:
-  /// **'Inserisci i tuoi dati e il codice licenza ricevuto per sbloccare GRUB, Kernel e Recovery.'**
+  /// **'La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB e Recovery di sistema. Senza un pagamento valido l\'app non può essere attivata.'**
   String get licenseActivateCardDesc;
 }
 

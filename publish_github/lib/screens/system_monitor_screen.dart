@@ -4,6 +4,7 @@ import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../models/system_process.dart';
 import '../models/system_info.dart';
 import '../services/system_monitor.dart';
+import '../services/app_memory_maintenance.dart';
 
 class SystemMonitorScreen extends StatefulWidget {
   const SystemMonitorScreen({super.key});
@@ -24,7 +25,7 @@ class _ProcessGroup {
   int get processCount => processes.length;
 }
 
-class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTickerProviderStateMixin {
   List<SystemProcess> _processes = [];
   SystemInfo? _systemInfo;
   bool _isLoading = false;
@@ -50,9 +51,6 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
   bool _isSelectionMode = false;
 
   @override
-  bool get wantKeepAlive => true;
-
-  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
@@ -68,6 +66,11 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
     _searchDebounceTimer?.cancel();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    _processes = [];
+    _systemInfo = null;
+    _cachedFilteredProcesses = null;
+    _selectedPids.clear();
+    AppMemoryMaintenance.requestTrim();
     super.dispose();
   }
 
@@ -414,7 +417,6 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Richiesto per AutomaticKeepAliveClientMixin
     return Scaffold(
       body: Column(
         children: [

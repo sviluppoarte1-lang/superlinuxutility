@@ -4,15 +4,13 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:flutter/services.dart';
-import 'cleanup_service.dart';
-import 'recovery_service.dart';
+import 'app_memory_maintenance.dart';
 import 'system_monitor.dart';
+import 'single_instance_service.dart';
 
 class TrayMenuLabels {
   final String checkUpdates;
-  final String cleanLinuxCache;
-  final String removeTempFiles;
-  final String cleanVram;
+  final String cleanTempFilesAndCache;
   final String cpuGpuTemp;
   final String diskUsage;
   final String memoryUsage;
@@ -22,9 +20,7 @@ class TrayMenuLabels {
   final String exit;
   const TrayMenuLabels({
     required this.checkUpdates,
-    required this.cleanLinuxCache,
-    required this.removeTempFiles,
-    required this.cleanVram,
+    required this.cleanTempFilesAndCache,
     required this.cpuGpuTemp,
     required this.diskUsage,
     required this.memoryUsage,
@@ -39,12 +35,10 @@ class TrayCallbacks {
   final void Function()? onShowMainWindow;
   final void Function()? onCheckUpdates;
   final void Function()? onShowCheckUpdatesDialog;
-  final void Function()? onCleanLinuxCache;
   final void Function()? onCleanTempFiles;
-  final void Function()? onCleanVram;
   final void Function()? onShowCpuGpuTemp;
   final void Function()? onShowDiskUsage;
-  final void Function()? onShowMemoryUsage;
+  final void Function()? onShowTaskManagerDialog;
   final void Function()? onShowShutdownTimerDialog;
   final void Function()? onShowCleanCacheDialog;
   final void Function()? onShowCpuGpuUsage;
@@ -54,12 +48,10 @@ class TrayCallbacks {
     this.onShowMainWindow,
     this.onCheckUpdates,
     this.onShowCheckUpdatesDialog,
-    this.onCleanLinuxCache,
     this.onCleanTempFiles,
-    this.onCleanVram,
     this.onShowCpuGpuTemp,
     this.onShowDiskUsage,
-    this.onShowMemoryUsage,
+    this.onShowTaskManagerDialog,
     this.onShowShutdownTimerDialog,
     this.onShowCleanCacheDialog,
     this.onShowCpuGpuUsage,
@@ -80,6 +72,9 @@ class TrayService {
   static bool _initialized = false;
   static String? _lastError;
   static Timer? _menuUpdateTimer;
+  static bool _menuRefreshInFlight = false;
+  /// Aggiornamento tray: meno frequente riduce RAM/CPU (prima era 3s + getSystemInfo pesante).
+  static const Duration _menuStatsInterval = Duration(seconds: 25);
   static String _tempLabel = '';
   static String _usageLabel = '';
   static String _diskUsageLabel = '';
@@ -151,14 +146,16 @@ class TrayService {
   static void _startMenuUpdateTimer() {
     _menuUpdateTimer?.cancel();
     if (!_initialized || _systemTray == null) return;
-    _menuUpdateTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+    _menuUpdateTimer = Timer.periodic(_menuStatsInterval, (_) async {
+      if (_menuRefreshInFlight) return;
+      _menuRefreshInFlight = true;
       try {
-        final info = await SystemMonitor.getSystemInfo();
+        final stats = await SystemMonitor.getTrayLightweightStats();
         final cpuTemp = await SystemMonitor.getCpuTemperature();
         final homeDisk = await SystemMonitor.getHomeDiskUsage();
-        final cpuUsage = info.cpu.usagePercent;
-        final gpuUsage = info.gpu?.usagePercent;
-        final gpuTemp = info.gpu?.temperature;
+        final cpuUsage = stats.cpuUsagePercent;
+        final gpuUsage = stats.gpuUsagePercent;
+        final gpuTemp = stats.gpuTemp;
         final cpuStr = cpuTemp != null ? '${cpuTemp.toStringAsFixed(0)}°C' : '-';
         final gpuStr = gpuTemp != null ? '${gpuTemp.toStringAsFixed(0)}°C' : '-';
         _tempLabel = 'CPU: $cpuStr | GPU: $gpuStr';
@@ -179,7 +176,9 @@ class TrayService {
           _memoryUsageLabel = '';
         }
         await _buildMenuWithStats();
-      } catch (_) {}
+      } catch (_) {} finally {
+        _menuRefreshInFlight = false;
+      }
     });
   }
 
@@ -199,9 +198,7 @@ class TrayService {
     if (_systemTray == null) return;
     final l = _labels ?? const TrayMenuLabels(
       checkUpdates: 'Verifica aggiornamenti di sistema',
-      cleanLinuxCache: 'Pulisci Cache Linux',
-      removeTempFiles: 'Rimuovi File temporanei',
-      cleanVram: 'Ripulisci VRAM (reset GPU)',
+      cleanTempFilesAndCache: 'Pulisci file temporanei e cache',
       cpuGpuTemp: 'Temperatura CPU, GPU',
       diskUsage: 'Uso del disco',
       memoryUsage: 'Uso memoria RAM',
@@ -217,9 +214,7 @@ class TrayService {
     final menu = Menu();
     await menu.buildFrom([
       MenuItemLabel(label: l.checkUpdates, onClicked: (_) => _onCheckUpdates()),
-      MenuItemLabel(label: l.cleanLinuxCache, onClicked: (_) => _onCleanLinuxCache()),
-      MenuItemLabel(label: l.removeTempFiles, onClicked: (_) => _onCleanTempFiles()),
-      MenuItemLabel(label: l.cleanVram, onClicked: (_) => _onCleanVram()),
+      MenuItemLabel(label: l.cleanTempFilesAndCache, onClicked: (_) => _onCleanTempFiles()),
       MenuItemLabel(label: tempLabel, onClicked: (_) {
         _callbacks?.onShowCpuGpuTemp?.call();
         _appWindow?.show();
@@ -229,7 +224,7 @@ class TrayService {
         _appWindow?.show();
       }),
       MenuItemLabel(label: memoryLabel, onClicked: (_) {
-        _callbacks?.onShowMemoryUsage?.call();
+        _callbacks?.onShowTaskManagerDialog?.call();
         _appWindow?.show();
       }),
       MenuItemLabel(label: l.shutdownTimer, onClicked: (_) => _onShutdownTimer()),
@@ -246,7 +241,10 @@ class TrayService {
         _appWindow?.show();
       }),
       MenuSeparator(),
-      MenuItemLabel(label: l.exit, onClicked: (_) => _onExit()),
+      MenuItemLabel(label: l.exit, onClicked: (_) async {
+        await releaseSingleInstanceLock();
+        _onExit();
+      }),
     ]);
     await _systemTray!.setContextMenu(menu);
   }
@@ -269,50 +267,12 @@ class TrayService {
     _callbacks?.onShowShutdownTimerDialog?.call();
   }
 
-  static void _onCleanLinuxCache() {
-    if (_callbacks?.onShowCleanCacheDialog != null) {
-      _appWindow?.show();
-      _callbacks!.onShowCleanCacheDialog!();
-    } else {
-      _appWindow?.show();
-      _runCleanLinuxCacheInBackground();
-    }
-  }
+  /// Se true, la CleanupScreen eseguirà la pulizia al primo frame (apertura da tray).
+  static bool runCleanupWhenScreenShown = false;
 
-  static Future<void> _runCleanLinuxCacheInBackground() async {
-    try {
-      final result = await CleanupService.dropLinuxCache();
-      final msg = result['success'] == true ? 'Cache pulita.' : (result['message'] ?? 'Errore');
-      _callbacks?.showSnackbar?.call(msg);
-    } catch (e) {
-      _callbacks?.showSnackbar?.call('Errore: $e');
-    }
-    _callbacks?.onCleanLinuxCache?.call();
-  }
-
-  static void _onCleanTempFiles() async {
-    _appWindow?.show();
-    try {
-      await CleanupService.cleanupTempFiles();
-      _callbacks?.showSnackbar?.call('Pulizia completata.');
-    } catch (e) {
-      _callbacks?.showSnackbar?.call('Errore: $e');
-    }
+  static void _onCleanTempFiles() {
+    runCleanupWhenScreenShown = true;
     _callbacks?.onCleanTempFiles?.call();
-  }
-
-  static void _onCleanVram() async {
-    _appWindow?.show();
-    try {
-      final result = await CleanupService.cleanVram();
-      final msg = result['success'] == true
-          ? (result['message']?.toString().isNotEmpty == true ? result['message']!.toString() : 'Pulizia VRAM completata.')
-          : '${result['message']?.toString().isNotEmpty == true ? result['message']!.toString() : 'Errore pulizia VRAM'}';
-      _callbacks?.showSnackbar?.call(msg);
-    } catch (e) {
-      _callbacks?.showSnackbar?.call('Errore pulizia VRAM: $e');
-    }
-    _callbacks?.onCleanVram?.call();
   }
 
   static void showWindow() {
@@ -321,5 +281,6 @@ class TrayService {
 
   static void hideWindow() {
     _appWindow?.hide();
+    AppMemoryMaintenance.notifyMainWindowHiddenToTray();
   }
 }

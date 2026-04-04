@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math' show min;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'password_storage.dart';
 
@@ -48,10 +49,28 @@ class CleanupService {
     }
   }
 
-  static Future<Map<String, int>> findAppTempFiles() async {
-    final sizes = <String, int>{};
+  static Future<int> _directorySizeBytesFast(String path) async {
+    try {
+      final dir = Directory(path);
+      if (!await dir.exists()) return 0;
+      if (Platform.isLinux) {
+        final r = await Process.run('du', ['-sb', path], runInShell: false);
+        if (r.exitCode != 0) return 0;
+        final out = r.stdout.toString().trim();
+        if (out.isEmpty) return 0;
+        final first = out.split(RegExp(r'\s+')).first;
+        return int.tryParse(first) ?? 0;
+      }
+      return await _calculateDirSize(dir);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static Future<List<String>> _collectExistingAppTempPaths() async {
+    final paths = <String>[];
     final homeDir = Platform.environment['HOME'] ?? '';
-    
+
     final appPaths = <String>[
       '$homeDir/.cache/google-chrome',
       '$homeDir/.cache/chromium',
@@ -124,10 +143,7 @@ class CleanupService {
                 final fullPath = entity.path + pathPattern.substring(pathPattern.indexOf('*') + 1);
                 final targetDir = Directory(fullPath);
                 if (await targetDir.exists()) {
-                  final size = await _calculateDirSize(targetDir);
-                  if (size > 0) {
-                    sizes[fullPath] = size;
-                  }
+                  paths.add(fullPath);
                 }
               }
             }
@@ -135,17 +151,29 @@ class CleanupService {
         } else {
           final dir = Directory(pathPattern);
           if (await dir.exists()) {
-            final size = await _calculateDirSize(dir);
-            if (size > 0) {
-              sizes[pathPattern] = size;
-            }
+            paths.add(pathPattern);
           }
         }
-      } catch (e) {
-        continue;
-      }
+      } catch (_) {}
     }
 
+    return paths;
+  }
+
+  static Future<Map<String, int>> findAppTempFiles() async {
+    final paths = await _collectExistingAppTempPaths();
+    final sizes = <String, int>{};
+    const parallel = 16;
+    for (var i = 0; i < paths.length; i += parallel) {
+      final end = min(i + parallel, paths.length);
+      final chunk = paths.sublist(i, end);
+      await Future.wait(chunk.map((p) async {
+        final size = await _directorySizeBytesFast(p);
+        if (size > 0) {
+          sizes[p] = size;
+        }
+      }));
+    }
     return sizes;
   }
 
@@ -369,8 +397,9 @@ class CleanupService {
 
     final excludedPaths = await getExcludedPaths();
     final criticalPaths = _getCriticalPaths(homeDir);
+    final baseToMeasure = <String>[];
     for (final path in basePaths) {
-      bool isCritical = false;
+      var isCritical = false;
       for (final critical in criticalPaths) {
         if (path == critical || path.startsWith('$critical/')) {
           isCritical = true;
@@ -381,19 +410,19 @@ class CleanupService {
         sizes[path] = 0;
         continue;
       }
-      
+      baseToMeasure.add(path);
+    }
+    await Future.wait(baseToMeasure.map((path) async {
       try {
-        final dir = Directory(path);
-        if (await dir.exists()) {
-          final size = await _calculateDirSize(dir);
-          sizes[path] = size;
+        if (await Directory(path).exists()) {
+          sizes[path] = await _directorySizeBytesFast(path);
         } else {
           sizes[path] = 0;
         }
-      } catch (e) {
+      } catch (_) {
         sizes[path] = 0;
       }
-    }
+    }));
 
     final appTempFiles = await findAppTempFiles();
     for (final entry in appTempFiles.entries) {

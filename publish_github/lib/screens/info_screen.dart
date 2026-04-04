@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'package:super_linux_utility/config/app_build.dart';
+import 'package:super_linux_utility/config/application_constants.dart';
 import 'package:super_linux_utility/services/license_service.dart';
 import 'license_activation_dialog.dart';
 
@@ -31,6 +33,26 @@ class _InfoScreenState extends State<InfoScreen> {
   Future<void> _checkLicense() async {
     final activated = await isActivated();
     if (mounted) setState(() { _licenseActivated = activated; _licenseCheckDone = true; });
+  }
+
+  /// Link PayPal.me con importo preimpostato 19,99 € (formato: paypal.me/username/amount)
+  static const String _paypalUrl = 'https://paypal.me/fearescape/19.99';
+
+  /// Project website (GitHub repository)
+  static const String _projectWebsiteUrl = 'https://github.com/sviluppoarte1-lang/superlinuxutility';
+
+  Future<void> _launchPayPal() async {
+    final uri = Uri.parse(_paypalUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchProjectWebsite() async {
+    final uri = Uri.parse(_projectWebsiteUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> _openLicenseDialog() async {
@@ -119,6 +141,14 @@ class _InfoScreenState extends State<InfoScreen> {
                   color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                 ),
           ),
+          const SizedBox(height: 6),
+          SelectableText(
+            '${localizations.applicationIdLabel}: ${ApplicationConstants.applicationId}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.75),
+                  fontFamily: 'monospace',
+                ),
+          ),
           const SizedBox(height: 8),
           Text(
             '${localizations.creator}: ${localizations.creatorName}',
@@ -153,6 +183,46 @@ class _InfoScreenState extends State<InfoScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Project website
+          Card(
+            child: InkWell(
+              onTap: _launchProjectWebsite,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.language, color: Theme.of(context).colorScheme.primary, size: 28),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            localizations.infoProjectWebsite,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _projectWebsiteUrl,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).textTheme.bodySmall?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.open_in_new, color: Theme.of(context).colorScheme.primary, size: 22),
+                  ],
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 24),
 
           if (isAdvancedBuild && _licenseCheckDone && !_licenseActivated) ...[
@@ -179,11 +249,26 @@ class _InfoScreenState extends State<InfoScreen> {
                       localizations.licenseActivateCardDesc,
                       style: const TextStyle(fontSize: 16, height: 1.5),
                     ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: _openLicenseDialog,
-                      icon: const Icon(Icons.key),
-                      label: Text(localizations.licenseActivateButton),
+                    const SizedBox(height: 12),
+                    Text(
+                      localizations.purchaseLicenseViaPaypal,
+                      style: const TextStyle(fontSize: 14, height: 1.5),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        FilledButton.icon(
+                          onPressed: _openLicenseDialog,
+                          icon: const Icon(Icons.key),
+                          label: Text(localizations.licenseActivateButton),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => _launchPayPal(),
+                          icon: const Icon(Icons.payment, size: 20),
+                          label: Text(localizations.payWithPaypal),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -191,6 +276,50 @@ class _InfoScreenState extends State<InfoScreen> {
             ),
             const SizedBox(height: 24),
           ],
+
+          // License & Disclaimer (all builds)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.gavel, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        localizations.disclaimerLicenseTitle,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    localizations.disclaimerGplNotice,
+                    style: const TextStyle(fontSize: 13, height: 1.5),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    localizations.disclaimerNoWarranty,
+                    style: const TextStyle(fontSize: 13, height: 1.5),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    localizations.disclaimerCopyright,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
 
           // Caratteristiche principali
           Card(
@@ -476,47 +605,6 @@ class _InfoScreenState extends State<InfoScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.memory, color: Colors.indigo),
-                      const SizedBox(width: 8),
-                      Text(
-                        localizations.infoKernel,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildFeatureItem(
-                    localizations.infoKernelList,
-                    localizations.infoKernelListDesc,
-                  ),
-                  _buildFeatureItem(
-                    localizations.infoKernelRemoval,
-                    localizations.infoKernelRemovalDesc,
-                  ),
-                  _buildFeatureItem(
-                    localizations.infoKernelDefault,
-                    localizations.infoKernelDefaultDesc,
-                  ),
-                  _buildFeatureItem(
-                    localizations.infoKernelCleanup,
-                    localizations.infoKernelCleanupDesc,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
                       const Icon(Icons.security, color: Colors.amber),
                       const SizedBox(width: 8),
                       Text(
@@ -555,7 +643,7 @@ class _InfoScreenState extends State<InfoScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '© 2024 ${localizations.creatorName}',
+            '© 2026 ${localizations.creatorName}',
             style: TextStyle(
               fontSize: 12,
               color: Theme.of(context).textTheme.bodySmall?.color,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
@@ -10,18 +11,23 @@ import 'cleanup_screen.dart';
 import 'installed_apps_screen.dart';
 import 'system_monitor_screen.dart';
 import 'grub_editor_screen.dart';
-import 'kernel_list_screen.dart';
 import 'info_screen.dart';
 import 'settings_screen.dart';
 import 'disk_analyzer_screen.dart';
 import 'recovery_screen.dart';
-import 'shutdown_scheduler_screen.dart';
+import 'tray_task_manager_dialog.dart';
 import 'dart:io';
+import '../services/app_memory_maintenance.dart';
 import '../services/tray_service.dart';
 import '../services/recovery_service.dart';
 import '../services/shutdown_scheduler_service.dart';
 import '../services/password_storage.dart';
 import '../services/cleanup_service.dart';
+import '../services/app_self_update_service.dart';
+import '../utils/update_check_report_formatter.dart';
+import '../utils/update_preview_helper.dart';
+import '../widgets/updates_apply_progress_view.dart';
+import '../widgets/tab_page_no_keep_alive.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(ThemeMode)? onThemeModeChanged;
@@ -39,17 +45,130 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isAdvancedMode = false;
   bool _isLoading = true;
   bool _licenseActivated = false;
-
+  Timer? _updateCheckTimer;
+  static const String _keyUpdateCheckIntervalMinutes = 'update_check_interval_minutes';
+  static const String _keyLastUpdateCheckTs = 'last_update_check_ts';
   static const int _standardTabCount = 8;
-  static const int _advancedTabCount = 11;
+  static const int _advancedTabCount = 10;
 
   @override
   void initState() {
     super.initState();
+    AppMemoryMaintenance.onMainWindowHiddenToTray = _releaseMainUiForTray;
     _initializeController();
     if (Platform.isLinux) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _initTray());
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startUpdateCheckTimer());
+  }
+
+  Future<void> _startUpdateCheckTimer() async {
+    _updateCheckTimer?.cancel();
+    final prefs = await SharedPreferences.getInstance();
+    final interval = prefs.getInt(_keyUpdateCheckIntervalMinutes) ?? 0;
+    if (interval <= 0) return;
+    _updateCheckTimer = Timer.periodic(const Duration(minutes: 1), (_) => _onUpdateCheckTick());
+    Timer(const Duration(seconds: 15), () => _onUpdateCheckTick());
+  }
+
+  Future<void> _onUpdateCheckTick() async {
+    final prefs = await SharedPreferences.getInstance();
+    final interval = prefs.getInt(_keyUpdateCheckIntervalMinutes) ?? 0;
+    if (interval <= 0) return;
+    final last = prefs.getInt(_keyLastUpdateCheckTs) ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (last > 0 && now - last < interval * 60 * 1000) return;
+    try {
+      final autoAppUpdateEnabled = prefs.getBool(SettingsScreen.keyAutoAppUpdateFromGithub) ?? true;
+      if (autoAppUpdateEnabled) {
+        final appUpdateResult = await AppSelfUpdateService.checkAndAutoUpdateFromGithub();
+        if (!mounted) return;
+        if (appUpdateResult['updated'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text((appUpdateResult['message'] ?? 'Application updated. Please restart the app.').toString()),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 8),
+            ),
+          );
+        }
+      }
+
+      final result = await RecoveryService.checkForUpdates();
+      await prefs.setInt(_keyLastUpdateCheckTs, now);
+      if (!mounted) return;
+      final installable = result['updateCount'] as int? ?? 0;
+      // Non notificare se ci sono solo aggiornamenti phased (non installabili); sì se misti o solo installabili.
+      if (installable > 0) {
+        final summary = result['summaryPackageCount'] as int? ?? installable;
+        _showUpdatesAvailableDialog(result, summary);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _showUpdatesAvailableDialog(Map<String, dynamic> result, int count) async {
+    if (!mounted) return;
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final apply = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.system_update, color: Colors.green),
+              const SizedBox(width: 8),
+              Text(l10n.updatesAvailableDialogTitle),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.updatesAvailableDialogMessage(count)),
+                const SizedBox(height: 12),
+                UpdatePreviewHelper.previewBlock(
+                  ctx,
+                  l10n,
+                  result,
+                  heading: l10n.updatesAvailableDetectedListHeading,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.postpone),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(ctx, true),
+              icon: const Icon(Icons.download, size: 20),
+              label: Text(l10n.applyNow),
+            ),
+          ],
+        ),
+      );
+      if (apply == true && mounted) {
+        _showTrayCheckUpdatesDialogWithResult(result);
+      }
+    });
+  }
+
+  void _showTrayCheckUpdatesDialogWithResult(Map<String, dynamic> initialResult) {
+    if (!mounted) return;
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => _TrayCheckUpdatesDialog(initialResult: initialResult),
+      );
+    });
   }
 
   void _initTray() {
@@ -57,9 +176,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final l10n = AppLocalizations.of(context)!;
     TrayService.setLabels(TrayMenuLabels(
       checkUpdates: l10n.trayCheckUpdates,
-      cleanLinuxCache: l10n.trayCleanLinuxCache,
-      removeTempFiles: l10n.trayRemoveTempFiles,
-      cleanVram: l10n.trayCleanVram,
+      cleanTempFilesAndCache: l10n.trayCleanTempFilesAndCache,
       cpuGpuTemp: l10n.trayCpuGpuTemp,
       diskUsage: l10n.trayDiskUsage,
       memoryUsage: l10n.trayMemoryUsage,
@@ -70,15 +187,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     ));
     TrayService.setCallbacks(TrayCallbacks(
       onShowMainWindow: () => TrayService.showWindow(),
-      onCheckUpdates: () => _goToTab(8),
+      onCheckUpdates: () => _goToTab(7),
       onShowCheckUpdatesDialog: () => _showTrayCheckUpdatesDialog(),
-      onCleanLinuxCache: () {},
-      onShowCleanCacheDialog: () => _showTrayCleanCacheDialog(),
       onCleanTempFiles: () => _goToTab(2),
-      onCleanVram: () => _goToTab(2),
+      onShowCleanCacheDialog: () => _showTrayCleanCacheDialog(),
       onShowCpuGpuTemp: () => _goToTab(4),
       onShowDiskUsage: () => _goToTab(5),
-      onShowMemoryUsage: () => _goToTab(4),
+      onShowTaskManagerDialog: () => _showTrayTaskManagerDialog(),
       onShowShutdownTimerDialog: () => _showTrayShutdownTimerDialog(),
       onShowCpuGpuUsage: () => _goToTab(4),
       showSnackbar: (msg) {
@@ -91,11 +206,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _showTrayCheckUpdatesDialog() {
     if (!mounted) return;
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _TrayCheckUpdatesDialog(),
-    );
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const _TrayCheckUpdatesDialog(),
+      );
+    });
   }
 
   void _showTrayShutdownTimerDialog() {
@@ -114,6 +233,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  void _showTrayTaskManagerDialog() {
+    if (!mounted) return;
+    TrayService.showWindow();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        barrierColor: Colors.transparent,
+        builder: (ctx) => const TrayTaskManagerDialog(),
+      );
+    });
+  }
+
   void _goToTab(int index) {
     TrayService.showWindow();
     if (_tabController != null && index < _tabController!.length) {
@@ -128,6 +260,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final bool effectiveAdvanced;
     if (isStandardBuild) {
       effectiveAdvanced = false;
+    } else if (isPersonalBuild) {
+      effectiveAdvanced = true;
+      _licenseActivated = true;
     } else {
       _licenseActivated = await isActivated();
       effectiveAdvanced = _licenseActivated && (prefs.getBool('advancedMode') ?? false);
@@ -173,8 +308,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  void _releaseMainUiForTray() {
+    if (!mounted || _tabController == null || _isLoading) return;
+    if (_tabController!.index != 0) {
+      _tabController!.index = 0;
+    }
+  }
+
   @override
   void dispose() {
+    AppMemoryMaintenance.onMainWindowHiddenToTray = null;
+    _updateCheckTimer?.cancel();
     _tabController?.dispose();
     super.dispose();
   }
@@ -192,8 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     if (_isAdvancedMode) {
       tabs.insert(6, Tab(icon: const Icon(Icons.edit), text: l10n.tabGrub));
-      tabs.insert(7, Tab(icon: const Icon(Icons.memory), text: l10n.tabKernel));
-      tabs.insert(8, Tab(icon: const Icon(Icons.healing), text: l10n.tabRecovery));
+      tabs.insert(7, Tab(icon: const Icon(Icons.healing), text: l10n.tabRecovery));
     }
 
     tabs.add(Tab(icon: const Icon(Icons.settings), text: l10n.tabSettings));
@@ -203,29 +346,31 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   List<Widget> _buildTabViews() {
+    Widget page(Widget child) => TabPageNoKeepAlive(child: child);
+
     final views = <Widget>[
-      const ServicesScreen(),
-      const StartupAppsScreen(),
-      const CleanupScreen(),
-      const InstalledAppsScreen(),
-      const SystemMonitorScreen(),
-      const DiskAnalyzerScreen(),
+      page(const ServicesScreen()),
+      page(const StartupAppsScreen()),
+      page(const CleanupScreen()),
+      page(const InstalledAppsScreen()),
+      page(const SystemMonitorScreen()),
+      page(const DiskAnalyzerScreen()),
     ];
 
     if (_isAdvancedMode) {
-      views.insert(6, const GrubEditorScreen());
-      views.insert(7, const KernelListScreen());
-      views.insert(8, const RecoveryScreen());
+      views.insert(6, page(const GrubEditorScreen()));
+      views.insert(7, page(const RecoveryScreen()));
     }
 
-    views.add(SettingsScreen(
+    views.add(page(SettingsScreen(
       onThemeModeChanged: widget.onThemeModeChanged,
       onLocaleChanged: widget.onLocaleChanged,
       onFontChanged: widget.onFontChanged,
-    ));
-    views.add(InfoScreen(
+      onUpdateCheckPolicyChanged: _startUpdateCheckTimer,
+    )));
+    views.add(page(InfoScreen(
       onLicenseActivated: isAdvancedBuild ? _initializeController : null,
-    ));
+    )));
 
     return views;
   }
@@ -253,6 +398,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
                       AppLocalizations.of(context)!.modeStandard,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  )
+                else if (isPersonalBuild)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Personal / Test',
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   )
@@ -313,6 +466,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 }
 
 class _TrayCheckUpdatesDialog extends StatefulWidget {
+  final Map<String, dynamic>? initialResult;
+
+  const _TrayCheckUpdatesDialog({this.initialResult});
+
   @override
   State<_TrayCheckUpdatesDialog> createState() => _TrayCheckUpdatesDialogState();
 }
@@ -321,11 +478,20 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
   bool _loading = true;
   bool _applyingUpdates = false;
   Map<String, dynamic>? _result;
+  double _applyProgress = 0;
+  String? _applyStatus;
+  String _applyLog = '';
+  List<String> _applyPendingPackages = [];
 
   @override
   void initState() {
     super.initState();
-    _runCheck();
+    if (widget.initialResult != null) {
+      _result = widget.initialResult;
+      _loading = false;
+    } else {
+      _runCheck();
+    }
   }
 
   Future<void> _runCheck() async {
@@ -353,14 +519,52 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
     );
     if (confirm != true || !mounted) return;
 
-    setState(() => _applyingUpdates = true);
+    final rawUpd = _result?['updates'];
+    final pending = rawUpd is List
+        ? rawUpd.map((e) => e.toString()).toList()
+        : <String>[];
+    final expectedCount = (_result?['updateCount'] as int?) ?? pending.length;
+
+    setState(() {
+      _applyingUpdates = true;
+      _applyProgress = 0;
+      _applyStatus = null;
+      _applyLog = '';
+      _applyPendingPackages = List<String>.from(pending);
+    });
     try {
-      final result = await RecoveryService.performUpdates();
+      final result = await RecoveryService.performUpdates(
+        expectedPackageCount: expectedCount,
+        onOutput: (data) {
+          if (!mounted) return;
+          setState(() {
+            _applyLog += data;
+            if (_applyLog.length > 12000) {
+              _applyLog = _applyLog.substring(_applyLog.length - 12000);
+            }
+          });
+        },
+        onProgress: (p, label) {
+          if (!mounted) return;
+          setState(() {
+            _applyProgress = p;
+            _applyStatus = label;
+          });
+        },
+      );
       if (!mounted) return;
       setState(() {
         _applyingUpdates = false;
         if (result['success'] == true) {
-          _result = {'success': true, 'updateCount': 0, 'output': _result?['output'] ?? ''};
+          _result = {
+            'success': true,
+            'updateCount': 0,
+            'summaryPackageCount': 0,
+            'updateReport': <String, dynamic>{},
+            'updates': <String>[],
+            'updateInstallableLabels': <String>[],
+            'updatePhasedLabels': <String>[],
+          };
         }
       });
       final message = result['success'] == true ? l10n.recoveryCheckUpdatesComplete : (result['error']?.toString() ?? result['message']?.toString() ?? '');
@@ -391,6 +595,15 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
     final hasUpdates = _result != null &&
         _result!['success'] == true &&
         (_result!['updateCount'] as int? ?? 0) > 0;
+    final reportMap = _result?['updateReport'] as Map<String, dynamic>?;
+    final detailText = _result?['success'] == true
+        ? UpdateCheckReportFormatter.format(l10n, reportMap)
+        : '';
+    final legacyOutput = _result?['output'] as String?;
+    final boxText = detailText.isNotEmpty
+        ? detailText
+        : (legacyOutput?.isNotEmpty == true ? legacyOutput! : '');
+    final showDetailBox = boxText.isNotEmpty;
 
     return AlertDialog(
       title: Row(
@@ -401,23 +614,26 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
         ],
       ),
       content: SizedBox(
-        width: 400,
+        width: _applyingUpdates ? 440 : 400,
         child: _loading || _applyingUpdates
             ? Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    if (_applyingUpdates) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        l10n.recoveryPerformUpdates,
-                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8)),
+                padding: const EdgeInsets.all(16.0),
+                child: _loading
+                    ? const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                        ],
+                      )
+                    : UpdatesApplyProgressView(
+                        progress: _applyProgress,
+                        statusLabel: _applyStatus,
+                        pendingPackages: _applyPendingPackages,
+                        logText: _applyLog.isEmpty ? null : _applyLog,
+                        maxPackagesHeight: 120,
+                        maxLogHeight: 140,
                       ),
-                    ],
-                  ],
-                ),
               )
             : SingleChildScrollView(
                 child: Column(
@@ -434,11 +650,24 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
                           color: _result!['success'] == true ? Colors.green : Theme.of(context).colorScheme.error,
                         ),
                       ),
-                      if (_result!['updateCount'] != null) ...[
+                      if (_result!['updateCount'] != null ||
+                          _result!['summaryPackageCount'] != null) ...[
                         const SizedBox(height: 8),
                         Text(
-                          '${_result!['updateCount']} ${l10n.package}',
+                          l10n.updateCheckSummaryPackageCount(
+                            (_result!['summaryPackageCount'] as int?) ??
+                                (_result!['updateCount'] as int? ?? 0),
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                      if (_result!['success'] == true) ...[
+                        const SizedBox(height: 10),
+                        UpdatePreviewHelper.previewBlock(
+                          context,
+                          l10n,
+                          _result,
+                          heading: l10n.updatesCheckPreviewHeading,
                         ),
                       ],
                       if (hasUpdates) ...[
@@ -451,7 +680,7 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
                         ),
                         const SizedBox(height: 8),
                       ],
-                      if (_result!['output'] != null && (_result!['output'] as String).isNotEmpty) ...[
+                      if (showDetailBox) ...[
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -460,7 +689,7 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: SelectableText(
-                            _result!['output'] as String,
+                            boxText,
                             style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
                           ),
                         ),

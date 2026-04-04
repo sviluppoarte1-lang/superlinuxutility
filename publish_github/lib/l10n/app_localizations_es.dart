@@ -24,7 +24,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trayRemoveTempFiles => 'Eliminar archivos temporales';
 
   @override
-  String get trayCleanVram => 'Limpiar VRAM (reinicio de GPU)';
+  String get trayCleanTempFilesAndCache =>
+      'Limpiar archivos temporales y caché';
+
+  @override
+  String get trayCleanVram => 'Limpiar VRAM (reinicio GPU)';
 
   @override
   String get trayCpuGpuTemp => 'Temperatura CPU, GPU';
@@ -73,11 +77,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cleanupVramSuccess =>
-      'VRAM limpiada (reinicio de GPU) correctamente.';
+      'VRAM limpiada (reinicio de la GPU) correctamente.';
 
   @override
   String get cleanupVramError =>
-      'No se pudo limpiar la VRAM (reinicio de GPU fallido).';
+      'No se pudo limpiar la VRAM (reinicio de la GPU fallido).';
 
   @override
   String get tabServices => 'Servicios';
@@ -110,9 +114,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tabGrub => 'GRUB';
 
   @override
-  String get tabKernel => 'Kernel';
-
-  @override
   String get tabSettings => 'Configuración';
 
   @override
@@ -137,13 +138,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get warningGrubDesc =>
       'La modificación incorrecta del gestor de arranque puede impedir que el sistema arranque.';
-
-  @override
-  String get warningKernel => 'Eliminación de Kernel';
-
-  @override
-  String get warningKernelDesc =>
-      'Eliminar kernels esenciales puede hacer que el sistema sea inutilizable.';
 
   @override
   String get warningServices => 'Gestión de Servicios';
@@ -378,6 +372,209 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo cambiar el inicio al arranque.';
 
   @override
+  String get settingsAutoUpdateCheckTitle =>
+      'Comprobación automática de actualizaciones';
+
+  @override
+  String get settingsAutoUpdateCheckDesc =>
+      'Comprobar actualizaciones del sistema automáticamente con la frecuencia elegida.';
+
+  @override
+  String get settingsAutoUpdateCheckInterval => 'Comprobar actualizaciones';
+
+  @override
+  String get settingsAutoUpdateNever => 'Nunca';
+
+  @override
+  String get settingsAutoUpdateEvery15Min => 'Cada 15 minutos';
+
+  @override
+  String get settingsAutoUpdateEvery30Min => 'Cada 30 minutos';
+
+  @override
+  String get settingsAutoUpdateEvery1Hour => 'Cada hora';
+
+  @override
+  String get settingsAutoUpdateEvery6Hours => 'Cada 6 horas';
+
+  @override
+  String get settingsAutoUpdateEvery12Hours => 'Cada 12 horas';
+
+  @override
+  String get settingsAutoUpdateEveryDay => 'Cada día';
+
+  @override
+  String get settingsAutoAppUpdateFromGithubTitle =>
+      'Actualizar la app automáticamente desde GitHub';
+
+  @override
+  String get settingsAutoAppUpdateFromGithubDesc =>
+      'Si está activo, la app descarga e instala periódicamente el último .deb de esta edición desde las releases de GitHub. Requiere la contraseña de administrador guardada y que la verificación automática de arriba esté activa.';
+
+  @override
+  String get updateCheckAptNone => 'APT: No hay actualizaciones disponibles';
+
+  @override
+  String get updateCheckAptPhasedOnly =>
+      'APT: No hay actualizaciones instalables ahora (solo despliegue por fases)';
+
+  @override
+  String updateCheckAptHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'APT: $count actualizaciones disponibles',
+      one: 'APT: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckAptPhasedExtra(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'APT: $count actualizaciones por fases detectadas',
+      one: 'APT: $count actualización por fases detectada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckAptError(String error) {
+    return 'APT: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckDnfNone => 'DNF: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckDnfHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'DNF: $count actualizaciones disponibles',
+      one: 'DNF: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckDnfError(String error) {
+    return 'DNF: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckPacmanNone =>
+      'Pacman: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckPacmanHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pacman: $count actualizaciones disponibles',
+      one: 'Pacman: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckPacmanError(String error) {
+    return 'Pacman: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckSnapNone => 'Snap: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckSnapHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Snap: $count actualizaciones disponibles',
+      one: 'Snap: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckSnapError(String error) {
+    return 'Snap: Error al comprobar: $error';
+  }
+
+  @override
+  String get updateCheckFlatpakNone =>
+      'Flatpak: No hay actualizaciones disponibles';
+
+  @override
+  String updateCheckFlatpakHasUpdates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Flatpak: $count actualizaciones disponibles',
+      one: 'Flatpak: $count actualización disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updateCheckFlatpakError(String error) {
+    return 'Flatpak: Error al comprobar: $error';
+  }
+
+  @override
+  String updateCheckSummaryPackageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count paquetes',
+      one: '$count paquete',
+      zero: '0 paquetes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String updatesAvailableCount(int count) {
+    return '$count actualizaciones disponibles';
+  }
+
+  @override
+  String get updatesAvailableDialogTitle => 'Actualizaciones disponibles';
+
+  @override
+  String updatesAvailableDialogMessage(int count) {
+    return '$count actualizaciones disponibles. ¿Desea aplicarlas ahora?';
+  }
+
+  @override
+  String get updatesAvailableDetectedListHeading => 'Detectados:';
+
+  @override
+  String updateLabelPhased(String name) {
+    return '$name (despliegue gradual — aún no instalable)';
+  }
+
+  @override
+  String updatesPreviewTruncated(int count) {
+    return '… y $count más';
+  }
+
+  @override
+  String get updatesAvailablePhasedFooter =>
+      'Los paquetes en despliegue gradual no se pueden instalar aún. \"Aplicar ahora\" solo aplica lo que el sistema permite.';
+
+  @override
+  String get updatesCheckPreviewHeading => 'Elementos afectados:';
+
+  @override
+  String get applyNow => 'Aplicar ahora';
+
+  @override
+  String get postpone => 'Más tarde';
+
+  @override
   String get fontFamily => 'Familia de Fuente';
 
   @override
@@ -529,6 +726,46 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get appExpertUsers =>
       'Aplicación diseñada para usuarios expertos de Linux';
+
+  @override
+  String get infoProjectWebsite => 'Sitio web del proyecto';
+
+  @override
+  String get applicationIdLabel => 'ID de la aplicación (escritorio)';
+
+  @override
+  String get updatesPendingPackagesTitle =>
+      'Paquetes pendientes (última comprobación)';
+
+  @override
+  String updatesProgressCurrent(String detail) {
+    return 'Progreso: $detail';
+  }
+
+  @override
+  String get updatesCommandOutputTitle => 'Salida del comando';
+
+  @override
+  String get disclaimerLicenseTitle => 'Licencia y Aviso Legal';
+
+  @override
+  String get disclaimerGplNotice =>
+      'Esta aplicación es software libre; puede redistribuirla y/o modificarla bajo los términos de la GNU General Public License publicada por la Free Software Foundation, versión 3 de la Licencia o (a su elección) posterior.';
+
+  @override
+  String get disclaimerNoWarranty =>
+      'Este programa se distribuye con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. Consulte la GNU General Public License para más detalles.';
+
+  @override
+  String get disclaimerCopyright =>
+      'Copyright (c) 2024-2025 Marco Di Giangiacomo. Todos los derechos reservados bajo GPL-3.0.';
+
+  @override
+  String get payWithPaypal => 'Pagar con PayPal';
+
+  @override
+  String get purchaseLicenseViaPaypal =>
+      'La versión Advanced cuesta 19,99 €. Para comprar una licencia, pague por PayPal. Tras el pago correcto recibirá su código de licencia por correo electrónico. Sin un pago válido, la aplicación no puede activarse.';
 
   @override
   String get languageSelectionTitle => 'Selección de Idioma';
@@ -750,105 +987,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupRestoreError => 'Error al restaurar la copia de seguridad';
 
   @override
-  String get kernelCannotRemoveActive =>
-      'No se puede eliminar el kernel actualmente activo';
-
-  @override
-  String get removeKernel => 'Eliminar kernel';
-
-  @override
-  String removeKernelQuestion(String version) {
-    return '¿Desea eliminar el kernel $version?';
-  }
-
-  @override
-  String get thisOperation => 'Esta operación:';
-
-  @override
-  String get willRemovePackage => '• Eliminará el paquete del kernel';
-
-  @override
-  String get willUpdateGrub => '• Actualizará GRUB';
-
-  @override
-  String get kernelWarning =>
-      'ADVERTENCIA: ¡Asegúrese de tener al menos un kernel funcional!';
-
-  @override
-  String kernelRemovedSuccess(String version) {
-    return 'Kernel $version eliminado con éxito';
-  }
-
-  @override
-  String get kernelRemoveError => 'Error al eliminar el kernel';
-
-  @override
-  String get setDefaultKernel => 'Establecer kernel predeterminado';
-
-  @override
-  String setDefaultKernelQuestion(String version) {
-    return '¿Desea establecer $version como kernel predeterminado?';
-  }
-
-  @override
-  String get set => 'Establecer';
-
-  @override
-  String kernelSetDefaultSuccess(String version) {
-    return 'Kernel $version establecido como predeterminado';
-  }
-
-  @override
-  String get kernelSetDefaultError =>
-      'Error al establecer el kernel predeterminado';
-
-  @override
-  String get keepMax => 'Mantener máx:';
-
-  @override
-  String get cleanupKernels => 'Limpieza de kernel';
-
-  @override
-  String keepOnlyRecentKernels(int count) {
-    return '¿Desea mantener solo los $count kernels más recientes?';
-  }
-
-  @override
-  String totalKernels(int count) {
-    return 'Kernels totales: $count';
-  }
-
-  @override
-  String kernelsToKeep(int count) {
-    return 'Kernels a mantener: $count';
-  }
-
-  @override
-  String kernelsToRemove(int count) {
-    return 'Kernels a eliminar: $count';
-  }
-
-  @override
-  String get cleanupKernelsWarning =>
-      'ADVERTENCIA: Solo se eliminarán los kernels no utilizados.';
-
-  @override
-  String get cleanup => 'Limpiar';
-
-  @override
-  String get kernelCleanupSuccess => 'Limpieza de kernel completada con éxito';
-
-  @override
-  String get kernelCleanupError => 'Error durante la limpieza del kernel';
-
-  @override
-  String get invalidKernelCount =>
-      'Ingrese un número válido de kernels a mantener';
-
-  @override
-  String get noKernelsFound => 'No se encontraron kernels instalados';
-
-  @override
   String get updateGrub => 'Actualizar GRUB';
 
   @override
@@ -875,13 +1013,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get rebootSystemError => 'Error al reiniciar el sistema';
 
   @override
-  String get package => 'Paquete';
-
-  @override
   String get size => 'Tamaño';
-
-  @override
-  String get setAsDefault => 'Establecer como predeterminado';
 
   @override
   String get refreshDimensions => 'Actualizar dimensiones';
@@ -1426,6 +1558,58 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Desea realizar las actualizaciones disponibles? Esta operación puede tardar algún tiempo.';
 
   @override
+  String get recoveryTabRecovery => 'Recovery';
+
+  @override
+  String get recoveryTabCheckUpdates => 'Buscar actualizaciones';
+
+  @override
+  String get recoveryTabSoftwareInstaller =>
+      'Instalador de software del sistema';
+
+  @override
+  String get recoverySoftwareInstallerDesc =>
+      'Descarga e instala automáticamente software esencial del sistema.';
+
+  @override
+  String get recoveryInstallFfmpeg => 'FFmpeg';
+
+  @override
+  String get recoveryInstallFfmpegDesc =>
+      'Framework multimedia para codificación/decodificación de audio y video.';
+
+  @override
+  String get recoveryInstallYtDlp => 'yt-dlp';
+
+  @override
+  String get recoveryInstallYtDlpDesc =>
+      'Descargador de video para muchos sitios.';
+
+  @override
+  String get recoveryInstallSystemLibs => 'Bibliotecas del sistema';
+
+  @override
+  String get recoveryInstallSystemLibsDesc =>
+      'Bibliotecas esenciales que a menudo se pueden corromper.';
+
+  @override
+  String get recoveryInstallCodecs => 'Códecs de video y audio';
+
+  @override
+  String get recoveryInstallCodecsDesc =>
+      'Códecs para formatos de video y audio comunes.';
+
+  @override
+  String get recoveryInstallRsync => 'rsync';
+
+  @override
+  String get recoveryInstallRsyncDesc =>
+      'Herramienta eficiente para sincronización y transferencia de archivos.';
+
+  @override
+  String get install => 'Instalar';
+
+  @override
   String get execute => 'Ejecutar';
 
   @override
@@ -1628,36 +1812,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Restaura fácilmente una configuración anterior';
 
   @override
-  String get infoKernel => 'Gestión de Kernel (Modo Avanzado)';
-
-  @override
-  String get infoKernelList => 'Lista de kernels instalados';
-
-  @override
-  String get infoKernelListDesc =>
-      'Ver todos los kernels instalados con versión y tamaño';
-
-  @override
-  String get infoKernelRemoval => 'Eliminación de kernel';
-
-  @override
-  String get infoKernelRemovalDesc =>
-      'Elimina kernels antiguos de forma segura (protege el kernel actual)';
-
-  @override
-  String get infoKernelDefault => 'Configuración de kernel predeterminado';
-
-  @override
-  String get infoKernelDefaultDesc => 'Elige qué kernel iniciar por defecto';
-
-  @override
-  String get infoKernelCleanup => 'Limpieza automática';
-
-  @override
-  String get infoKernelCleanupDesc =>
-      'Mantiene solo un número específico de kernels más recientes';
-
-  @override
   String get infoSecurity => 'Seguridad';
 
   @override
@@ -1679,7 +1833,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get infoSecurityModeDesc =>
-      'Separa funcionalidades básicas de las avanzadas (GRUB, Kernel)';
+      'Separa funcionalidades básicas de las avanzadas (GRUB, recuperación del sistema)';
 
   @override
   String get recoveryCheckUpdatesComplete =>
@@ -1714,6 +1868,96 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get hardwareSuggestionsCancel => 'Cancelar';
+
+  @override
+  String get hardwareSuggestionsAlreadyPresent => 'Ya presente';
+
+  @override
+  String hardwareSuggestionsCurrentValue(String value) {
+    return 'Valor actual: $value';
+  }
+
+  @override
+  String hardwareSuggestionsSuggestedValue(String value) {
+    return 'Sugerido: $value';
+  }
+
+  @override
+  String get hardwareSuggestionsAnalyzing => 'Analizando el hardware...';
+
+  @override
+  String get hardwareSuggestionsNoAvailable =>
+      'No hay sugerencias de hardware disponibles.';
+
+  @override
+  String hardwareSuggestionsApplied(String parameter) {
+    return 'Sugerencia aplicada: $parameter';
+  }
+
+  @override
+  String hardwareSuggestionsApplyError(String error) {
+    return 'Error al aplicar la sugerencia: $error';
+  }
+
+  @override
+  String hardwareSuggestionsGenerationError(String error) {
+    return 'Error al generar las sugerencias: $error';
+  }
+
+  @override
+  String grubSuggestionCpuThreadirqs(int count) {
+    return 'CPU con $count núcleos: añadir threadirqs puede mejorar la planificación multi-núcleo';
+  }
+
+  @override
+  String get grubSuggestionCpuMitigationsOff =>
+      'CPU moderna: mitigations=off puede mejorar el rendimiento (solo si aceptas el compromiso de seguridad)';
+
+  @override
+  String get grubSuggestionCpuIntelIommu =>
+      'CPU Intel: habilita IOMMU para virtualización y aislamiento de dispositivos';
+
+  @override
+  String get grubSuggestionCpuAmdIommu =>
+      'CPU AMD: habilita IOMMU para virtualización y aislamiento de dispositivos';
+
+  @override
+  String grubSuggestionRamZswapDisable(String gb) {
+    return 'Sistema con $gb GB RAM: zswap suele ser innecesario';
+  }
+
+  @override
+  String grubSuggestionRamZswapEnable(String gb) {
+    return 'Sistema con $gb GB RAM: zswap puede ayudar cuando la memoria está ajustada';
+  }
+
+  @override
+  String get grubSuggestionGpuNvidiaModeset =>
+      'GPU NVIDIA detectada: habilita nvidia-drm modeset para mejor rendimiento gráfico';
+
+  @override
+  String get grubSuggestionGpuNvidiaVideoMemory =>
+      'GPU NVIDIA: conservar asignaciones de memoria de vídeo entre suspensión/reanudación';
+
+  @override
+  String get grubSuggestionGpuAmdPpfeaturemask =>
+      'GPU AMD: habilitar la máscara completa de gestión de energía';
+
+  @override
+  String get grubSuggestionGpuVideoMode =>
+      'Fijar un modo de vídeo para reducir problemas de pantalla al arrancar';
+
+  @override
+  String get grubSuggestionFirmwareUefiQuietSplash =>
+      'UEFI: quiet splash puede mejorar la experiencia de arranque';
+
+  @override
+  String get grubSuggestionPerfElevatorNone =>
+      'Almacenamiento centrado en SSD: elevator=none puede mejorar el rendimiento de E/S';
+
+  @override
+  String get grubSuggestionPerfVmSwappiness =>
+      'Reducir swappiness cuando hay RAM suficiente';
 
   @override
   String get settingsPasswordSecurityMessage =>
@@ -1868,5 +2112,5 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get licenseActivateCardDesc =>
-      'Introduzca sus datos y el código de licencia recibido para desbloquear GRUB, Kernel y Recovery.';
+      'La versión Advanced cuesta 19,99 €. Introduzca sus datos y el código de licencia recibido tras el pago correcto para desbloquear GRUB y recuperación del sistema. Sin un pago válido, la aplicación no puede activarse.';
 }

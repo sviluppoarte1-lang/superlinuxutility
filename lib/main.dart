@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,7 @@ import 'services/single_instance_service.dart';
 import 'services/tray_service.dart';
 import 'services/dependency_check_service.dart';
 import 'services/window_close_to_tray.dart';
+import 'services/app_memory_maintenance.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Rilascia il lock anche se il lifecycle `detached` non viene notificato (es. terminazione da WM).
@@ -44,6 +46,9 @@ Future<bool> _isFedora() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Limita cache immagini decodificate (default Flutter molto alto → crescita RSS nel tempo).
+  PaintingBinding.instance.imageCache.maximumSize = 40;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 48 << 20;
 
   if (Platform.isLinux) {
     try {
@@ -151,6 +156,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Locale? _locale;
   String? _fontFamily;
   double _fontSize = 14.0;
+  Timer? _memoryMaintenanceTimer;
 
   @override
   void initState() {
@@ -159,18 +165,30 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _loadThemeMode();
     _loadLocale();
     _loadFontSettings();
+    _memoryMaintenanceTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => AppMemoryMaintenance.requestTrim(),
+    );
   }
 
   @override
   void dispose() {
+    _memoryMaintenanceTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    AppMemoryMaintenance.requestTrim();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached) {
       releaseSingleInstanceLock();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      AppMemoryMaintenance.requestTrim();
     }
   }
   

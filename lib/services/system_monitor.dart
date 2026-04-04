@@ -4,6 +4,12 @@ import '../models/system_info.dart';
 import 'password_storage.dart';
 
 class SystemMonitor {
+  /// Evita di trattenere in RAM migliaia di stringhe lunghissime (Chrome/Electron, ecc.).
+  static const int _maxCommandChars = 512;
+
+  static int? _dmidecodeInstalledRamBytesCache;
+  static DateTime? _dmidecodeInstalledRamBytesCacheAt;
+
   static Future<ProcessResult> _runSudoCommand(String command) async {
     final password = await PasswordStorage.getPassword();
     if (password == null || password.isEmpty) {
@@ -59,7 +65,10 @@ class SystemMonitor {
           final rss = int.tryParse(parts[5]) ?? 0;
           final stat = parts[7];
           
-          final command = parts.sublist(10).join(' ');
+          var command = parts.sublist(10).join(' ');
+          if (command.length > _maxCommandChars) {
+            command = '${command.substring(0, _maxCommandChars)}…';
+          }
           String name;
           if (command.startsWith('[') && command.endsWith(']')) {
             name = command.substring(1, command.length - 1);
@@ -203,43 +212,7 @@ class SystemMonitor {
       final threadsPerCore = int.tryParse((threadsResult.stdout as String).trim()) ?? 1;
       final threads = cores * threadsPerCore;
 
-      double cpuUsage = 0.0;
-      try {
-        final stat1 = await File('/proc/stat').readAsString();
-        await Future.delayed(const Duration(milliseconds: 100));
-        final stat2 = await File('/proc/stat').readAsString();
-        
-        final lines1 = stat1.split('\n');
-        final lines2 = stat2.split('\n');
-        
-        if (lines1.isNotEmpty && lines2.isNotEmpty) {
-          final cpu1 = lines1[0].split(RegExp(r'\s+'));
-          final cpu2 = lines2[0].split(RegExp(r'\s+'));
-          
-          if (cpu1.length >= 8 && cpu2.length >= 8) {
-            final idle1 = int.tryParse(cpu1[4]) ?? 0;
-            final idle2 = int.tryParse(cpu2[4]) ?? 0;
-            
-            int total1 = 0;
-            int total2 = 0;
-            for (var i = 1; i < cpu1.length && i < 8; i++) {
-              total1 += int.tryParse(cpu1[i]) ?? 0;
-            }
-            for (var i = 1; i < cpu2.length && i < 8; i++) {
-              total2 += int.tryParse(cpu2[i]) ?? 0;
-            }
-            
-            final totalDiff = total2 - total1;
-            final idleDiff = idle2 - idle1;
-            
-            if (totalDiff > 0) {
-              cpuUsage = ((totalDiff - idleDiff) / totalDiff) * 100;
-            }
-          }
-        }
-      } catch (e) {
-        cpuUsage = 0.0;
-      }
+      final cpuUsage = await _cpuUsagePercentFromProcStat();
       final coreUsage = <double>[];
       try {
         final mpstatResult = await Process.run('bash', ['-c', r"mpstat -P ALL 1 1 2>/dev/null | tail -n +4 | awk '{print $3}'"]);
@@ -272,6 +245,12 @@ class SystemMonitor {
   }
 
   static Future<int?> _getInstalledRamBytesFromDmidecode() async {
+    final now = DateTime.now();
+    if (_dmidecodeInstalledRamBytesCache != null &&
+        _dmidecodeInstalledRamBytesCacheAt != null &&
+        now.difference(_dmidecodeInstalledRamBytesCacheAt!) < const Duration(hours: 24)) {
+      return _dmidecodeInstalledRamBytesCache;
+    }
     try {
       ProcessResult result = await Process.run(
         'bash',
@@ -296,11 +275,82 @@ class SystemMonitor {
           if (mb > 0) sumMb += mb;
         }
       }
-      if (sumMb > 0) return sumMb * 1024 * 1024;
+      if (sumMb > 0) {
+        final bytes = sumMb * 1024 * 1024;
+        _dmidecodeInstalledRamBytesCache = bytes;
+        _dmidecodeInstalledRamBytesCacheAt = now;
+        return bytes;
+      }
       return null;
     } catch (_) {
       return null;
     }
+  }
+
+  /// Solo `/proc/stat` (nessun sottoprocesso): per tray e refresh leggeri.
+  static Future<double> _cpuUsagePercentFromProcStat() async {
+    try {
+      final stat1 = await File('/proc/stat').readAsString();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final stat2 = await File('/proc/stat').readAsString();
+      final lines1 = stat1.split('\n');
+      final lines2 = stat2.split('\n');
+      if (lines1.isEmpty || lines2.isEmpty) return 0;
+      final cpu1 = lines1[0].split(RegExp(r'\s+'));
+      final cpu2 = lines2[0].split(RegExp(r'\s+'));
+      if (cpu1.length < 8 || cpu2.length < 8) return 0;
+      final idle1 = int.tryParse(cpu1[4]) ?? 0;
+      final idle2 = int.tryParse(cpu2[4]) ?? 0;
+      var total1 = 0;
+      var total2 = 0;
+      for (var i = 1; i < 8 && i < cpu1.length && i < cpu2.length; i++) {
+        total1 += int.tryParse(cpu1[i]) ?? 0;
+        total2 += int.tryParse(cpu2[i]) ?? 0;
+      }
+      final totalDiff = total2 - total1;
+      final idleDiff = idle2 - idle1;
+      if (totalDiff <= 0) return 0;
+      return ((totalDiff - idleDiff) / totalDiff) * 100;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Solo `nvidia-smi` rapido se disponibile (niente lspci/rocm/glxinfo).
+  static Future<GpuInfo?> _tryQuickNvidiaGpuForTray() async {
+    try {
+      final r = await Process.run('bash', [
+        '-c',
+        'command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi --query-gpu=utilization.gpu,temperature.gpu --format=csv,noheader,nounits 2>/dev/null | head -1',
+      ]);
+      if (r.exitCode != 0) return null;
+      final line = (r.stdout as String).trim();
+      if (line.isEmpty) return null;
+      final parts = line.split(', ');
+      if (parts.length < 2) return null;
+      final u = double.tryParse(parts[0].trim());
+      final t = double.tryParse(parts[1].trim());
+      if (u == null && t == null) return null;
+      return GpuInfo(
+        model: 'NVIDIA',
+        driver: 'nvidia-smi',
+        usagePercent: u,
+        temperature: t,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Per il system tray: niente mpstat, df globale, dmidecode né scansione GPU completa.
+  static Future<TrayCpuGpuStats> getTrayLightweightStats() async {
+    final cpuUsage = await _cpuUsagePercentFromProcStat();
+    final gpu = await _tryQuickNvidiaGpuForTray();
+    return TrayCpuGpuStats(
+      cpuUsagePercent: cpuUsage,
+      gpuUsagePercent: gpu?.usagePercent,
+      gpuTemp: gpu?.temperature,
+    );
   }
 
   static Future<MemoryInfo> _getMemoryInfo() async {

@@ -5,6 +5,8 @@ import 'password_storage.dart';
 import 'system_detector.dart';
 
 class RecoveryService {
+  /// Esegue [command] interamente come root. Necessario per script con `&&` / `|`: senza
+  /// `bash -c`, solo il primo comando dopo `printf … | sudo -S` è elevato (es. apt-get install senza sudo).
   static Future<ProcessResult> _runSudoCommand(String command) async {
     final password = await PasswordStorage.getPassword();
     if (password == null || password.isEmpty) {
@@ -17,13 +19,19 @@ class RecoveryService {
         .replaceAll('\$', '\\\$')
         .replaceAll('`', '\\`');
     
-    final fullCommand = 'printf "%s\\n" "$escapedPassword" | sudo -S $command';
+    final fullCommand =
+        'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(command)}';
     
     return await Process.run(
       'bash',
       ['-c', fullCommand],
       runInShell: true,
     );
+  }
+
+  static String shellQuote(String s) {
+    if (s.isEmpty) return "''";
+    return "'${s.replaceAll("'", "'\\''")}'";
   }
 
   static Future<Map<String, dynamic>> restartPipewire() async {
@@ -151,12 +159,13 @@ class RecoveryService {
       String output = '';
       final distLower = systemInfo.distribution.toLowerCase();
       
-      // Backup del grub.cfg esistente
+      // Backup del grub.cfg esistente (timestamp da Dart: con bash -c quotato, $(date) nella shell non verrebbe espanso)
       try {
+        final stamp = _grubBackupTimestamp();
         if (distLower.contains('fedora') || distLower.contains('rhel') || distLower.contains('centos')) {
-          await _runSudoCommand(r'cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.backup.$(date +%Y%m%d_%H%M%S)');
+          await _runSudoCommand('cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.backup.$stamp');
         } else {
-          await _runSudoCommand(r'cp /boot/grub/grub.cfg /boot/grub/grub.cfg.backup.$(date +%Y%m%d_%H%M%S)');
+          await _runSudoCommand('cp /boot/grub/grub.cfg /boot/grub/grub.cfg.backup.$stamp');
         }
       } catch (e) {
         // Continua anche se il backup fallisce
@@ -362,12 +371,29 @@ class RecoveryService {
         updateReport['flatpak'] = await _checkFlatpakUpdatesReport(updates);
       }
 
+      final aptPhased =
+          (updateReport['apt'] as Map<String, dynamic>?)?['phasedCount'] as int? ?? 0;
+      final summaryPackageCount = updates.length + aptPhased;
+
+      final installableLabels =
+          updates.map((u) => shortUpdateDisplayName(u.toString())).toList();
+      final aptMap = updateReport['apt'] as Map<String, dynamic>?;
+      List<String> phasedLabels = [];
+      if (aptMap != null && aptMap['phasedPackages'] is List) {
+        phasedLabels = (aptMap['phasedPackages'] as List)
+            .map((e) => shortUpdateDisplayName(e.toString()))
+            .toList();
+      }
+
       return {
         'success': true,
         'message': 'recoveryCheckUpdatesComplete',
         'updateReport': updateReport,
         'updates': updates,
         'updateCount': updates.length,
+        'summaryPackageCount': summaryPackageCount,
+        'updateInstallableLabels': installableLabels,
+        'updatePhasedLabels': phasedLabels,
       };
     } catch (e) {
       return {
@@ -378,8 +404,38 @@ class RecoveryService {
     }
   }
 
+  /// Human-readable short name for UI (APT/DNF/snap/Flatpak/pacman raw lines).
+  static String shortUpdateDisplayName(String raw) {
+    var s = raw.trim();
+    if (s.isEmpty) return s;
+    final parts = s.split(RegExp(r'\s+'));
+    final first = parts.first;
+    if (first.contains('/') && !first.startsWith('/')) {
+      final idx = first.indexOf('/');
+      if (idx > 0) {
+        return first.substring(0, idx);
+      }
+    }
+    if (first.contains('.') && first.contains('/')) {
+      return first.split('/').first;
+    }
+    return first;
+  }
+
   static Future<Map<String, dynamic>> _checkAptUpdatesReport(List<String> updatesOut) async {
     try {
+      void addAptSimPackageLineTokens(String trimmed, Set<String> target) {
+        final tokenRe =
+            RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]*(?::[a-zA-Z0-9][a-zA-Z0-9+\-._]*)?$');
+        for (final rawTok in trimmed.split(RegExp(r'\s+'))) {
+          if (rawTok.isEmpty) continue;
+          final tok = rawTok.trim();
+          if (tok.length < 2) continue;
+          if (!tokenRe.hasMatch(tok)) continue;
+          target.add(tok);
+        }
+      }
+
       final simResult = await Process.run(
         'bash',
         ['-c', 'apt-get -s -y upgrade 2>&1'],
@@ -388,7 +444,12 @@ class RecoveryService {
       final simOutput = '${simResult.stdout}\n${simResult.stderr}'.trim();
       if (simOutput.isEmpty) {
         updatesOut.clear();
-        return {'mode': 'none', 'installableCount': 0, 'phasedCount': 0};
+        return {
+          'mode': 'none',
+          'installableCount': 0,
+          'phasedCount': 0,
+          'phasedPackages': <String>[],
+        };
       }
 
       final instRegex = RegExp(r'^\s*Inst\s+([a-zA-Z0-9][a-zA-Z0-9+\-._]+)\b');
@@ -402,32 +463,34 @@ class RecoveryService {
       }
 
       final deferredHeader = RegExp(
-        r'(upgrades?\s+have\s+been\s+deferred.*phasing|deferred.*phasing|postponed.*phasing|scaglion)',
+        r'(upgrades?\s+have\s+been\s+deferred|deferred.*phasing|postponed.*phasing|posticipat|scaglion|phasing:\s*$)',
         caseSensitive: false,
       );
-      final pkgPrefixRegex = RegExp(r'^([a-zA-Z0-9][a-zA-Z0-9+\-._]+)');
       final deferredPkgs = <String>{};
       var inDeferredBlock = false;
       for (final rawLine in simOutput.split('\n')) {
-        final trimmed = rawLine.trim();
-        if (deferredHeader.hasMatch(trimmed)) {
+        final line = rawLine.trim();
+        if (deferredHeader.hasMatch(line)) {
           inDeferredBlock = true;
           continue;
         }
         if (inDeferredBlock) {
-          if (trimmed.isEmpty) {
+          if (line.isEmpty) {
             inDeferredBlock = false;
             continue;
           }
-          final match = pkgPrefixRegex.firstMatch(trimmed);
-          if (match != null) {
-            deferredPkgs.add(match.group(1)!.trim());
+          final isIndented = rawLine.startsWith(' ') || rawLine.startsWith('\t');
+          if (!isIndented) {
+            inDeferredBlock = false;
+            continue;
           }
+          addAptSimPackageLineTokens(line, deferredPkgs);
         }
       }
 
       if (instPkgs.isNotEmpty) {
         final effectivePkgs = instPkgs.toList()..sort();
+        final phasedList = deferredPkgs.toList()..sort();
         updatesOut
           ..clear()
           ..addAll(effectivePkgs);
@@ -435,32 +498,39 @@ class RecoveryService {
           'mode': 'installable',
           'installableCount': effectivePkgs.length,
           'phasedCount': deferredPkgs.length,
+          'phasedPackages': phasedList,
         };
       }
 
-      final willUpgradeHeader = RegExp(r'^The following packages will be upgraded:\s*$');
+      final willUpgradeHeader = RegExp(
+        r'(The following packages will be upgraded|following packages will be upgraded|pacchetti saranno aggiornati|Paquetes que serán actualizados|serán actualizados|seront mis à jour|werden aktualisiert|Pacotes a serem atualizados|saranno aggiornati)',
+        caseSensitive: false,
+      );
       var inWillUpgradeBlock = false;
       final willUpgradedPkgs = <String>{};
       for (final rawLine in simOutput.split('\n')) {
-        final trimmed = rawLine.trim();
-        if (willUpgradeHeader.hasMatch(trimmed)) {
+        final line = rawLine.trim();
+        if (willUpgradeHeader.hasMatch(line)) {
           inWillUpgradeBlock = true;
           continue;
         }
         if (inWillUpgradeBlock) {
-          if (trimmed.isEmpty) {
+          if (line.isEmpty) {
             inWillUpgradeBlock = false;
             continue;
           }
-          final match = pkgPrefixRegex.firstMatch(trimmed);
-          if (match != null) {
-            willUpgradedPkgs.add(match.group(1)!.trim());
+          final isIndented = rawLine.startsWith(' ') || rawLine.startsWith('\t');
+          if (!isIndented) {
+            inWillUpgradeBlock = false;
+            continue;
           }
+          addAptSimPackageLineTokens(line, willUpgradedPkgs);
         }
       }
 
       if (willUpgradedPkgs.isNotEmpty) {
         final effectivePkgs = willUpgradedPkgs.toList()..sort();
+        final phasedList = deferredPkgs.toList()..sort();
         updatesOut
           ..clear()
           ..addAll(effectivePkgs);
@@ -468,14 +538,17 @@ class RecoveryService {
           'mode': 'installable',
           'installableCount': effectivePkgs.length,
           'phasedCount': deferredPkgs.length,
+          'phasedPackages': phasedList,
         };
       }
 
       updatesOut.clear();
+      final phasedList = deferredPkgs.toList()..sort();
       return {
         'mode': deferredPkgs.isNotEmpty ? 'phased_only' : 'none',
         'installableCount': 0,
         'phasedCount': deferredPkgs.length,
+        'phasedPackages': phasedList,
       };
     } catch (e) {
       try {
@@ -506,6 +579,7 @@ class RecoveryService {
           'mode': lines.isNotEmpty ? 'installable' : 'none',
           'installableCount': lines.length,
           'phasedCount': 0,
+          'phasedPackages': <String>[],
         };
       } catch (_) {
         updatesOut.clear();
@@ -513,6 +587,7 @@ class RecoveryService {
           'mode': 'error',
           'installableCount': 0,
           'phasedCount': 0,
+          'phasedPackages': <String>[],
           'errorMessage': '$e',
         };
       }
@@ -521,7 +596,7 @@ class RecoveryService {
 
   static Future<Map<String, dynamic>> _checkDnfUpdatesReport(List<String> updatesOut) async {
     try {
-      final result = await _runSudoCommand(r'dnf check-update --quiet 2>&1 | grep -v "^$" || true');
+      final result = await _runSudoCommand(r"dnf check-update --quiet 2>&1 | grep -v '^$' || true");
       final dnfOutput = result.stdout.toString();
       if (dnfOutput.isNotEmpty && !dnfOutput.contains('No updates')) {
         final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\.[a-zA-Z0-9]+\s+');
@@ -589,24 +664,52 @@ class RecoveryService {
 
   static Future<Map<String, dynamic>> _checkFlatpakUpdatesReport(List<String> updatesOut) async {
     try {
-      final result = await _runSudoCommand('flatpak remote-ls --updates 2>&1');
-      final flatpakOutput = result.stdout.toString();
-      if (flatpakOutput.isNotEmpty && !flatpakOutput.contains('Nothing to update')) {
-        final flatpakRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\s+');
-        final lines = flatpakOutput
-            .split('\n')
-            .where((line) {
-              final trimmed = line.trim();
-              return trimmed.isNotEmpty &&
-                  !trimmed.contains('Looking for') &&
-                  !trimmed.contains('Error') &&
-                  !trimmed.contains('error') &&
-                  flatpakRegex.hasMatch(trimmed);
-            })
-            .toList();
-        updatesOut.addAll(lines);
-        return {'mode': 'installable', 'count': lines.length};
+      final found = <String>{};
+
+      void parseOutput(String out) {
+        final lines = out.split('\n');
+        for (final rawLine in lines) {
+          final trimmed = rawLine.trim();
+          if (trimmed.isEmpty) continue;
+          if (trimmed.contains('Nothing to update')) continue;
+          if (trimmed.startsWith('Looking for')) continue;
+          if (trimmed.startsWith('Updating')) continue;
+          if (trimmed.startsWith('Info:')) continue;
+          if (trimmed.startsWith('Warning:')) continue;
+          if (trimmed.startsWith('--')) continue;
+          if (trimmed.startsWith('Error') || trimmed.contains('error')) continue;
+          if (trimmed.startsWith('Ref ') || trimmed.startsWith('Name ')) continue;
+
+          // Con `--columns=ref` ogni riga è già un ref. Se però arrivano warning/testo extra,
+          // scartiamo tutto ciò che non assomiglia ad un ref Flatpak.
+          if (!trimmed.contains('/')) continue;
+          if (trimmed.contains(' ')) continue;
+          found.add(trimmed);
+        }
       }
+
+      // Flatpak può avere installazioni "user" e "system": gli aggiornamenti tipo
+      // Freedesktop Platform spesso sono a livello system, quindi controlliamo entrambi.
+      try {
+        final userRes = await Process.run(
+          'bash',
+          ['-c', 'flatpak --user remote-ls --updates --columns=ref 2>&1'],
+          runInShell: false,
+        );
+        parseOutput('${userRes.stdout}\n${userRes.stderr}');
+      } catch (_) {}
+
+      try {
+        final sysRes = await _runSudoCommand('flatpak --system remote-ls --updates --columns=ref 2>&1');
+        parseOutput('${sysRes.stdout}\n${sysRes.stderr}');
+      } catch (_) {}
+
+      final count = found.length;
+      if (count > 0) {
+        updatesOut.addAll(found);
+        return {'mode': 'installable', 'count': count};
+      }
+
       return {'mode': 'none', 'count': 0};
     } catch (e) {
       return {'mode': 'error', 'count': 0, 'errorMessage': e.toString()};
@@ -655,9 +758,10 @@ class RecoveryService {
     return 'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(remoteCommand)}';
   }
 
-  static String shellQuote(String s) {
-    if (s.isEmpty) return "''";
-    return "'${s.replaceAll("'", "'\\''")}'";
+  static String _grubBackupTimestamp() {
+    final n = DateTime.now();
+    String p2(int x) => x.toString().padLeft(2, '0');
+    return '${n.year}${p2(n.month)}${p2(n.day)}_${p2(n.hour)}${p2(n.minute)}${p2(n.second)}';
   }
 
   static Future<Map<String, dynamic>> performUpdates({
@@ -878,10 +982,49 @@ class RecoveryService {
         final a = segStart();
         final b = segEnd();
         final span = b - a;
+        final userSpan = span * 0.5;
+        final sysSpan = span - userSpan;
+        var ranAny = false;
         try {
-          onProgress?.call(a, 'Flatpak: update');
+          // Update "user" (non usa sudo, per non cambiare HOME).
+          onProgress?.call(a, 'Flatpak: user update');
           var n = 0;
-          final cmd = _sudoBashCommand(escapedPassword, 'flatpak update -y 2>&1');
+          final process = await Process.start(
+            'bash',
+            ['-c', 'flatpak --user update -y 2>&1'],
+            runInShell: false,
+          );
+          final code = await _pumpStdoutLines(
+            process,
+            onChunk: (c) {
+              output += c;
+              onOutput?.call(c);
+            },
+            onLine: (line) {
+              final t = line.trim();
+              if (t.isEmpty) return;
+              n++;
+              final localT = (n / 60.0).clamp(0.0, 1.0);
+              onProgress?.call(
+                (a + userSpan * localT).clamp(0.0, 0.995),
+                'Flatpak: $t',
+              );
+            },
+          );
+          if (code == 0) ranAny = true;
+          if (code != 0) output += 'Flatpak (user): exit $code\n';
+        } catch (e) {
+          output += 'Flatpak (user): Errore durante l\'aggiornamento: $e\n';
+        }
+
+        try {
+          // Update "system" (Freedesktop Platform spesso è a livello system).
+          onProgress?.call(a + userSpan * 0.98, 'Flatpak: system update');
+          var n = 0;
+          final cmd = _sudoBashCommand(
+            escapedPassword,
+            'flatpak --system update -y 2>&1',
+          );
           final process = await Process.start('bash', ['-c', cmd], runInShell: true);
           final code = await _pumpStdoutLines(
             process,
@@ -895,18 +1038,19 @@ class RecoveryService {
               n++;
               final localT = (n / 60.0).clamp(0.0, 1.0);
               onProgress?.call(
-                (a + span * localT).clamp(0.0, 0.995),
+                (a + userSpan + sysSpan * localT).clamp(0.0, 0.995),
                 'Flatpak: $t',
               );
             },
           );
-          if (code == 0) {
-            updated.add('Flatpak');
-          } else {
-            output += 'Flatpak: exit $code\n';
-          }
+          if (code == 0) ranAny = true;
+          if (code != 0) output += 'Flatpak (system): exit $code\n';
         } catch (e) {
-          output += 'Flatpak: Errore durante l\'aggiornamento: $e\n';
+          output += 'Flatpak (system): Errore durante l\'aggiornamento: $e\n';
+        }
+
+        if (ranAny) {
+          updated.add('Flatpak');
         }
         managerIndex++;
       }
@@ -957,8 +1101,12 @@ class RecoveryService {
 
       final result = await _runSudoCommand(command);
       output = result.stdout.toString();
+      final err = result.stderr.toString();
+      if (err.isNotEmpty) {
+        if (output.isNotEmpty) output += '\n';
+        output += err;
+      }
       if (result.exitCode != 0) {
-        output += '\n${result.stderr}';
         return {
           'success': false,
           'message': 'Errore durante l\'installazione di $operationName',

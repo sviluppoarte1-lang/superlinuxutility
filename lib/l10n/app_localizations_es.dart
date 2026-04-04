@@ -559,6 +559,26 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get updatesAvailableDetectedListHeading => 'Detectados:';
+
+  @override
+  String updateLabelPhased(String name) {
+    return '$name (despliegue gradual — aún no instalable)';
+  }
+
+  @override
+  String updatesPreviewTruncated(int count) {
+    return '… y $count más';
+  }
+
+  @override
+  String get updatesAvailablePhasedFooter =>
+      'Los paquetes en despliegue gradual no se pueden instalar aún. \"Aplicar ahora\" solo aplica lo que el sistema permite.';
+
+  @override
+  String get updatesCheckPreviewHeading => 'Elementos afectados:';
+
+  @override
   String get applyNow => 'Aplicar ahora';
 
   @override
@@ -1993,6 +2013,96 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get hardwareSuggestionsCancel => 'Cancelar';
+
+  @override
+  String get hardwareSuggestionsAlreadyPresent => 'Ya presente';
+
+  @override
+  String hardwareSuggestionsCurrentValue(String value) {
+    return 'Valor actual: $value';
+  }
+
+  @override
+  String hardwareSuggestionsSuggestedValue(String value) {
+    return 'Sugerido: $value';
+  }
+
+  @override
+  String get hardwareSuggestionsAnalyzing => 'Analizando el hardware...';
+
+  @override
+  String get hardwareSuggestionsNoAvailable =>
+      'No hay sugerencias de hardware disponibles.';
+
+  @override
+  String hardwareSuggestionsApplied(String parameter) {
+    return 'Sugerencia aplicada: $parameter';
+  }
+
+  @override
+  String hardwareSuggestionsApplyError(String error) {
+    return 'Error al aplicar la sugerencia: $error';
+  }
+
+  @override
+  String hardwareSuggestionsGenerationError(String error) {
+    return 'Error al generar las sugerencias: $error';
+  }
+
+  @override
+  String grubSuggestionCpuThreadirqs(int count) {
+    return 'CPU con $count núcleos: añadir threadirqs puede mejorar la planificación multi-núcleo';
+  }
+
+  @override
+  String get grubSuggestionCpuMitigationsOff =>
+      'CPU moderna: mitigations=off puede mejorar el rendimiento (solo si aceptas el compromiso de seguridad)';
+
+  @override
+  String get grubSuggestionCpuIntelIommu =>
+      'CPU Intel: habilita IOMMU para virtualización y aislamiento de dispositivos';
+
+  @override
+  String get grubSuggestionCpuAmdIommu =>
+      'CPU AMD: habilita IOMMU para virtualización y aislamiento de dispositivos';
+
+  @override
+  String grubSuggestionRamZswapDisable(String gb) {
+    return 'Sistema con $gb GB RAM: zswap suele ser innecesario';
+  }
+
+  @override
+  String grubSuggestionRamZswapEnable(String gb) {
+    return 'Sistema con $gb GB RAM: zswap puede ayudar cuando la memoria está ajustada';
+  }
+
+  @override
+  String get grubSuggestionGpuNvidiaModeset =>
+      'GPU NVIDIA detectada: habilita nvidia-drm modeset para mejor rendimiento gráfico';
+
+  @override
+  String get grubSuggestionGpuNvidiaVideoMemory =>
+      'GPU NVIDIA: conservar asignaciones de memoria de vídeo entre suspensión/reanudación';
+
+  @override
+  String get grubSuggestionGpuAmdPpfeaturemask =>
+      'GPU AMD: habilitar la máscara completa de gestión de energía';
+
+  @override
+  String get grubSuggestionGpuVideoMode =>
+      'Fijar un modo de vídeo para reducir problemas de pantalla al arrancar';
+
+  @override
+  String get grubSuggestionFirmwareUefiQuietSplash =>
+      'UEFI: quiet splash puede mejorar la experiencia de arranque';
+
+  @override
+  String get grubSuggestionPerfElevatorNone =>
+      'Almacenamiento centrado en SSD: elevator=none puede mejorar el rendimiento de E/S';
+
+  @override
+  String get grubSuggestionPerfVmSwappiness =>
+      'Reducir swappiness cuando hay RAM suficiente';
 
   @override
   String get settingsPasswordSecurityMessage =>

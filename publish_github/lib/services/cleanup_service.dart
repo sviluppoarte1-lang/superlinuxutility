@@ -1,19 +1,10 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math' show min;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'password_storage.dart';
 
 class CleanupService {
-  /// Checks if a command is available in PATH.
-  static Future<bool> _commandExists(String command) async {
-    final result = await Process.run(
-      'bash',
-      ['-c', 'command -v $command >/dev/null 2>&1'],
-      runInShell: false,
-    );
-    return result.exitCode == 0;
-  }
-
   static Future<ProcessResult> _runSudoCommand(String command) async {
     final password = await PasswordStorage.getPassword();
     if (password == null || password.isEmpty) {
@@ -58,10 +49,28 @@ class CleanupService {
     }
   }
 
-  static Future<Map<String, int>> findAppTempFiles() async {
-    final sizes = <String, int>{};
+  static Future<int> _directorySizeBytesFast(String path) async {
+    try {
+      final dir = Directory(path);
+      if (!await dir.exists()) return 0;
+      if (Platform.isLinux) {
+        final r = await Process.run('du', ['-sb', path], runInShell: false);
+        if (r.exitCode != 0) return 0;
+        final out = r.stdout.toString().trim();
+        if (out.isEmpty) return 0;
+        final first = out.split(RegExp(r'\s+')).first;
+        return int.tryParse(first) ?? 0;
+      }
+      return await _calculateDirSize(dir);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static Future<List<String>> _collectExistingAppTempPaths() async {
+    final paths = <String>[];
     final homeDir = Platform.environment['HOME'] ?? '';
-    
+
     final appPaths = <String>[
       '$homeDir/.cache/google-chrome',
       '$homeDir/.cache/chromium',
@@ -134,10 +143,7 @@ class CleanupService {
                 final fullPath = entity.path + pathPattern.substring(pathPattern.indexOf('*') + 1);
                 final targetDir = Directory(fullPath);
                 if (await targetDir.exists()) {
-                  final size = await _calculateDirSize(targetDir);
-                  if (size > 0) {
-                    sizes[fullPath] = size;
-                  }
+                  paths.add(fullPath);
                 }
               }
             }
@@ -145,17 +151,29 @@ class CleanupService {
         } else {
           final dir = Directory(pathPattern);
           if (await dir.exists()) {
-            final size = await _calculateDirSize(dir);
-            if (size > 0) {
-              sizes[pathPattern] = size;
-            }
+            paths.add(pathPattern);
           }
         }
-      } catch (e) {
-        continue;
-      }
+      } catch (_) {}
     }
 
+    return paths;
+  }
+
+  static Future<Map<String, int>> findAppTempFiles() async {
+    final paths = await _collectExistingAppTempPaths();
+    final sizes = <String, int>{};
+    const parallel = 16;
+    for (var i = 0; i < paths.length; i += parallel) {
+      final end = min(i + parallel, paths.length);
+      final chunk = paths.sublist(i, end);
+      await Future.wait(chunk.map((p) async {
+        final size = await _directorySizeBytesFast(p);
+        if (size > 0) {
+          sizes[p] = size;
+        }
+      }));
+    }
     return sizes;
   }
 
@@ -231,6 +249,8 @@ class CleanupService {
       '$homeDir/.cache/pkcs11',
       '$homeDir/.config/autostart',
       '$homeDir/.config/environment.d',
+      '$homeDir/.cache/super-linux-utility',
+      '$homeDir/.local/share/super-linux-utility',
     };
   }
 
@@ -377,8 +397,9 @@ class CleanupService {
 
     final excludedPaths = await getExcludedPaths();
     final criticalPaths = _getCriticalPaths(homeDir);
+    final baseToMeasure = <String>[];
     for (final path in basePaths) {
-      bool isCritical = false;
+      var isCritical = false;
       for (final critical in criticalPaths) {
         if (path == critical || path.startsWith('$critical/')) {
           isCritical = true;
@@ -389,19 +410,19 @@ class CleanupService {
         sizes[path] = 0;
         continue;
       }
-      
+      baseToMeasure.add(path);
+    }
+    await Future.wait(baseToMeasure.map((path) async {
       try {
-        final dir = Directory(path);
-        if (await dir.exists()) {
-          final size = await _calculateDirSize(dir);
-          sizes[path] = size;
+        if (await Directory(path).exists()) {
+          sizes[path] = await _directorySizeBytesFast(path);
         } else {
           sizes[path] = 0;
         }
-      } catch (e) {
+      } catch (_) {
         sizes[path] = 0;
       }
-    }
+    }));
 
     final appTempFiles = await findAppTempFiles();
     for (final entry in appTempFiles.entries) {
@@ -439,92 +460,6 @@ class CleanupService {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
     } else {
       return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-    }
-  }
-
-  /// Best-effort VRAM cleanup.
-  /// Usa la password amministratore già memorizzata nell'app (Impostazioni).
-  /// On NVIDIA, we try `nvidia-smi --gpu-reset` via sudo with that password.
-  static Future<Map<String, dynamic>> cleanVram() async {
-    try {
-      final password = await PasswordStorage.getPassword();
-      if (password == null || password.isEmpty) {
-        return {
-          'success': false,
-          'message': 'Password amministratore non salvata. Salvala nelle Impostazioni per eseguire il reset GPU.',
-        };
-      }
-
-      final hasNvidiaSmi = await _commandExists('nvidia-smi');
-      if (!hasNvidiaSmi) {
-        return {
-          'success': false,
-          'message': 'nvidia-smi non disponibile (reset VRAM non supportato).',
-        };
-      }
-
-      final listResult = await Process.run(
-        'bash',
-        ['-c', 'nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null || true'],
-        runInShell: false,
-      );
-
-      final stdout = listResult.stdout.toString();
-      final indices = <int>{};
-      for (final rawLine in stdout.split('\n')) {
-        final line = rawLine.trim();
-        if (line.isEmpty) continue;
-        final v = int.tryParse(line);
-        if (v != null) indices.add(v);
-      }
-
-      if (indices.isEmpty) {
-        indices.add(0);
-      }
-
-      int successCount = 0;
-      final errorLines = <String>[];
-
-      for (final idx in indices.toList()..sort()) {
-        final process = await Process.start(
-          'sudo',
-          ['-S', 'nvidia-smi', '--gpu-reset', '-i', idx.toString()],
-          runInShell: false,
-        );
-        process.stdin.writeln(password);
-        await process.stdin.close();
-        final exitCode = await process.exitCode;
-        final stderr = await process.stderr.transform(const SystemEncoding().decoder).join();
-        final out = await process.stdout.transform(const SystemEncoding().decoder).join();
-
-        if (exitCode == 0) {
-          successCount++;
-        } else {
-          final err = (stderr.trim().isNotEmpty ? stderr : out).trim();
-          String summary = err.isNotEmpty ? err.replaceFirst(RegExp(r'\[sudo\].*'), '').trim() : '';
-          if (summary.isEmpty) summary = 'exit code $exitCode';
-          if (summary.isNotEmpty) {
-            errorLines.add('GPU $idx: $summary');
-          }
-        }
-      }
-
-      if (successCount > 0) {
-        return {
-          'success': true,
-          'message': 'Reset GPU eseguito su $successCount dispositivo/i.',
-        };
-      }
-
-      return {
-        'success': false,
-        'message': errorLines.isNotEmpty ? errorLines.join('\n') : 'Reset GPU fallito.',
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,10 +16,39 @@ import 'services/single_instance_service.dart';
 import 'services/tray_service.dart';
 import 'services/dependency_check_service.dart';
 import 'services/window_close_to_tray.dart';
+import 'services/app_memory_maintenance.dart';
 import 'package:window_manager/window_manager.dart';
+
+/// Rilascia il lock anche se il lifecycle `detached` non viene notificato (es. terminazione da WM).
+void _registerSingleInstanceShutdownHooks() {
+  if (!Platform.isLinux) return;
+  try {
+    ProcessSignal.sigterm.watch().listen((_) {
+      releaseSingleInstanceLock();
+    });
+    ProcessSignal.sigint.watch().listen((_) {
+      releaseSingleInstanceLock();
+    });
+  } catch (_) {}
+}
+
+/// Rileva se la distro è Fedora (evita init system tray per segfault noti con appindicator su Fedora/KDE).
+Future<bool> _isFedora() async {
+  try {
+    final file = File('/etc/os-release');
+    if (!await file.exists()) return false;
+    final content = await file.readAsString();
+    return content.contains('ID=fedora') || content.contains('ID="fedora"');
+  } catch (_) {
+    return false;
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Limita cache immagini decodificate (default Flutter molto alto → crescita RSS nel tempo).
+  PaintingBinding.instance.imageCache.maximumSize = 40;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 48 << 20;
 
   if (Platform.isLinux) {
     try {
@@ -33,9 +63,13 @@ void main() async {
   }
 
   if (Platform.isLinux) {
+    _registerSingleInstanceShutdownHooks();
     final prefs = await SharedPreferences.getInstance();
     final trayEnabled = prefs.getBool(TrayService.prefKeySystemTrayEnabled) ?? true;
-    if (trayEnabled) {
+    final skipTrayEnv = Platform.environment['SUPER_LINUX_UTILITY_NO_TRAY'] == '1' ||
+        Platform.environment['SUPER_LINUX_UTILITY_NO_TRAY'] == 'true';
+    final isFedora = await _isFedora();
+    if (trayEnabled && !skipTrayEnv && !isFedora) {
       final supported = await DependencyCheckService.isSystemTraySupported();
       if (!supported) {
         await DependencyCheckService.installSystemTrayDependencies();
@@ -117,18 +151,45 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   ThemeMode _themeMode = ThemeMode.system;
   Locale? _locale;
   String? _fontFamily;
   double _fontSize = 14.0;
+  Timer? _memoryMaintenanceTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadThemeMode();
     _loadLocale();
     _loadFontSettings();
+    _memoryMaintenanceTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => AppMemoryMaintenance.requestTrim(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _memoryMaintenanceTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    AppMemoryMaintenance.requestTrim();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      releaseSingleInstanceLock();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      AppMemoryMaintenance.requestTrim();
+    }
   }
   
   Future<void> _loadFontSettings() async {

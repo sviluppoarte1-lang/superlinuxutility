@@ -2,12 +2,33 @@ import 'dart:io';
 import 'hardware_analyzer.dart';
 import 'grub_service.dart';
 
+/// Chiave per localizzare il testo descrittivo del suggerimento (vedi `AppLocalizations`).
+enum GrubSuggestionReasonKind {
+  cpuThreadirqs,
+  cpuMitigationsOff,
+  cpuIntelIommu,
+  cpuAmdIommu,
+  ramZswapDisable,
+  ramZswapEnable,
+  gpuNvidiaModeset,
+  gpuNvidiaVideoMemory,
+  gpuAmdPpfeaturemask,
+  gpuVideoMode,
+  firmwareUefiQuietSplash,
+  perfElevatorNone,
+  perfVmSwappiness,
+}
+
 /// Rappresenta un suggerimento GRUB
 class GrubSuggestion {
   final String parameter;
   final String? currentValue;
   final String suggestedValue;
-  final String reason;
+  final GrubSuggestionReasonKind reasonKind;
+  /// Per [GrubSuggestionReasonKind.cpuThreadirqs]
+  final int? reasonCoreCount;
+  /// Per RAM (stringa già formattata, es. "16.0")
+  final String? reasonRamGb;
   final SuggestionPriority priority;
   final bool isAlreadyPresent;
 
@@ -15,7 +36,9 @@ class GrubSuggestion {
     required this.parameter,
     this.currentValue,
     required this.suggestedValue,
-    required this.reason,
+    required this.reasonKind,
+    this.reasonCoreCount,
+    this.reasonRamGb,
     this.priority = SuggestionPriority.medium,
     this.isAlreadyPresent = false,
   });
@@ -134,7 +157,8 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentValue.isEmpty ? null : currentValue,
           suggestedValue: _addToCmdline(currentValue, 'threadirqs'),
-          reason: 'CPU con $cores core: threadirqs migliora le prestazioni multi-core',
+          reasonKind: GrubSuggestionReasonKind.cpuThreadirqs,
+          reasonCoreCount: cores,
           priority: SuggestionPriority.medium,
           isAlreadyPresent: currentValue.contains('threadirqs'),
         ));
@@ -150,7 +174,7 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'mitigations=off'),
-          reason: 'CPU moderna: disabilitare mitigazioni può migliorare le prestazioni (solo se sicurezza non critica)',
+          reasonKind: GrubSuggestionReasonKind.cpuMitigationsOff,
           priority: SuggestionPriority.low,
           isAlreadyPresent: false,
         ));
@@ -165,7 +189,7 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'intel_iommu=on'),
-          reason: 'CPU Intel: abilitare IOMMU per virtualizzazione e sicurezza',
+          reasonKind: GrubSuggestionReasonKind.cpuIntelIommu,
           priority: SuggestionPriority.low,
           isAlreadyPresent: false,
         ));
@@ -176,7 +200,7 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'amd_iommu=on'),
-          reason: 'CPU AMD: abilitare IOMMU per virtualizzazione e sicurezza',
+          reasonKind: GrubSuggestionReasonKind.cpuAmdIommu,
           priority: SuggestionPriority.low,
           isAlreadyPresent: false,
         ));
@@ -205,7 +229,8 @@ class GrubSuggestionsService {
         parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
         currentValue: currentCmdline.isEmpty ? null : currentCmdline,
         suggestedValue: _addToCmdline(currentCmdline, 'zswap.enabled=0'),
-        reason: 'Sistema con ${totalGb.toStringAsFixed(1)} GB RAM: zswap non necessario',
+        reasonKind: GrubSuggestionReasonKind.ramZswapDisable,
+        reasonRamGb: totalGb.toStringAsFixed(1),
         priority: SuggestionPriority.low,
         isAlreadyPresent: false,
       ));
@@ -217,7 +242,8 @@ class GrubSuggestionsService {
         parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
         currentValue: currentCmdline.isEmpty ? null : currentCmdline,
         suggestedValue: _addToCmdline(currentCmdline, 'zswap.enabled=1'),
-        reason: 'Sistema con ${totalGb.toStringAsFixed(1)} GB RAM: zswap può migliorare le prestazioni',
+        reasonKind: GrubSuggestionReasonKind.ramZswapEnable,
+        reasonRamGb: totalGb.toStringAsFixed(1),
         priority: SuggestionPriority.medium,
         isAlreadyPresent: false,
       ));
@@ -244,7 +270,7 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'nvidia-drm.modeset=1'),
-          reason: 'GPU NVIDIA rilevata: abilitare modeset per migliori prestazioni',
+          reasonKind: GrubSuggestionReasonKind.gpuNvidiaModeset,
           priority: SuggestionPriority.high,
           isAlreadyPresent: false,
         ));
@@ -255,7 +281,7 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'nvidia.NVreg_PreserveVideoMemoryAllocations=1'),
-          reason: 'GPU NVIDIA: preservare allocazioni memoria video',
+          reasonKind: GrubSuggestionReasonKind.gpuNvidiaVideoMemory,
           priority: SuggestionPriority.medium,
           isAlreadyPresent: false,
         ));
@@ -269,7 +295,7 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'amdgpu.ppfeaturemask=0xffffffff'),
-          reason: 'GPU AMD: abilitare tutte le funzionalità di power management',
+          reasonKind: GrubSuggestionReasonKind.gpuAmdPpfeaturemask,
           priority: SuggestionPriority.medium,
           isAlreadyPresent: false,
         ));
@@ -282,7 +308,7 @@ class GrubSuggestionsService {
         parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
         currentValue: currentCmdline.isEmpty ? null : currentCmdline,
         suggestedValue: _addToCmdline(currentCmdline, 'video=1920x1080'),
-        reason: 'Impostare risoluzione video per evitare problemi al boot',
+        reasonKind: GrubSuggestionReasonKind.gpuVideoMode,
         priority: SuggestionPriority.low,
         isAlreadyPresent: false,
       ));
@@ -310,7 +336,7 @@ class GrubSuggestionsService {
           parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'quiet splash'),
-          reason: 'UEFI: quiet splash migliora l\'esperienza di boot',
+          reasonKind: GrubSuggestionReasonKind.firmwareUefiQuietSplash,
           priority: SuggestionPriority.low,
           isAlreadyPresent: false,
         ));
@@ -339,7 +365,7 @@ class GrubSuggestionsService {
               parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
               currentValue: currentCmdline.isEmpty ? null : currentCmdline,
               suggestedValue: _addToCmdline(currentCmdline, 'elevator=none'),
-              reason: 'Sistema con SSD: elevator=none per migliori prestazioni I/O',
+              reasonKind: GrubSuggestionReasonKind.perfElevatorNone,
               priority: SuggestionPriority.medium,
               isAlreadyPresent: false,
             ));
@@ -356,7 +382,7 @@ class GrubSuggestionsService {
         parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
         currentValue: currentCmdline.isEmpty ? null : currentCmdline,
         suggestedValue: _addToCmdline(currentCmdline, 'vm.swappiness=10'),
-        reason: 'Ridurre swappiness per sistemi con RAM sufficiente',
+        reasonKind: GrubSuggestionReasonKind.perfVmSwappiness,
         priority: SuggestionPriority.low,
         isAlreadyPresent: false,
       ));

@@ -1,0 +1,958 @@
+diff --git a/lib/l10n/app_de.arb b/lib/l10n/app_de.arb
+index ac951fb..859da90 100644
+--- a/lib/l10n/app_de.arb
++++ b/lib/l10n/app_de.arb
+@@ -812,6 +812,49 @@
+   "hardwareSuggestionsPriorityLow": "Niedrig",
+   "hardwareSuggestionsApply": "Anwenden",
+   "hardwareSuggestionsCancel": "Abbrechen",
++  "hardwareSuggestionsAlreadyPresent": "Bereits vorhanden",
++  "hardwareSuggestionsCurrentValue": "Aktueller Wert: {value}",
++  "@hardwareSuggestionsCurrentValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsSuggestedValue": "Vorgeschlagen: {value}",
++  "@hardwareSuggestionsSuggestedValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsAnalyzing": "Hardware wird analysiert...",
++  "hardwareSuggestionsNoAvailable": "Keine Hardwarevorschläge verfügbar.",
++  "hardwareSuggestionsApplied": "Vorschlag angewendet: {parameter}",
++  "@hardwareSuggestionsApplied": {
++    "placeholders": {
++      "parameter": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsApplyError": "Fehler beim Anwenden des Vorschlags: {error}",
++  "@hardwareSuggestionsApplyError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsGenerationError": "Fehler beim Erstellen der Vorschläge: {error}",
++  "@hardwareSuggestionsGenerationError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
+   "settingsPasswordSecurityMessage": "Das Passwort wird sicher im System-Keyring gespeichert.",
+   "tabShutdownScheduler": "Automatisches Herunterfahren",
+   "shutdownInfoTitle": "Automatisches Herunterfahren",
+diff --git a/lib/l10n/app_en.arb b/lib/l10n/app_en.arb
+index 5a0a5b6..cbb321f 100644
+--- a/lib/l10n/app_en.arb
++++ b/lib/l10n/app_en.arb
+@@ -820,6 +820,49 @@
+   "hardwareSuggestionsPriorityLow": "Low",
+   "hardwareSuggestionsApply": "Apply",
+   "hardwareSuggestionsCancel": "Cancel",
++  "hardwareSuggestionsAlreadyPresent": "Already present",
++  "hardwareSuggestionsCurrentValue": "Current value: {value}",
++  "@hardwareSuggestionsCurrentValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsSuggestedValue": "Suggested: {value}",
++  "@hardwareSuggestionsSuggestedValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsAnalyzing": "Analyzing hardware...",
++  "hardwareSuggestionsNoAvailable": "No hardware suggestions available.",
++  "hardwareSuggestionsApplied": "Suggestion applied: {parameter}",
++  "@hardwareSuggestionsApplied": {
++    "placeholders": {
++      "parameter": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsApplyError": "Error applying suggestion: {error}",
++  "@hardwareSuggestionsApplyError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsGenerationError": "Error generating suggestions: {error}",
++  "@hardwareSuggestionsGenerationError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
+   "settingsPasswordSecurityMessage": "The password is saved securely using the system keyring.",
+   "tabShutdownScheduler": "Automatic Shutdown",
+   "shutdownInfoTitle": "Automatic Shutdown",
+diff --git a/lib/l10n/app_es.arb b/lib/l10n/app_es.arb
+index 8412c37..2f42050 100644
+--- a/lib/l10n/app_es.arb
++++ b/lib/l10n/app_es.arb
+@@ -812,6 +812,49 @@
+   "hardwareSuggestionsPriorityLow": "Baja",
+   "hardwareSuggestionsApply": "Aplicar",
+   "hardwareSuggestionsCancel": "Cancelar",
++  "hardwareSuggestionsAlreadyPresent": "Ya presente",
++  "hardwareSuggestionsCurrentValue": "Valor actual: {value}",
++  "@hardwareSuggestionsCurrentValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsSuggestedValue": "Sugerido: {value}",
++  "@hardwareSuggestionsSuggestedValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsAnalyzing": "Analizando el hardware...",
++  "hardwareSuggestionsNoAvailable": "No hay sugerencias de hardware disponibles.",
++  "hardwareSuggestionsApplied": "Sugerencia aplicada: {parameter}",
++  "@hardwareSuggestionsApplied": {
++    "placeholders": {
++      "parameter": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsApplyError": "Error al aplicar la sugerencia: {error}",
++  "@hardwareSuggestionsApplyError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsGenerationError": "Error al generar las sugerencias: {error}",
++  "@hardwareSuggestionsGenerationError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
+   "settingsPasswordSecurityMessage": "La contraseña se guarda de forma segura utilizando el keyring del sistema.",
+   "tabShutdownScheduler": "Apagado Automático",
+   "shutdownInfoTitle": "Apagado Automático",
+diff --git a/lib/l10n/app_fr.arb b/lib/l10n/app_fr.arb
+index c2e2c66..e43ab2b 100644
+--- a/lib/l10n/app_fr.arb
++++ b/lib/l10n/app_fr.arb
+@@ -812,6 +812,49 @@
+   "hardwareSuggestionsPriorityLow": "Faible",
+   "hardwareSuggestionsApply": "Appliquer",
+   "hardwareSuggestionsCancel": "Annuler",
++  "hardwareSuggestionsAlreadyPresent": "Déjà présent",
++  "hardwareSuggestionsCurrentValue": "Valeur actuelle : {value}",
++  "@hardwareSuggestionsCurrentValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsSuggestedValue": "Suggéré : {value}",
++  "@hardwareSuggestionsSuggestedValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsAnalyzing": "Analyse du matériel en cours...",
++  "hardwareSuggestionsNoAvailable": "Aucune suggestion matérielle disponible.",
++  "hardwareSuggestionsApplied": "Suggestion appliquée : {parameter}",
++  "@hardwareSuggestionsApplied": {
++    "placeholders": {
++      "parameter": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsApplyError": "Erreur lors de l'application de la suggestion : {error}",
++  "@hardwareSuggestionsApplyError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsGenerationError": "Erreur lors de la génération des suggestions : {error}",
++  "@hardwareSuggestionsGenerationError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
+   "settingsPasswordSecurityMessage": "Le mot de passe est enregistré en toute sécurité à l'aide du trousseau système.",
+   "tabShutdownScheduler": "Arrêt Automatique",
+   "shutdownInfoTitle": "Arrêt Automatique",
+diff --git a/lib/l10n/app_it.arb b/lib/l10n/app_it.arb
+index c0d7ae4..ec37dd1 100644
+--- a/lib/l10n/app_it.arb
++++ b/lib/l10n/app_it.arb
+@@ -818,6 +818,49 @@
+   "hardwareSuggestionsPriorityLow": "Bassa",
+   "hardwareSuggestionsApply": "Applica",
+   "hardwareSuggestionsCancel": "Annulla",
++  "hardwareSuggestionsAlreadyPresent": "Già presente",
++  "hardwareSuggestionsCurrentValue": "Valore corrente: {value}",
++  "@hardwareSuggestionsCurrentValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsSuggestedValue": "Suggerito: {value}",
++  "@hardwareSuggestionsSuggestedValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsAnalyzing": "Analisi hardware in corso...",
++  "hardwareSuggestionsNoAvailable": "Nessun suggerimento disponibile per il tuo hardware.",
++  "hardwareSuggestionsApplied": "Suggerimento applicato: {parameter}",
++  "@hardwareSuggestionsApplied": {
++    "placeholders": {
++      "parameter": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsApplyError": "Errore nell'applicazione del suggerimento: {error}",
++  "@hardwareSuggestionsApplyError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsGenerationError": "Errore nella generazione dei suggerimenti: {error}",
++  "@hardwareSuggestionsGenerationError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
+   "settingsPasswordSecurityMessage": "La password viene salvata in modo sicuro utilizzando il keyring del sistema.",
+   "tabShutdownScheduler": "Spegnimento Automatico",
+   "shutdownInfoTitle": "Spegnimento Automatico",
+diff --git a/lib/l10n/app_localizations.dart b/lib/l10n/app_localizations.dart
+index 8e73f18..4396ac5 100644
+--- a/lib/l10n/app_localizations.dart
++++ b/lib/l10n/app_localizations.dart
+@@ -3598,6 +3598,54 @@ abstract class AppLocalizations {
+   /// **'Annulla'**
+   String get hardwareSuggestionsCancel;
+ 
++  /// No description provided for @hardwareSuggestionsAlreadyPresent.
++  ///
++  /// In it, this message translates to:
++  /// **'Già presente'**
++  String get hardwareSuggestionsAlreadyPresent;
++
++  /// No description provided for @hardwareSuggestionsCurrentValue.
++  ///
++  /// In it, this message translates to:
++  /// **'Valore corrente: {value}'**
++  String hardwareSuggestionsCurrentValue(String value);
++
++  /// No description provided for @hardwareSuggestionsSuggestedValue.
++  ///
++  /// In it, this message translates to:
++  /// **'Suggerito: {value}'**
++  String hardwareSuggestionsSuggestedValue(String value);
++
++  /// No description provided for @hardwareSuggestionsAnalyzing.
++  ///
++  /// In it, this message translates to:
++  /// **'Analisi hardware in corso...'**
++  String get hardwareSuggestionsAnalyzing;
++
++  /// No description provided for @hardwareSuggestionsNoAvailable.
++  ///
++  /// In it, this message translates to:
++  /// **'Nessun suggerimento disponibile per il tuo hardware.'**
++  String get hardwareSuggestionsNoAvailable;
++
++  /// No description provided for @hardwareSuggestionsApplied.
++  ///
++  /// In it, this message translates to:
++  /// **'Suggerimento applicato: {parameter}'**
++  String hardwareSuggestionsApplied(String parameter);
++
++  /// No description provided for @hardwareSuggestionsApplyError.
++  ///
++  /// In it, this message translates to:
++  /// **'Errore nell\'applicazione del suggerimento: {error}'**
++  String hardwareSuggestionsApplyError(String error);
++
++  /// No description provided for @hardwareSuggestionsGenerationError.
++  ///
++  /// In it, this message translates to:
++  /// **'Errore nella generazione dei suggerimenti: {error}'**
++  String hardwareSuggestionsGenerationError(String error);
++
+   /// No description provided for @settingsPasswordSecurityMessage.
+   ///
+   /// In it, this message translates to:
+diff --git a/lib/l10n/app_localizations_de.dart b/lib/l10n/app_localizations_de.dart
+index 42747aa..a3c6c5a 100644
+--- a/lib/l10n/app_localizations_de.dart
++++ b/lib/l10n/app_localizations_de.dart
+@@ -1987,6 +1987,41 @@ class AppLocalizationsDe extends AppLocalizations {
+   @override
+   String get hardwareSuggestionsCancel => 'Abbrechen';
+ 
++  @override
++  String get hardwareSuggestionsAlreadyPresent => 'Bereits vorhanden';
++
++  @override
++  String hardwareSuggestionsCurrentValue(String value) {
++    return 'Aktueller Wert: $value';
++  }
++
++  @override
++  String hardwareSuggestionsSuggestedValue(String value) {
++    return 'Vorgeschlagen: $value';
++  }
++
++  @override
++  String get hardwareSuggestionsAnalyzing => 'Hardware wird analysiert...';
++
++  @override
++  String get hardwareSuggestionsNoAvailable =>
++      'Keine Hardwarevorschläge verfügbar.';
++
++  @override
++  String hardwareSuggestionsApplied(String parameter) {
++    return 'Vorschlag angewendet: $parameter';
++  }
++
++  @override
++  String hardwareSuggestionsApplyError(String error) {
++    return 'Fehler beim Anwenden des Vorschlags: $error';
++  }
++
++  @override
++  String hardwareSuggestionsGenerationError(String error) {
++    return 'Fehler beim Erstellen der Vorschläge: $error';
++  }
++
+   @override
+   String get settingsPasswordSecurityMessage =>
+       'Das Passwort wird sicher im System-Keyring gespeichert.';
+diff --git a/lib/l10n/app_localizations_en.dart b/lib/l10n/app_localizations_en.dart
+index 2b96eab..1ade667 100644
+--- a/lib/l10n/app_localizations_en.dart
++++ b/lib/l10n/app_localizations_en.dart
+@@ -1974,6 +1974,41 @@ class AppLocalizationsEn extends AppLocalizations {
+   @override
+   String get hardwareSuggestionsCancel => 'Cancel';
+ 
++  @override
++  String get hardwareSuggestionsAlreadyPresent => 'Already present';
++
++  @override
++  String hardwareSuggestionsCurrentValue(String value) {
++    return 'Current value: $value';
++  }
++
++  @override
++  String hardwareSuggestionsSuggestedValue(String value) {
++    return 'Suggested: $value';
++  }
++
++  @override
++  String get hardwareSuggestionsAnalyzing => 'Analyzing hardware...';
++
++  @override
++  String get hardwareSuggestionsNoAvailable =>
++      'No hardware suggestions available.';
++
++  @override
++  String hardwareSuggestionsApplied(String parameter) {
++    return 'Suggestion applied: $parameter';
++  }
++
++  @override
++  String hardwareSuggestionsApplyError(String error) {
++    return 'Error applying suggestion: $error';
++  }
++
++  @override
++  String hardwareSuggestionsGenerationError(String error) {
++    return 'Error generating suggestions: $error';
++  }
++
+   @override
+   String get settingsPasswordSecurityMessage =>
+       'The password is saved securely using the system keyring.';
+diff --git a/lib/l10n/app_localizations_es.dart b/lib/l10n/app_localizations_es.dart
+index d41d72d..a9a0e0f 100644
+--- a/lib/l10n/app_localizations_es.dart
++++ b/lib/l10n/app_localizations_es.dart
+@@ -1994,6 +1994,41 @@ class AppLocalizationsEs extends AppLocalizations {
+   @override
+   String get hardwareSuggestionsCancel => 'Cancelar';
+ 
++  @override
++  String get hardwareSuggestionsAlreadyPresent => 'Ya presente';
++
++  @override
++  String hardwareSuggestionsCurrentValue(String value) {
++    return 'Valor actual: $value';
++  }
++
++  @override
++  String hardwareSuggestionsSuggestedValue(String value) {
++    return 'Sugerido: $value';
++  }
++
++  @override
++  String get hardwareSuggestionsAnalyzing => 'Analizando el hardware...';
++
++  @override
++  String get hardwareSuggestionsNoAvailable =>
++      'No hay sugerencias de hardware disponibles.';
++
++  @override
++  String hardwareSuggestionsApplied(String parameter) {
++    return 'Sugerencia aplicada: $parameter';
++  }
++
++  @override
++  String hardwareSuggestionsApplyError(String error) {
++    return 'Error al aplicar la sugerencia: $error';
++  }
++
++  @override
++  String hardwareSuggestionsGenerationError(String error) {
++    return 'Error al generar las sugerencias: $error';
++  }
++
+   @override
+   String get settingsPasswordSecurityMessage =>
+       'La contraseña se guarda de forma segura utilizando el keyring del sistema.';
+diff --git a/lib/l10n/app_localizations_fr.dart b/lib/l10n/app_localizations_fr.dart
+index 03f5fad..badb7ad 100644
+--- a/lib/l10n/app_localizations_fr.dart
++++ b/lib/l10n/app_localizations_fr.dart
+@@ -2001,6 +2001,41 @@ class AppLocalizationsFr extends AppLocalizations {
+   @override
+   String get hardwareSuggestionsCancel => 'Annuler';
+ 
++  @override
++  String get hardwareSuggestionsAlreadyPresent => 'Déjà présent';
++
++  @override
++  String hardwareSuggestionsCurrentValue(String value) {
++    return 'Valeur actuelle : $value';
++  }
++
++  @override
++  String hardwareSuggestionsSuggestedValue(String value) {
++    return 'Suggéré : $value';
++  }
++
++  @override
++  String get hardwareSuggestionsAnalyzing => 'Analyse du matériel en cours...';
++
++  @override
++  String get hardwareSuggestionsNoAvailable =>
++      'Aucune suggestion matérielle disponible.';
++
++  @override
++  String hardwareSuggestionsApplied(String parameter) {
++    return 'Suggestion appliquée : $parameter';
++  }
++
++  @override
++  String hardwareSuggestionsApplyError(String error) {
++    return 'Erreur lors de l\'application de la suggestion : $error';
++  }
++
++  @override
++  String hardwareSuggestionsGenerationError(String error) {
++    return 'Erreur lors de la génération des suggestions : $error';
++  }
++
+   @override
+   String get settingsPasswordSecurityMessage =>
+       'Le mot de passe est enregistré en toute sécurité à l\'aide du trousseau système.';
+diff --git a/lib/l10n/app_localizations_it.dart b/lib/l10n/app_localizations_it.dart
+index 3f8f411..7fd8d18 100644
+--- a/lib/l10n/app_localizations_it.dart
++++ b/lib/l10n/app_localizations_it.dart
+@@ -1987,6 +1987,41 @@ class AppLocalizationsIt extends AppLocalizations {
+   @override
+   String get hardwareSuggestionsCancel => 'Annulla';
+ 
++  @override
++  String get hardwareSuggestionsAlreadyPresent => 'Già presente';
++
++  @override
++  String hardwareSuggestionsCurrentValue(String value) {
++    return 'Valore corrente: $value';
++  }
++
++  @override
++  String hardwareSuggestionsSuggestedValue(String value) {
++    return 'Suggerito: $value';
++  }
++
++  @override
++  String get hardwareSuggestionsAnalyzing => 'Analisi hardware in corso...';
++
++  @override
++  String get hardwareSuggestionsNoAvailable =>
++      'Nessun suggerimento disponibile per il tuo hardware.';
++
++  @override
++  String hardwareSuggestionsApplied(String parameter) {
++    return 'Suggerimento applicato: $parameter';
++  }
++
++  @override
++  String hardwareSuggestionsApplyError(String error) {
++    return 'Errore nell\'applicazione del suggerimento: $error';
++  }
++
++  @override
++  String hardwareSuggestionsGenerationError(String error) {
++    return 'Errore nella generazione dei suggerimenti: $error';
++  }
++
+   @override
+   String get settingsPasswordSecurityMessage =>
+       'La password viene salvata in modo sicuro utilizzando il keyring del sistema.';
+diff --git a/lib/l10n/app_localizations_pt.dart b/lib/l10n/app_localizations_pt.dart
+index 29e7a0b..92b179d 100644
+--- a/lib/l10n/app_localizations_pt.dart
++++ b/lib/l10n/app_localizations_pt.dart
+@@ -1990,6 +1990,41 @@ class AppLocalizationsPt extends AppLocalizations {
+   @override
+   String get hardwareSuggestionsCancel => 'Cancelar';
+ 
++  @override
++  String get hardwareSuggestionsAlreadyPresent => 'Já presente';
++
++  @override
++  String hardwareSuggestionsCurrentValue(String value) {
++    return 'Valor atual: $value';
++  }
++
++  @override
++  String hardwareSuggestionsSuggestedValue(String value) {
++    return 'Sugerido: $value';
++  }
++
++  @override
++  String get hardwareSuggestionsAnalyzing => 'Analisando hardware...';
++
++  @override
++  String get hardwareSuggestionsNoAvailable =>
++      'Nenhuma sugestão de hardware disponível.';
++
++  @override
++  String hardwareSuggestionsApplied(String parameter) {
++    return 'Sugestão aplicada: $parameter';
++  }
++
++  @override
++  String hardwareSuggestionsApplyError(String error) {
++    return 'Erro ao aplicar sugestão: $error';
++  }
++
++  @override
++  String hardwareSuggestionsGenerationError(String error) {
++    return 'Erro ao gerar sugestões: $error';
++  }
++
+   @override
+   String get settingsPasswordSecurityMessage =>
+       'A senha é salva com segurança usando o keyring do sistema.';
+diff --git a/lib/l10n/app_pt.arb b/lib/l10n/app_pt.arb
+index 448827b..ea45e57 100644
+--- a/lib/l10n/app_pt.arb
++++ b/lib/l10n/app_pt.arb
+@@ -812,6 +812,49 @@
+   "hardwareSuggestionsPriorityLow": "Baixa",
+   "hardwareSuggestionsApply": "Aplicar",
+   "hardwareSuggestionsCancel": "Cancelar",
++  "hardwareSuggestionsAlreadyPresent": "Já presente",
++  "hardwareSuggestionsCurrentValue": "Valor atual: {value}",
++  "@hardwareSuggestionsCurrentValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsSuggestedValue": "Sugerido: {value}",
++  "@hardwareSuggestionsSuggestedValue": {
++    "placeholders": {
++      "value": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsAnalyzing": "Analisando hardware...",
++  "hardwareSuggestionsNoAvailable": "Nenhuma sugestão de hardware disponível.",
++  "hardwareSuggestionsApplied": "Sugestão aplicada: {parameter}",
++  "@hardwareSuggestionsApplied": {
++    "placeholders": {
++      "parameter": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsApplyError": "Erro ao aplicar sugestão: {error}",
++  "@hardwareSuggestionsApplyError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
++  "hardwareSuggestionsGenerationError": "Erro ao gerar sugestões: {error}",
++  "@hardwareSuggestionsGenerationError": {
++    "placeholders": {
++      "error": {
++        "type": "String"
++      }
++    }
++  },
+   "settingsPasswordSecurityMessage": "A senha é salva com segurança usando o keyring do sistema.",
+   "tabShutdownScheduler": "Desligamento Automático",
+   "shutdownInfoTitle": "Desligamento Automático",
+diff --git a/lib/screens/grub_editor_screen.dart b/lib/screens/grub_editor_screen.dart
+index 74a9ab4..f91bb59 100644
+--- a/lib/screens/grub_editor_screen.dart
++++ b/lib/screens/grub_editor_screen.dart
+@@ -204,7 +204,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
+     showDialog(
+       context: context,
+       barrierDismissible: false,
+-      builder: (context) => const Center(
++      builder: (context) => Center(
+         child: Card(
+           child: Padding(
+             padding: EdgeInsets.all(24.0),
+@@ -213,7 +213,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
+               children: [
+                 CircularProgressIndicator(),
+                 SizedBox(height: 16),
+-                Text('Analisi hardware in corso...'),
++                Text(AppLocalizations.of(context)!.hardwareSuggestionsAnalyzing),
+               ],
+             ),
+           ),
+@@ -230,8 +230,8 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
+       if (suggestions.isEmpty) {
+         if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+-            const SnackBar(
+-              content: Text('Nessun suggerimento disponibile per il tuo hardware.'),
++            SnackBar(
++              content: Text(AppLocalizations.of(context)!.hardwareSuggestionsNoAvailable),
+               backgroundColor: Colors.blue,
+             ),
+           );
+@@ -258,7 +258,9 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
+                 Navigator.pop(context);
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(
+-                    content: Text('Suggerimento applicato: ${suggestion.parameter}'),
++                    content: Text(
++                      AppLocalizations.of(context)!.hardwareSuggestionsApplied(suggestion.parameter),
++                    ),
+                     backgroundColor: Colors.green,
+                   ),
+                 );
+@@ -267,7 +269,9 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
+               if (mounted) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(
+-                    content: Text('Errore nell\'applicazione del suggerimento: $e'),
++                    content: Text(
++                      AppLocalizations.of(context)!.hardwareSuggestionsApplyError(e.toString()),
++                    ),
+                     backgroundColor: Colors.red,
+                   ),
+                 );
+@@ -281,7 +285,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
+         Navigator.pop(context); // Chiudi il dialog di caricamento
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+-            content: Text('Errore nella generazione dei suggerimenti: $e'),
++            content: Text(AppLocalizations.of(context)!.hardwareSuggestionsGenerationError(e.toString())),
+             backgroundColor: Colors.red,
+           ),
+         );
+@@ -392,7 +396,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
+                 ElevatedButton.icon(
+                   onPressed: _isLoading || _isSaving ? null : _showHardwareSuggestions,
+                   icon: const Icon(Icons.lightbulb_outline),
+-                  label: const Text('Suggerimenti Hardware'),
++                  label: Text(AppLocalizations.of(context)!.hardwareSuggestionsTitle),
+                   style: ElevatedButton.styleFrom(
+                     backgroundColor: Colors.blue,
+                     foregroundColor: Colors.white,
+@@ -615,8 +619,8 @@ class _HardwareSuggestionsDialog extends StatelessWidget {
+                                     color: Colors.green.withOpacity(0.2),
+                                     borderRadius: BorderRadius.circular(4),
+                                   ),
+-                                  child: const Text(
+-                                    'Già presente',
++                                  child: Text(
++                                    AppLocalizations.of(context)!.hardwareSuggestionsAlreadyPresent,
+                                     style: TextStyle(
+                                       color: Colors.green,
+                                       fontSize: 12,
+@@ -637,7 +641,7 @@ class _HardwareSuggestionsDialog extends StatelessWidget {
+                           const SizedBox(height: 4),
+                           if (suggestion.currentValue != null) ...[
+                             Text(
+-                              'Valore corrente: ${suggestion.currentValue}',
++                              AppLocalizations.of(context)!.hardwareSuggestionsCurrentValue(suggestion.currentValue!),
+                               style: TextStyle(
+                                 fontSize: 12,
+                                 color: Colors.grey[600],
+@@ -647,7 +651,7 @@ class _HardwareSuggestionsDialog extends StatelessWidget {
+                             const SizedBox(height: 4),
+                           ],
+                           Text(
+-                            'Suggerito: ${suggestion.suggestedValue}',
++                            AppLocalizations.of(context)!.hardwareSuggestionsSuggestedValue(suggestion.suggestedValue),
+                             style: const TextStyle(
+                               fontSize: 12,
+                               fontFamily: 'monospace',
+diff --git a/lib/screens/installed_apps_screen.dart b/lib/screens/installed_apps_screen.dart
+index 591d29d..a3e14a8 100644
+--- a/lib/screens/installed_apps_screen.dart
++++ b/lib/screens/installed_apps_screen.dart
+@@ -512,13 +512,16 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> with Automati
+                             ),
+                             trailing: PopupMenuButton(
+                               itemBuilder: (context) => [
+-                                const PopupMenuItem(
++                                PopupMenuItem(
+                                   value: 'remove',
+                                   child: Row(
+                                     children: [
+-                                      Icon(Icons.delete, color: Colors.red),
+-                                      SizedBox(width: 8),
+-                                      Text('Rimuovi', style: TextStyle(color: Colors.red)),
++                                      const Icon(Icons.delete, color: Colors.red),
++                                      const SizedBox(width: 8),
++                                      Text(
++                                        AppLocalizations.of(context)!.remove,
++                                        style: const TextStyle(color: Colors.red),
++                                      ),
+                                     ],
+                                   ),
+                                 ),
+diff --git a/lib/screens/startup_apps_screen.dart b/lib/screens/startup_apps_screen.dart
+index 86dff64..558374c 100644
+--- a/lib/screens/startup_apps_screen.dart
++++ b/lib/screens/startup_apps_screen.dart
+@@ -390,7 +390,7 @@ class _StartupAppsScreenState extends State<StartupAppsScreen> with AutomaticKee
+           TextButton(
+             onPressed: () => Navigator.pop(context, true),
+             child: Text(
+-              'Rimuovi',
++              AppLocalizations.of(context)!.remove,
+               style: TextStyle(
+                 color: Theme.of(context).colorScheme.error,
+               ),
+@@ -742,7 +742,7 @@ class _StartupAppsScreenState extends State<StartupAppsScreen> with AutomaticKee
+                     ),
+                     const SizedBox(width: 8),
+                     Text(
+-                      'Rimuovi',
++                      AppLocalizations.of(context)!.remove,
+                       style: TextStyle(
+                         color: Theme.of(context).colorScheme.error,
+                       ),
+diff --git a/lib/services/recovery_service.dart b/lib/services/recovery_service.dart
+index e61c9f5..208f1e2 100644
+--- a/lib/services/recovery_service.dart
++++ b/lib/services/recovery_service.dart
+@@ -589,24 +589,49 @@ class RecoveryService {
+ 
+   static Future<Map<String, dynamic>> _checkFlatpakUpdatesReport(List<String> updatesOut) async {
+     try {
+-      final result = await _runSudoCommand('flatpak remote-ls --updates 2>&1');
+-      final flatpakOutput = result.stdout.toString();
+-      if (flatpakOutput.isNotEmpty && !flatpakOutput.contains('Nothing to update')) {
+-        final flatpakRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\s+');
+-        final lines = flatpakOutput
+-            .split('\n')
+-            .where((line) {
+-              final trimmed = line.trim();
+-              return trimmed.isNotEmpty &&
+-                  !trimmed.contains('Looking for') &&
+-                  !trimmed.contains('Error') &&
+-                  !trimmed.contains('error') &&
+-                  flatpakRegex.hasMatch(trimmed);
+-            })
+-            .toList();
+-        updatesOut.addAll(lines);
+-        return {'mode': 'installable', 'count': lines.length};
++      final found = <String>{};
++
++      void parseOutput(String out) {
++        final lines = out.split('\n');
++        for (final rawLine in lines) {
++          final trimmed = rawLine.trim();
++          if (trimmed.isEmpty) continue;
++          if (trimmed.contains('Nothing to update')) continue;
++          if (trimmed.startsWith('Looking for')) continue;
++          if (trimmed.startsWith('--')) continue;
++          if (trimmed.startsWith('Error') || trimmed.contains('error')) continue;
++          if (trimmed.startsWith('Ref ') || trimmed.startsWith('Name ')) continue;
++
++          // La prima "colonna" di solito è il riferimento (ref/id) dell'aggiornamento.
++          final firstToken = trimmed.split(RegExp(r'\s+')).first;
++          if (firstToken.isNotEmpty) {
++            found.add(firstToken);
++          }
++        }
+       }
++
++      // Flatpak può avere installazioni "user" e "system": gli aggiornamenti tipo
++      // Freedesktop Platform spesso sono a livello system, quindi controlliamo entrambi.
++      try {
++        final userRes = await Process.run(
++          'bash',
++          ['-c', 'flatpak --user remote-ls --updates 2>&1'],
++          runInShell: false,
++        );
++        parseOutput('${userRes.stdout}\n${userRes.stderr}');
++      } catch (_) {}
++
++      try {
++        final sysRes = await _runSudoCommand('flatpak --system remote-ls --updates 2>&1');
++        parseOutput('${sysRes.stdout}\n${sysRes.stderr}');
++      } catch (_) {}
++
++      final count = found.length;
++      if (count > 0) {
++        updatesOut.addAll(found);
++        return {'mode': 'installable', 'count': count};
++      }
++
+       return {'mode': 'none', 'count': 0};
+     } catch (e) {
+       return {'mode': 'error', 'count': 0, 'errorMessage': e.toString()};
+@@ -878,10 +903,49 @@ class RecoveryService {
+         final a = segStart();
+         final b = segEnd();
+         final span = b - a;
++        final userSpan = span * 0.5;
++        final sysSpan = span - userSpan;
++        var ranAny = false;
++        try {
++          // Update "user" (non usa sudo, per non cambiare HOME).
++          onProgress?.call(a, 'Flatpak: user update');
++          var n = 0;
++          final process = await Process.start(
++            'bash',
++            ['-c', 'flatpak --user update -y 2>&1'],
++            runInShell: false,
++          );
++          final code = await _pumpStdoutLines(
++            process,
++            onChunk: (c) {
++              output += c;
++              onOutput?.call(c);
++            },
++            onLine: (line) {
++              final t = line.trim();
++              if (t.isEmpty) return;
++              n++;
++              final localT = (n / 60.0).clamp(0.0, 1.0);
++              onProgress?.call(
++                (a + userSpan * localT).clamp(0.0, 0.995),
++                'Flatpak: $t',
++              );
++            },
++          );
++          if (code == 0) ranAny = true;
++          if (code != 0) output += 'Flatpak (user): exit $code\n';
++        } catch (e) {
++          output += 'Flatpak (user): Errore durante l\'aggiornamento: $e\n';
++        }
++
+         try {
+-          onProgress?.call(a, 'Flatpak: update');
++          // Update "system" (Freedesktop Platform spesso è a livello system).
++          onProgress?.call(a + userSpan * 0.98, 'Flatpak: system update');
+           var n = 0;
+-          final cmd = _sudoBashCommand(escapedPassword, 'flatpak update -y 2>&1');
++          final cmd = _sudoBashCommand(
++            escapedPassword,
++            'flatpak --system update -y 2>&1',
++          );
+           final process = await Process.start('bash', ['-c', cmd], runInShell: true);
+           final code = await _pumpStdoutLines(
+             process,
+@@ -895,18 +959,19 @@ class RecoveryService {
+               n++;
+               final localT = (n / 60.0).clamp(0.0, 1.0);
+               onProgress?.call(
+-                (a + span * localT).clamp(0.0, 0.995),
++                (a + userSpan + sysSpan * localT).clamp(0.0, 0.995),
+                 'Flatpak: $t',
+               );
+             },
+           );
+-          if (code == 0) {
+-            updated.add('Flatpak');
+-          } else {
+-            output += 'Flatpak: exit $code\n';
+-          }
++          if (code == 0) ranAny = true;
++          if (code != 0) output += 'Flatpak (system): exit $code\n';
+         } catch (e) {
+-          output += 'Flatpak: Errore durante l\'aggiornamento: $e\n';
++          output += 'Flatpak (system): Errore durante l\'aggiornamento: $e\n';
++        }
++
++        if (ranAny) {
++          updated.add('Flatpak');
+         }
+         managerIndex++;
+       }

@@ -209,6 +209,13 @@
   "updatesAvailableDialogTitle": "Atualizações disponíveis",
   "updatesAvailableDialogMessage": "{count} atualizações disponíveis. Deseja aplicá-las agora?",
   "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDetectedListHeading": "Detectados:",
+  "updateLabelPhased": "{name} (implantação gradual — ainda não instalável)",
+  "@updateLabelPhased": {"placeholders": {"name": {"type": "String"}}},
+  "updatesPreviewTruncated": "… e mais {count}",
+  "@updatesPreviewTruncated": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailablePhasedFooter": "Pacotes em implantação gradual ainda não podem ser instalados. \"Aplicar agora\" só aplica o que o sistema permite.",
+  "updatesCheckPreviewHeading": "Itens afetados:",
   "applyNow": "Aplicar agora",
   "postpone": "Depois",
   "fontFamily": "Família da Fonte",
@@ -812,6 +819,83 @@
   "hardwareSuggestionsPriorityLow": "Baixa",
   "hardwareSuggestionsApply": "Aplicar",
   "hardwareSuggestionsCancel": "Cancelar",
+  "hardwareSuggestionsAlreadyPresent": "Já presente",
+  "hardwareSuggestionsCurrentValue": "Valor atual: {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Sugerido: {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Analisando hardware...",
+  "hardwareSuggestionsNoAvailable": "Nenhuma sugestão de hardware disponível.",
+  "hardwareSuggestionsApplied": "Sugestão aplicada: {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Erro ao aplicar sugestão: {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Erro ao gerar sugestões: {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU com {count} núcleos: adicionar threadirqs pode melhorar o agendamento multi-núcleo",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "CPU moderna: mitigations=off pode melhorar o desempenho (somente se aceitar o compromisso de segurança)",
+  "grubSuggestionCpuIntelIommu": "CPU Intel: ative IOMMU para virtualização e isolamento de dispositivos",
+  "grubSuggestionCpuAmdIommu": "CPU AMD: ative IOMMU para virtualização e isolamento de dispositivos",
+  "grubSuggestionRamZswapDisable": "Sistema com {gb} GB de RAM: zswap costuma ser desnecessário",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "Sistema com {gb} GB de RAM: zswap pode ajudar quando a memória está apertada",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "GPU NVIDIA detectada: ative nvidia-drm modeset para melhor desempenho de vídeo",
+  "grubSuggestionGpuNvidiaVideoMemory": "GPU NVIDIA: preservar alocações de memória de vídeo entre suspensão/retomada",
+  "grubSuggestionGpuAmdPpfeaturemask": "GPU AMD: ativar máscara completa de gerenciamento de energia",
+  "grubSuggestionGpuVideoMode": "Definir um modo de vídeo fixo para reduzir problemas de tela na inicialização",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI: quiet splash pode melhorar a experiência de inicialização",
+  "grubSuggestionPerfElevatorNone": "Armazenamento focado em SSD: elevator=none pode melhorar o desempenho de E/S",
+  "grubSuggestionPerfVmSwappiness": "Reduzir swappiness quando houver RAM suficiente",
   "settingsPasswordSecurityMessage": "A senha é salva com segurança usando o keyring do sistema.",
   "tabShutdownScheduler": "Desligamento Automático",
   "shutdownInfoTitle": "Desligamento Automático",

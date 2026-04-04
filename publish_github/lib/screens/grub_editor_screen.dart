@@ -204,7 +204,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
+      builder: (context) => Center(
         child: Card(
           child: Padding(
             padding: EdgeInsets.all(24.0),
@@ -213,7 +213,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Analisi hardware in corso...'),
+                Text(AppLocalizations.of(context)!.hardwareSuggestionsAnalyzing),
               ],
             ),
           ),
@@ -230,8 +230,8 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
       if (suggestions.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Nessun suggerimento disponibile per il tuo hardware.'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.hardwareSuggestionsNoAvailable),
               backgroundColor: Colors.blue,
             ),
           );
@@ -258,7 +258,9 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Suggerimento applicato: ${suggestion.parameter}'),
+                    content: Text(
+                      AppLocalizations.of(context)!.hardwareSuggestionsApplied(suggestion.parameter),
+                    ),
                     backgroundColor: Colors.green,
                   ),
                 );
@@ -267,7 +269,9 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Errore nell\'applicazione del suggerimento: $e'),
+                    content: Text(
+                      AppLocalizations.of(context)!.hardwareSuggestionsApplyError(e.toString()),
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -281,7 +285,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
         Navigator.pop(context); // Chiudi il dialog di caricamento
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore nella generazione dei suggerimenti: $e'),
+            content: Text(AppLocalizations.of(context)!.hardwareSuggestionsGenerationError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -392,7 +396,7 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
                 ElevatedButton.icon(
                   onPressed: _isLoading || _isSaving ? null : _showHardwareSuggestions,
                   icon: const Icon(Icons.lightbulb_outline),
-                  label: const Text('Suggerimenti Hardware'),
+                  label: Text(AppLocalizations.of(context)!.hardwareSuggestionsTitle),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
@@ -501,6 +505,38 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
         ],
       ),
     );
+  }
+}
+
+String _localizedGrubSuggestionReason(BuildContext context, GrubSuggestion s) {
+  final l10n = AppLocalizations.of(context)!;
+  switch (s.reasonKind) {
+    case GrubSuggestionReasonKind.cpuThreadirqs:
+      return l10n.grubSuggestionCpuThreadirqs(s.reasonCoreCount ?? 0);
+    case GrubSuggestionReasonKind.cpuMitigationsOff:
+      return l10n.grubSuggestionCpuMitigationsOff;
+    case GrubSuggestionReasonKind.cpuIntelIommu:
+      return l10n.grubSuggestionCpuIntelIommu;
+    case GrubSuggestionReasonKind.cpuAmdIommu:
+      return l10n.grubSuggestionCpuAmdIommu;
+    case GrubSuggestionReasonKind.ramZswapDisable:
+      return l10n.grubSuggestionRamZswapDisable(s.reasonRamGb ?? '');
+    case GrubSuggestionReasonKind.ramZswapEnable:
+      return l10n.grubSuggestionRamZswapEnable(s.reasonRamGb ?? '');
+    case GrubSuggestionReasonKind.gpuNvidiaModeset:
+      return l10n.grubSuggestionGpuNvidiaModeset;
+    case GrubSuggestionReasonKind.gpuNvidiaVideoMemory:
+      return l10n.grubSuggestionGpuNvidiaVideoMemory;
+    case GrubSuggestionReasonKind.gpuAmdPpfeaturemask:
+      return l10n.grubSuggestionGpuAmdPpfeaturemask;
+    case GrubSuggestionReasonKind.gpuVideoMode:
+      return l10n.grubSuggestionGpuVideoMode;
+    case GrubSuggestionReasonKind.firmwareUefiQuietSplash:
+      return l10n.grubSuggestionFirmwareUefiQuietSplash;
+    case GrubSuggestionReasonKind.perfElevatorNone:
+      return l10n.grubSuggestionPerfElevatorNone;
+    case GrubSuggestionReasonKind.perfVmSwappiness:
+      return l10n.grubSuggestionPerfVmSwappiness;
   }
 }
 
@@ -615,8 +651,8 @@ class _HardwareSuggestionsDialog extends StatelessWidget {
                                     color: Colors.green.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text(
-                                    'Già presente',
+                                  child: Text(
+                                    AppLocalizations.of(context)!.hardwareSuggestionsAlreadyPresent,
                                     style: TextStyle(
                                       color: Colors.green,
                                       fontSize: 12,
@@ -637,7 +673,7 @@ class _HardwareSuggestionsDialog extends StatelessWidget {
                           const SizedBox(height: 4),
                           if (suggestion.currentValue != null) ...[
                             Text(
-                              'Valore corrente: ${suggestion.currentValue}',
+                              AppLocalizations.of(context)!.hardwareSuggestionsCurrentValue(suggestion.currentValue!),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -647,7 +683,7 @@ class _HardwareSuggestionsDialog extends StatelessWidget {
                             const SizedBox(height: 4),
                           ],
                           Text(
-                            'Suggerito: ${suggestion.suggestedValue}',
+                            AppLocalizations.of(context)!.hardwareSuggestionsSuggestedValue(suggestion.suggestedValue),
                             style: const TextStyle(
                               fontSize: 12,
                               fontFamily: 'monospace',
@@ -655,7 +691,7 @@ class _HardwareSuggestionsDialog extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            suggestion.reason,
+                            _localizedGrubSuggestionReason(context, suggestion),
                             style: const TextStyle(fontSize: 14),
                           ),
                           if (!suggestion.isAlreadyPresent) ...[

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:flutter/services.dart';
+import 'app_memory_maintenance.dart';
 import 'system_monitor.dart';
 import 'single_instance_service.dart';
 
@@ -71,6 +72,9 @@ class TrayService {
   static bool _initialized = false;
   static String? _lastError;
   static Timer? _menuUpdateTimer;
+  static bool _menuRefreshInFlight = false;
+  /// Aggiornamento tray: meno frequente riduce RAM/CPU (prima era 3s + getSystemInfo pesante).
+  static const Duration _menuStatsInterval = Duration(seconds: 25);
   static String _tempLabel = '';
   static String _usageLabel = '';
   static String _diskUsageLabel = '';
@@ -142,14 +146,16 @@ class TrayService {
   static void _startMenuUpdateTimer() {
     _menuUpdateTimer?.cancel();
     if (!_initialized || _systemTray == null) return;
-    _menuUpdateTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+    _menuUpdateTimer = Timer.periodic(_menuStatsInterval, (_) async {
+      if (_menuRefreshInFlight) return;
+      _menuRefreshInFlight = true;
       try {
-        final info = await SystemMonitor.getSystemInfo();
+        final stats = await SystemMonitor.getTrayLightweightStats();
         final cpuTemp = await SystemMonitor.getCpuTemperature();
         final homeDisk = await SystemMonitor.getHomeDiskUsage();
-        final cpuUsage = info.cpu.usagePercent;
-        final gpuUsage = info.gpu?.usagePercent;
-        final gpuTemp = info.gpu?.temperature;
+        final cpuUsage = stats.cpuUsagePercent;
+        final gpuUsage = stats.gpuUsagePercent;
+        final gpuTemp = stats.gpuTemp;
         final cpuStr = cpuTemp != null ? '${cpuTemp.toStringAsFixed(0)}°C' : '-';
         final gpuStr = gpuTemp != null ? '${gpuTemp.toStringAsFixed(0)}°C' : '-';
         _tempLabel = 'CPU: $cpuStr | GPU: $gpuStr';
@@ -170,7 +176,9 @@ class TrayService {
           _memoryUsageLabel = '';
         }
         await _buildMenuWithStats();
-      } catch (_) {}
+      } catch (_) {} finally {
+        _menuRefreshInFlight = false;
+      }
     });
   }
 
@@ -273,5 +281,6 @@ class TrayService {
 
   static void hideWindow() {
     _appWindow?.hide();
+    AppMemoryMaintenance.notifyMainWindowHiddenToTray();
   }
 }

@@ -988,6 +988,36 @@ abstract class AppLocalizations {
   /// **'{count} aggiornamenti disponibili. Vuoi applicarli ora?'**
   String updatesAvailableDialogMessage(int count);
 
+  /// No description provided for @updatesAvailableDetectedListHeading.
+  ///
+  /// In it, this message translates to:
+  /// **'Rilevati:'**
+  String get updatesAvailableDetectedListHeading;
+
+  /// No description provided for @updateLabelPhased.
+  ///
+  /// In it, this message translates to:
+  /// **'{name} (scaglionato — non ancora installabile)'**
+  String updateLabelPhased(String name);
+
+  /// No description provided for @updatesPreviewTruncated.
+  ///
+  /// In it, this message translates to:
+  /// **'… e altri {count}'**
+  String updatesPreviewTruncated(int count);
+
+  /// No description provided for @updatesAvailablePhasedFooter.
+  ///
+  /// In it, this message translates to:
+  /// **'I pacchetti in rollout graduale non si possono installare subito. \"Applica ora\" aggiorna solo ciò che il sistema consente.'**
+  String get updatesAvailablePhasedFooter;
+
+  /// No description provided for @updatesCheckPreviewHeading.
+  ///
+  /// In it, this message translates to:
+  /// **'Elementi interessati:'**
+  String get updatesCheckPreviewHeading;
+
   /// No description provided for @applyNow.
   ///
   /// In it, this message translates to:
@@ -3597,6 +3627,132 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Annulla'**
   String get hardwareSuggestionsCancel;
+
+  /// No description provided for @hardwareSuggestionsAlreadyPresent.
+  ///
+  /// In it, this message translates to:
+  /// **'Già presente'**
+  String get hardwareSuggestionsAlreadyPresent;
+
+  /// No description provided for @hardwareSuggestionsCurrentValue.
+  ///
+  /// In it, this message translates to:
+  /// **'Valore corrente: {value}'**
+  String hardwareSuggestionsCurrentValue(String value);
+
+  /// No description provided for @hardwareSuggestionsSuggestedValue.
+  ///
+  /// In it, this message translates to:
+  /// **'Suggerito: {value}'**
+  String hardwareSuggestionsSuggestedValue(String value);
+
+  /// No description provided for @hardwareSuggestionsAnalyzing.
+  ///
+  /// In it, this message translates to:
+  /// **'Analisi hardware in corso...'**
+  String get hardwareSuggestionsAnalyzing;
+
+  /// No description provided for @hardwareSuggestionsNoAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun suggerimento disponibile per il tuo hardware.'**
+  String get hardwareSuggestionsNoAvailable;
+
+  /// No description provided for @hardwareSuggestionsApplied.
+  ///
+  /// In it, this message translates to:
+  /// **'Suggerimento applicato: {parameter}'**
+  String hardwareSuggestionsApplied(String parameter);
+
+  /// No description provided for @hardwareSuggestionsApplyError.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore nell\'applicazione del suggerimento: {error}'**
+  String hardwareSuggestionsApplyError(String error);
+
+  /// No description provided for @hardwareSuggestionsGenerationError.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore nella generazione dei suggerimenti: {error}'**
+  String hardwareSuggestionsGenerationError(String error);
+
+  /// No description provided for @grubSuggestionCpuThreadirqs.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU con {count} core: threadirqs può migliorare lo scheduling multi-core'**
+  String grubSuggestionCpuThreadirqs(int count);
+
+  /// No description provided for @grubSuggestionCpuMitigationsOff.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU moderna: mitigations=off può migliorare le prestazioni (solo se accetti i compromessi di sicurezza)'**
+  String get grubSuggestionCpuMitigationsOff;
+
+  /// No description provided for @grubSuggestionCpuIntelIommu.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU Intel: abilita IOMMU per virtualizzazione e isolamento dispositivi'**
+  String get grubSuggestionCpuIntelIommu;
+
+  /// No description provided for @grubSuggestionCpuAmdIommu.
+  ///
+  /// In it, this message translates to:
+  /// **'CPU AMD: abilita IOMMU per virtualizzazione e isolamento dispositivi'**
+  String get grubSuggestionCpuAmdIommu;
+
+  /// No description provided for @grubSuggestionRamZswapDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Sistema con {gb} GB RAM: zswap spesso non è necessario'**
+  String grubSuggestionRamZswapDisable(String gb);
+
+  /// No description provided for @grubSuggestionRamZswapEnable.
+  ///
+  /// In it, this message translates to:
+  /// **'Sistema con {gb} GB RAM: zswap può aiutare quando la memoria è sotto pressione'**
+  String grubSuggestionRamZswapEnable(String gb);
+
+  /// No description provided for @grubSuggestionGpuNvidiaModeset.
+  ///
+  /// In it, this message translates to:
+  /// **'GPU NVIDIA rilevata: abilita nvidia-drm modeset per migliori prestazioni video'**
+  String get grubSuggestionGpuNvidiaModeset;
+
+  /// No description provided for @grubSuggestionGpuNvidiaVideoMemory.
+  ///
+  /// In it, this message translates to:
+  /// **'GPU NVIDIA: preserva le allocazioni di memoria video tra sospensione/ripresa'**
+  String get grubSuggestionGpuNvidiaVideoMemory;
+
+  /// No description provided for @grubSuggestionGpuAmdPpfeaturemask.
+  ///
+  /// In it, this message translates to:
+  /// **'GPU AMD: abilita la maschera completa delle funzioni di power management'**
+  String get grubSuggestionGpuAmdPpfeaturemask;
+
+  /// No description provided for @grubSuggestionGpuVideoMode.
+  ///
+  /// In it, this message translates to:
+  /// **'Imposta una modalità video fissa per ridurre problemi di schermo all’avvio'**
+  String get grubSuggestionGpuVideoMode;
+
+  /// No description provided for @grubSuggestionFirmwareUefiQuietSplash.
+  ///
+  /// In it, this message translates to:
+  /// **'UEFI: quiet splash può migliorare l’esperienza di boot'**
+  String get grubSuggestionFirmwareUefiQuietSplash;
+
+  /// No description provided for @grubSuggestionPerfElevatorNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Storage orientato agli SSD: elevator=none può migliorare le prestazioni I/O'**
+  String get grubSuggestionPerfElevatorNone;
+
+  /// No description provided for @grubSuggestionPerfVmSwappiness.
+  ///
+  /// In it, this message translates to:
+  /// **'Riduci lo swappiness quando il sistema ha RAM sufficiente'**
+  String get grubSuggestionPerfVmSwappiness;
 
   /// No description provided for @settingsPasswordSecurityMessage.
   ///

@@ -18,6 +18,7 @@ import 'disk_analyzer_screen.dart';
 import 'recovery_screen.dart';
 import 'tray_task_manager_dialog.dart';
 import 'dart:io';
+import '../services/app_memory_maintenance.dart';
 import '../services/tray_service.dart';
 import '../services/recovery_service.dart';
 import '../services/shutdown_scheduler_service.dart';
@@ -25,7 +26,9 @@ import '../services/password_storage.dart';
 import '../services/cleanup_service.dart';
 import '../services/app_self_update_service.dart';
 import '../utils/update_check_report_formatter.dart';
+import '../utils/update_preview_helper.dart';
 import '../widgets/updates_apply_progress_view.dart';
+import '../widgets/tab_page_no_keep_alive.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(ThemeMode)? onThemeModeChanged;
@@ -52,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    AppMemoryMaintenance.onMainWindowHiddenToTray = _releaseMainUiForTray;
     _initializeController();
     if (Platform.isLinux) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _initTray());
@@ -94,9 +98,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final result = await RecoveryService.checkForUpdates();
       await prefs.setInt(_keyLastUpdateCheckTs, now);
       if (!mounted) return;
-      final count = result['updateCount'] as int? ?? 0;
-      if (count > 0) {
-        _showUpdatesAvailableDialog(result, count);
+      final installable = result['updateCount'] as int? ?? 0;
+      // Non notificare se ci sono solo aggiornamenti phased (non installabili); sì se misti o solo installabili.
+      if (installable > 0) {
+        final summary = result['summaryPackageCount'] as int? ?? installable;
+        _showUpdatesAvailableDialog(result, summary);
       }
     } catch (_) {}
   }
@@ -118,7 +124,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               Text(l10n.updatesAvailableDialogTitle),
             ],
           ),
-          content: Text(l10n.updatesAvailableDialogMessage(count)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.updatesAvailableDialogMessage(count)),
+                const SizedBox(height: 12),
+                UpdatePreviewHelper.previewBlock(
+                  ctx,
+                  l10n,
+                  result,
+                  heading: l10n.updatesAvailableDetectedListHeading,
+                ),
+              ],
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -288,8 +309,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  void _releaseMainUiForTray() {
+    if (!mounted || _tabController == null || _isLoading) return;
+    if (_tabController!.index != 0) {
+      _tabController!.index = 0;
+    }
+  }
+
   @override
   void dispose() {
+    AppMemoryMaintenance.onMainWindowHiddenToTray = null;
     _updateCheckTimer?.cancel();
     _tabController?.dispose();
     super.dispose();
@@ -319,30 +348,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   List<Widget> _buildTabViews() {
+    Widget page(Widget child) => TabPageNoKeepAlive(child: child);
+
     final views = <Widget>[
-      const ServicesScreen(),
-      const StartupAppsScreen(),
-      const CleanupScreen(),
-      const InstalledAppsScreen(),
-      const SystemMonitorScreen(),
-      const DiskAnalyzerScreen(),
+      page(const ServicesScreen()),
+      page(const StartupAppsScreen()),
+      page(const CleanupScreen()),
+      page(const InstalledAppsScreen()),
+      page(const SystemMonitorScreen()),
+      page(const DiskAnalyzerScreen()),
     ];
 
     if (_isAdvancedMode) {
-      views.insert(6, const GrubEditorScreen());
-      views.insert(7, const KernelListScreen());
-      views.insert(8, const RecoveryScreen());
+      views.insert(6, page(const GrubEditorScreen()));
+      views.insert(7, page(const KernelListScreen()));
+      views.insert(8, page(const RecoveryScreen()));
     }
 
-    views.add(SettingsScreen(
+    views.add(page(SettingsScreen(
       onThemeModeChanged: widget.onThemeModeChanged,
       onLocaleChanged: widget.onLocaleChanged,
       onFontChanged: widget.onFontChanged,
       onUpdateCheckPolicyChanged: _startUpdateCheckTimer,
-    ));
-    views.add(InfoScreen(
+    )));
+    views.add(page(InfoScreen(
       onLicenseActivated: isAdvancedBuild ? _initializeController : null,
-    ));
+    )));
 
     return views;
   }
@@ -531,8 +562,11 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
           _result = {
             'success': true,
             'updateCount': 0,
+            'summaryPackageCount': 0,
             'updateReport': <String, dynamic>{},
             'updates': <String>[],
+            'updateInstallableLabels': <String>[],
+            'updatePhasedLabels': <String>[],
           };
         }
       });
@@ -619,11 +653,24 @@ class _TrayCheckUpdatesDialogState extends State<_TrayCheckUpdatesDialog> {
                           color: _result!['success'] == true ? Colors.green : Theme.of(context).colorScheme.error,
                         ),
                       ),
-                      if (_result!['updateCount'] != null) ...[
+                      if (_result!['updateCount'] != null ||
+                          _result!['summaryPackageCount'] != null) ...[
                         const SizedBox(height: 8),
                         Text(
-                          l10n.updateCheckSummaryPackageCount(_result!['updateCount'] as int? ?? 0),
+                          l10n.updateCheckSummaryPackageCount(
+                            (_result!['summaryPackageCount'] as int?) ??
+                                (_result!['updateCount'] as int? ?? 0),
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                      if (_result!['success'] == true) ...[
+                        const SizedBox(height: 10),
+                        UpdatePreviewHelper.previewBlock(
+                          context,
+                          l10n,
+                          _result,
+                          heading: l10n.updatesCheckPreviewHeading,
                         ),
                       ],
                       if (hasUpdates) ...[

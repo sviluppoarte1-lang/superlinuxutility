@@ -11,9 +11,7 @@ class StartupAppsScreen extends StatefulWidget {
   State<StartupAppsScreen> createState() => _StartupAppsScreenState();
 }
 
-class _StartupAppsScreenState extends State<StartupAppsScreen> with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
+class _StartupAppsScreenState extends State<StartupAppsScreen> {
   List<StartupApp> _apps = [];
   bool _isLoading = false;
   String? _error;
@@ -390,7 +388,7 @@ class _StartupAppsScreenState extends State<StartupAppsScreen> with AutomaticKee
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Rimuovi',
+              AppLocalizations.of(context)!.remove,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -454,7 +452,6 @@ class _StartupAppsScreenState extends State<StartupAppsScreen> with AutomaticKee
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Richiesto per AutomaticKeepAliveClientMixin
     return Scaffold(
       body: Column(
         children: [
@@ -742,7 +739,7 @@ class _StartupAppsScreenState extends State<StartupAppsScreen> with AutomaticKee
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Rimuovi',
+                      AppLocalizations.of(context)!.remove,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),

@@ -209,6 +209,13 @@
   "updatesAvailableDialogTitle": "Actualizaciones disponibles",
   "updatesAvailableDialogMessage": "{count} actualizaciones disponibles. ¿Desea aplicarlas ahora?",
   "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailableDetectedListHeading": "Detectados:",
+  "updateLabelPhased": "{name} (despliegue gradual — aún no instalable)",
+  "@updateLabelPhased": {"placeholders": {"name": {"type": "String"}}},
+  "updatesPreviewTruncated": "… y {count} más",
+  "@updatesPreviewTruncated": {"placeholders": {"count": {"type": "int"}}},
+  "updatesAvailablePhasedFooter": "Los paquetes en despliegue gradual no se pueden instalar aún. \"Aplicar ahora\" solo aplica lo que el sistema permite.",
+  "updatesCheckPreviewHeading": "Elementos afectados:",
   "applyNow": "Aplicar ahora",
   "postpone": "Más tarde",
   "fontFamily": "Familia de Fuente",
@@ -812,6 +819,83 @@
   "hardwareSuggestionsPriorityLow": "Baja",
   "hardwareSuggestionsApply": "Aplicar",
   "hardwareSuggestionsCancel": "Cancelar",
+  "hardwareSuggestionsAlreadyPresent": "Ya presente",
+  "hardwareSuggestionsCurrentValue": "Valor actual: {value}",
+  "@hardwareSuggestionsCurrentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsSuggestedValue": "Sugerido: {value}",
+  "@hardwareSuggestionsSuggestedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsAnalyzing": "Analizando el hardware...",
+  "hardwareSuggestionsNoAvailable": "No hay sugerencias de hardware disponibles.",
+  "hardwareSuggestionsApplied": "Sugerencia aplicada: {parameter}",
+  "@hardwareSuggestionsApplied": {
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsApplyError": "Error al aplicar la sugerencia: {error}",
+  "@hardwareSuggestionsApplyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hardwareSuggestionsGenerationError": "Error al generar las sugerencias: {error}",
+  "@hardwareSuggestionsGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionCpuThreadirqs": "CPU con {count} núcleos: añadir threadirqs puede mejorar la planificación multi-núcleo",
+  "@grubSuggestionCpuThreadirqs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grubSuggestionCpuMitigationsOff": "CPU moderna: mitigations=off puede mejorar el rendimiento (solo si aceptas el compromiso de seguridad)",
+  "grubSuggestionCpuIntelIommu": "CPU Intel: habilita IOMMU para virtualización y aislamiento de dispositivos",
+  "grubSuggestionCpuAmdIommu": "CPU AMD: habilita IOMMU para virtualización y aislamiento de dispositivos",
+  "grubSuggestionRamZswapDisable": "Sistema con {gb} GB RAM: zswap suele ser innecesario",
+  "@grubSuggestionRamZswapDisable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionRamZswapEnable": "Sistema con {gb} GB RAM: zswap puede ayudar cuando la memoria está ajustada",
+  "@grubSuggestionRamZswapEnable": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "grubSuggestionGpuNvidiaModeset": "GPU NVIDIA detectada: habilita nvidia-drm modeset para mejor rendimiento gráfico",
+  "grubSuggestionGpuNvidiaVideoMemory": "GPU NVIDIA: conservar asignaciones de memoria de vídeo entre suspensión/reanudación",
+  "grubSuggestionGpuAmdPpfeaturemask": "GPU AMD: habilitar la máscara completa de gestión de energía",
+  "grubSuggestionGpuVideoMode": "Fijar un modo de vídeo para reducir problemas de pantalla al arrancar",
+  "grubSuggestionFirmwareUefiQuietSplash": "UEFI: quiet splash puede mejorar la experiencia de arranque",
+  "grubSuggestionPerfElevatorNone": "Almacenamiento centrado en SSD: elevator=none puede mejorar el rendimiento de E/S",
+  "grubSuggestionPerfVmSwappiness": "Reducir swappiness cuando hay RAM suficiente",
   "settingsPasswordSecurityMessage": "La contraseña se guarda de forma segura utilizando el keyring del sistema.",
   "tabShutdownScheduler": "Apagado Automático",
   "shutdownInfoTitle": "Apagado Automático",

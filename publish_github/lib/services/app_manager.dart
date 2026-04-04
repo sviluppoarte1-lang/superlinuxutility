@@ -374,9 +374,14 @@ class AppManager {
         case PackageManager.apt:
           result = await _runSudoCommand('apt-get remove -y ${app.name}');
           break;
-        case PackageManager.snap:
-          result = await Process.run('snap', ['remove', app.name]);
+        case PackageManager.snap: {
+          final safeName = app.name
+              .replaceAll('\\', '\\\\')
+              .replaceAll('"', '\\"')
+              .replaceAll(r'$', r'\$');
+          result = await _runSudoCommand('snap remove "$safeName"');
           break;
+        }
         case PackageManager.flatpak:
           result = await Process.run('flatpak', ['uninstall', '-y', app.description ?? app.name]);
           break;
