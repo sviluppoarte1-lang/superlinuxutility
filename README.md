@@ -88,12 +88,6 @@ This software is distributed under the **GPL-3.0 or later** license.
 - Apply changes and update bootloader.
 - Restore from previous backup.
 
-### Kernel management (Advanced)
-
-- List installed kernels with version and size.
-- Remove old kernels safely (current kernel protected).
-- Set default kernel to boot.
-- Automatic cleanup: keep only a chosen number of recent kernels.
 
 ### System recovery (Advanced)
 
