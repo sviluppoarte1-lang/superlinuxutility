@@ -73,13 +73,7 @@ This software is distributed under the **GPL-3.0 or later** license.
 - Visualize space usage; identify large files and folders.
 - Cache of scan results for faster navigation.
 
-### Appearance (GNOME)
 
-- Fonts: interface, document, and monospace with previews.
-- Rendering: hinting, antialiasing, scale factor.
-- Themes: cursor, icons, legacy apps with previews.
-- Wallpaper: set backgrounds for light and dark theme.
-- Window behavior: click actions, title bar buttons, focus.
 
 ### GRUB editor (Advanced)
 
