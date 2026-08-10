@@ -14,7 +14,7 @@ Super Linux Utility is a complete Flutter application for advanced Linux/Ubuntu 
 
 - **Standard (free):** Core features: services, startup apps, cleanup, installed apps, system monitor, disk analyzer, appearance customization.
 - **Advanced (paid):** Same as standard plus GRUB editor, kernel management, and system recovery tools. License activation required.
-- **Personal/Test:** Full advanced functionality for personal or testing use, without license requirement. Not for distribution.
+  
 
 This software is distributed under the **GPL-3.0 or later** license.
 
