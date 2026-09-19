@@ -1,3 +1,13 @@
+
+<img width="676" height="651" alt="Schermata del 2026-09-19 11-24-35" src="https://github.com/user-attachments/assets/460a7954-acdb-402f-82fb-6c90f32d92ac" />
+<img width="383" height="459" alt="Schermata del 2026-09-19 11-24-18" src="https://github.com/user-attachments/assets/eb7b3dd0-b877-4b34-8ea1-b01e4bf5db10" />
+<img width="1918" height="1045" alt="Schermata del 2026-09-19 11-24-02" src="https://github.com/user-attachments/assets/f73941ca-8003-4d04-aa1e-7a218ba781d8" />
+<img width="1918" height="1045" alt="Schermata del 2026-09-19 11-23-48" src="https://github.com/user-attachments/assets/d82247dc-abd0-4ee8-a589-0aae2929d20f" />
+<img width="1918" height="1045" alt="Schermata del 2026-09-19 11-23-40" src="https://github.com/user-attachments/assets/44286671-48a7-4516-bb10-404e66d002a3" />
+<img width="1918" height="1045" alt="Schermata del 2026-09-19 11-23-29" src="https://github.com/user-attachments/assets/36260666-dd3c-420b-82cc-c12784c05710" />
+<img width="1917" height="1055" alt="Schermata del 2026-09-19 11-23-19" src="https://github.com/user-attachments/assets/efeecbb5-753c-4020-b2e3-88224b7d7c27" />
+<img width="278" height="364" alt="Schermata del 2026-09-19 11-23-03" src="https://github.com/user-attachments/assets/03c7abef-0236-4298-8a59-8cab07f01c7b" />
+
 # Super Linux Utility
 
 A full-featured system manager for Linux. Manage systemd services, startup apps, temp cleanup, installed packages (APT, Snap, Flatpak), monitor CPU/RAM/disks, analyze disk usage, and customize appearance. Free standard edition; paid advanced edition adds GRUB editor, kernel management, and recovery tools.
