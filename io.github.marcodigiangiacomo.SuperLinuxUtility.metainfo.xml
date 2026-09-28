@@ -16,7 +16,7 @@
   </developer>
 
   <description>
-    <p>**Super Linux Utility** is a full-featured application for managing and optimizing your Linux system.</p>
+    <p>Super Linux Utility is a full-featured application for managing and optimizing your Linux system.</p>
     <p>Main features:</p>
     <ul>
       <li>Analyse and manage systemd services (identify services that slow down boot)</li>
@@ -87,7 +87,6 @@
     <display_length compare="ge">768</display_length>
   </requires>
 
-  <!-- Replace the screenshot URL with a direct link to your app screenshot (e.g. from GitHub repo or release). Flathub requires at least one screenshot. -->
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/sviluppoarte1-lang/superlinuxutility/main/screenshots/super-linux-utility.png</image>
@@ -97,7 +96,7 @@
   </screenshots>
 
   <releases>
-    <release version="1.8.6" date="2025-02-24">
+    <release version="2.1.0" date="2026-09-19">
       <url type="details">https://github.com/sviluppoarte1-lang/superlinuxutility/releases</url>
       <description>
         <p>Current release with standard (free) and advanced (paid) editions.</p>

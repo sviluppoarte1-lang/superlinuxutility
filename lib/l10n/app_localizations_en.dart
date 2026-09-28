@@ -39,6 +39,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trayMemoryUsage => 'Memory usage';
 
   @override
+  String get traySmartHealth => 'Disk health (SMART)';
+
+  @override
   String get trayShutdownTimer => 'Automatic shutdown';
 
   @override
@@ -49,6 +52,198 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trayExit => 'Exit';
+
+  @override
+  String get traySettings => 'Settings';
+
+  @override
+  String get traySystem => 'System';
+
+  @override
+  String get trayClipboard => 'Clipboard';
+
+  @override
+  String get clipboardTitle => 'Clipboard history';
+
+  @override
+  String get clipboardEmpty =>
+      'Nothing copied yet. Copy some text and it will appear here.';
+
+  @override
+  String get clipboardEditTitle => 'Edit text';
+
+  @override
+  String get clipboardSave => 'Save';
+
+  @override
+  String get clipboardCancel => 'Cancel';
+
+  @override
+  String get clipboardDelete => 'Delete';
+
+  @override
+  String get clipboardDeleteTitle => 'Delete this entry?';
+
+  @override
+  String get clipboardDeleteBody =>
+      'The entry will be permanently removed from history.';
+
+  @override
+  String get clipboardClearAll => 'Clear all';
+
+  @override
+  String get clipboardClearAllTitle => 'Clear history?';
+
+  @override
+  String get clipboardClearAllBody =>
+      'All saved entries will be permanently deleted.';
+
+  @override
+  String get clipboardSaveEntryTxt => 'Save as TXT';
+
+  @override
+  String get clipboardExportAll => 'Export all as TXT';
+
+  @override
+  String clipboardSavedTo(String path) {
+    return 'Saved to $path';
+  }
+
+  @override
+  String get clipboardSaveFailed => 'Save failed.';
+
+  @override
+  String get clipboardCopiedBack => 'Text copied to clipboard.';
+
+  @override
+  String get clipboardSettingsTitle => 'Clipboard';
+
+  @override
+  String get clipboardSettingsDesc =>
+      'The app automatically stores texts you copy. Choose how many hours to keep them: expired copies are deleted automatically.';
+
+  @override
+  String get clipboardRetentionLabel => 'Keep copies for';
+
+  @override
+  String clipboardRetentionHours(int n) {
+    return '$n h';
+  }
+
+  @override
+  String get tabBattery => 'Battery';
+
+  @override
+  String get trayBattery => 'Battery';
+
+  @override
+  String get trayBatteryHealth => 'Battery health';
+
+  @override
+  String get trayChargeLimit => 'Charge limit';
+
+  @override
+  String get trayPowerProfile => 'Power profile';
+
+  @override
+  String get batteryNoBattery => 'No battery detected';
+
+  @override
+  String get batteryNoBatteryDesc =>
+      'This feature is only available on notebooks. No battery was found on this system.';
+
+  @override
+  String get batteryHealthTitle => 'Battery health';
+
+  @override
+  String get batteryCapacityNow => 'Current energy';
+
+  @override
+  String get batteryCapacityFull => 'Full capacity';
+
+  @override
+  String get batteryCapacityDesign => 'Design capacity';
+
+  @override
+  String get batteryHealthPct => 'Health';
+
+  @override
+  String get batteryCycles => 'Charge cycles';
+
+  @override
+  String get batteryVoltage => 'Voltage';
+
+  @override
+  String get batteryPower => 'Power';
+
+  @override
+  String get batteryTech => 'Technology';
+
+  @override
+  String get batteryStatus => 'Battery';
+
+  @override
+  String get batteryAcOnline => 'On AC power';
+
+  @override
+  String get batteryAcOffline => 'On battery';
+
+  @override
+  String get batteryCharging => 'Charging';
+
+  @override
+  String get batteryDischarging => 'Discharging';
+
+  @override
+  String get batteryFull => 'Fully charged';
+
+  @override
+  String get batteryUnknown => 'Unknown state';
+
+  @override
+  String get batteryThresholdsTitle => 'Charge thresholds';
+
+  @override
+  String get batteryThresholdsDesc =>
+      'Limit the maximum charge (e.g. 80%) to preserve battery lifespan. Requires administrator password. Supported on recent ASUS, ThinkPad, Lenovo and Dell.';
+
+  @override
+  String get batteryThresholdsUnsupported =>
+      'Charge thresholds not supported on this hardware.';
+
+  @override
+  String get batteryEndLimit => 'Maximum charge limit';
+
+  @override
+  String get batteryStartLimit => 'Charge start';
+
+  @override
+  String get batteryGovernorTitle => 'Automatic governor';
+
+  @override
+  String get batteryGovernorDesc =>
+      'Switch to powersave when unplugged and to performance when charging. Works while the app is running.';
+
+  @override
+  String get batteryGovernorAuto => 'Automatic governor switching';
+
+  @override
+  String get batteryGovernorOnAc => 'Governor when charging';
+
+  @override
+  String get batteryGovernorOnBattery => 'Governor on battery';
+
+  @override
+  String get batteryGovernorCurrent => 'Current governor';
+
+  @override
+  String get batteryApplied => 'Setting applied.';
+
+  @override
+  String get batteryFailed => 'Operation failed.';
+
+  @override
+  String get batteryRefresh => 'Refresh';
 
   @override
   String get cleanupLinuxCache => 'Clear cache';
@@ -62,6 +257,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Error clearing cache.';
+
+  @override
+  String get advCleanupTitle => 'Advanced cleanup (logs & dev caches)';
+
+  @override
+  String get devPip => 'pip cache';
+
+  @override
+  String get devCargo => 'Cargo cache (Rust)';
+
+  @override
+  String get devNpm => 'npm cache';
+
+  @override
+  String get devGo => 'Go cache';
+
+  @override
+  String get devGradle => 'Gradle cache';
+
+  @override
+  String get devDocker => 'Unused Docker images';
+
+  @override
+  String get devKernelHeaders => 'Old kernels (headers + images)';
+
+  @override
+  String get advEmpty => 'No development caches detected.';
+
+  @override
+  String get journalTitle => 'System logs (journald)';
+
+  @override
+  String get journalCurrentSize => 'Space used';
+
+  @override
+  String get journalVacuumTarget => 'Vacuum down to';
+
+  @override
+  String get journalVacuumNow => 'Vacuum';
+
+  @override
+  String get journalLimitLabel => 'Persistent limit';
+
+  @override
+  String get journalLimitApply => 'Apply limit';
+
+  @override
+  String get advCleanSelected => 'Clean selected';
+
+  @override
+  String get advCleaned => 'Cleanup completed.';
+
+  @override
+  String get advFailed => 'Cleanup failed.';
 
   @override
   String get cleanupVram => 'Clear VRAM';
@@ -78,6 +327,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cleanupVramError => 'Failed to clear VRAM (GPU reset).';
+
+  @override
+  String get ramCleanupTitle => 'RAM Cleanup';
+
+  @override
+  String get ramCleanup => 'Clean RAM';
+
+  @override
+  String get ramCleanupConfirmTitle => 'Confirm RAM cleanup';
+
+  @override
+  String get ramCleanupConfirmMessage =>
+      'Deep RAM cleanup will flush kernel caches (drop_caches) and recycle swap to free memory used by inactive data. It does not stop system services and does not delete temporary files. Requires administrator password. Continue?';
+
+  @override
+  String get ramCleanupSuccess => 'RAM cleanup completed successfully.';
+
+  @override
+  String get ramCleanupError => 'Error during RAM cleanup.';
+
+  @override
+  String get ramUsed => 'Used';
+
+  @override
+  String get ramAvailable => 'Available';
+
+  @override
+  String get ramCache => 'Cache';
+
+  @override
+  String get ramSwap => 'Swap';
+
+  @override
+  String get ramSwapNone => 'No swap';
+
+  @override
+  String get ramFreed => 'Memory freed';
+
+  @override
+  String get ramBefore => 'Before';
+
+  @override
+  String get ramAfter => 'After';
+
+  @override
+  String get ramStepsFailed => 'Failed steps';
+
+  @override
+  String get ramCleanupSettingsTitle => 'Automatic RAM cleanup';
+
+  @override
+  String get ramCleanupSettingsDesc =>
+      'Automatically performs deep RAM cleanup at regular intervals.';
+
+  @override
+  String get ramCleanupSettingsInterval => 'RAM cleanup frequency';
+
+  @override
+  String get ramCleanupNever => 'Never';
+
+  @override
+  String get ramCleanupEvery5Min => 'Every 5 minutes';
+
+  @override
+  String get ramCleanupEvery10Min => 'Every 10 minutes';
+
+  @override
+  String get ramCleanupEvery15Min => 'Every 15 minutes';
+
+  @override
+  String get ramCleanupEvery30Min => 'Every 30 minutes';
+
+  @override
+  String ramCleanupAutoEnabled(int minutes) {
+    return 'Automatic RAM cleanup enabled (every $minutes minutes).';
+  }
+
+  @override
+  String get ramCleanupAutoDisabled => 'Automatic RAM cleanup disabled.';
+
+  @override
+  String get ramCleanupAutoDone => 'Automatic RAM cleanup completed';
 
   @override
   String get tabServices => 'Services';
@@ -719,7 +1050,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appDescription =>
-      'Super Linux Utility is a complete application for advanced Linux system management. It offers powerful tools to optimize performance, manage services, applications and customize the system appearance.';
+      'Super Linux Utility is a desktop application for managing a Linux system: services, startup applications, cleanup, installed packages, resource monitoring and appearance settings.';
 
   @override
   String get features => 'Features';
@@ -729,6 +1060,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get infoProjectWebsite => 'Project website';
+
+  @override
+  String get infoChangelog => 'Changelog';
+
+  @override
+  String get infoChangelogShowAll => 'View full changelog';
 
   @override
   String get applicationIdLabel => 'Application ID (desktop)';
@@ -798,8 +1135,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageDesc => 'Select the interface language';
 
   @override
-  String get languageRestartMessage =>
-      'The language will be applied when the application restarts';
+  String get languageRestartMessage => 'Language updated';
 
   @override
   String get servicesSlow => 'Slow Services';
@@ -1643,13 +1979,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Updates and restores package manager repositories (APT, DNF, Pacman) to fix update issues.';
 
   @override
-  String get recoveryCheckUpdates => 'Check for Updates';
-
-  @override
-  String get recoveryCheckUpdatesDesc =>
-      'Checks for available updates for all installed package managers (APT, DNF, Pacman, Snap, Flatpak).';
-
-  @override
   String get recoveryPerformUpdates => 'Perform Updates';
 
   @override
@@ -1658,9 +1987,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recoveryTabRecovery => 'Recovery';
-
-  @override
-  String get recoveryTabCheckUpdates => 'Check for Updates';
 
   @override
   String get recoveryTabSoftwareInstaller => 'System Software Installer';
@@ -1703,6 +2029,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recoveryInstallRsyncDesc =>
       'Efficient file sync and transfer tool.';
+
+  @override
+  String get recoveryFixWifiAutoSuspend => 'Fix WiFi Auto-Suspend';
+
+  @override
+  String get recoveryFixWifiAutoSuspendDesc =>
+      'Disables USB auto-suspend for WiFi adapters and internal wireless receivers to prevent random disconnections.';
 
   @override
   String get install => 'Install';
@@ -1973,6 +2306,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diskAnalyzerMainDirectories => 'Main Directories';
 
   @override
+  String get diskIndexingNotice =>
+      'Disk indexing in progress: the first analysis may take some time. Data will be cached for future sessions.';
+
+  @override
   String get hardwareSuggestionsTitle => 'GRUB Suggestions based on Hardware';
 
   @override
@@ -2085,8 +2422,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lower swappiness when the system has enough RAM';
 
   @override
+  String get grubSuggestionGpuNvidiaWaylandPageTable =>
+      'NVIDIA: UsePageAttributeTable improves Wayland rendering performance';
+
+  @override
+  String get grubSuggestionGpuNvidiaWaylandResizableBar =>
+      'NVIDIA: EnableResizableBar boosts GPU performance 10-15% (PCIe ReBAR)';
+
+  @override
+  String get grubSuggestionGpuNvidiaWaylandGpuFirmware =>
+      'NVIDIA: EnableGpuFirmware=0 improves Wayland stability and compatibility';
+
+  @override
+  String get grubSuggestionGpuNvidiaWaylandFbdev =>
+      'NVIDIA: fbdev=1 enables framebuffer console on Wayland';
+
+  @override
   String get settingsPasswordSecurityMessage =>
       'The password is saved securely using the system keyring.';
+
+  @override
+  String get tabSmart => 'SMART';
 
   @override
   String get tabShutdownScheduler => 'Automatic Shutdown';
@@ -2237,4 +2593,759 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get licenseActivateCardDesc =>
       'The Advanced version costs 19.99 €. Enter your details and the license code you received after successful payment to unlock GRUB, Kernel and Recovery tools. Without valid payment, the application cannot be activated.';
+
+  @override
+  String get noSmartDisksFound => 'No disks with SMART support found.';
+
+  @override
+  String get smartctlNotFound => 'smartctl not found';
+
+  @override
+  String get smartctlInstallPrompt =>
+      'smartmontools is required to monitor disk health. Do you want to install it?';
+
+  @override
+  String get installing => 'Installing...';
+
+  @override
+  String get installSmartctl => 'Install smartmontools';
+
+  @override
+  String get selectDisk => 'Select Disk';
+
+  @override
+  String get smartHealthPassed => 'Health: PASSED';
+
+  @override
+  String get smartHealthFailed => 'Health: FAILED';
+
+  @override
+  String get powerOnHours => 'Power-on Hours';
+
+  @override
+  String get powerCycleCount => 'Power Cycle Count';
+
+  @override
+  String get diskInformation => 'Disk Information';
+
+  @override
+  String get serialNumber => 'Serial Number';
+
+  @override
+  String get firmware => 'Firmware';
+
+  @override
+  String get interface => 'Interface';
+
+  @override
+  String get smartAvailable => 'SMART Available';
+
+  @override
+  String get smartEnabled => 'SMART Enabled';
+
+  @override
+  String get smartAttributes => 'SMART Attributes';
+
+  @override
+  String get attributes => 'attributes';
+
+  @override
+  String get failedAttributes => 'Failed Attributes';
+
+  @override
+  String get attributeId => 'ID';
+
+  @override
+  String get attributeName => 'Attribute';
+
+  @override
+  String get attributeValue => 'Value';
+
+  @override
+  String get attributeWorst => 'Worst';
+
+  @override
+  String get attributeThreshold => 'Threshold';
+
+  @override
+  String get attributeRaw => 'Raw Value';
+
+  @override
+  String get selfTest => 'Self-Test';
+
+  @override
+  String get shortTest => 'Short Test';
+
+  @override
+  String get longTest => 'Extended Test';
+
+  @override
+  String get selfTestHint =>
+      'A self-test will be queued on the disk. Check the results later using the attribute table.';
+
+  @override
+  String get selfTestStarted =>
+      'Self-test started successfully. Check results later.';
+
+  @override
+  String get selfTestFailed => 'Failed to start self-test';
+
+  @override
+  String get attributeFailedWarning =>
+      'This attribute has FAILED! The disk may need replacement.';
+
+  @override
+  String get smartDataNotAvailable => 'SMART data not available for this disk.';
+
+  @override
+  String get smartUsbInfoTitle => 'USB Drive';
+
+  @override
+  String get smartUsbInfoBody =>
+      'USB-to-SATA bridges often limit SMART data to health status and temperature. Full attribute table may not be available. If available, try a direct SATA connection.';
+
+  @override
+  String get smartSudoPasswordRequired =>
+      'Save your sudo password in Settings first.';
+
+  @override
+  String get smartInstallFailed => 'Installation failed.';
+
+  @override
+  String smartInstallError(String error) {
+    return 'Installation error: $error';
+  }
+
+  @override
+  String get smartErrNoPassword =>
+      'Password not saved. Save your password in Settings.';
+
+  @override
+  String get smartErrWrongPassword => 'Incorrect password.';
+
+  @override
+  String get smartErrPasswordRequired => 'Password required but not provided.';
+
+  @override
+  String get smartErrPasswordTimeout => 'Timeout while validating password.';
+
+  @override
+  String smartErrPasswordGeneric(String error) {
+    return 'Validation error: $error';
+  }
+
+  @override
+  String smartErrSudo(String error) {
+    return 'sudo error: $error';
+  }
+
+  @override
+  String get smartErrUnsupportedPm => 'Unsupported package manager.';
+
+  @override
+  String smartErrUnexpected(String error) {
+    return 'Unexpected error: $error';
+  }
+
+  @override
+  String get smartErrAptLock =>
+      'Unable to update: another process is using apt. Try again in a few seconds.';
+
+  @override
+  String get smartErrAptNoRepos =>
+      'Repositories not found. Check your repository configuration.';
+
+  @override
+  String smartErrAptUpdateFailed(String error) {
+    return 'Cache update failed: $error';
+  }
+
+  @override
+  String get smartErrDpkgInterrupted =>
+      'dpkg was interrupted. Run \"sudo dpkg --configure -a\" and try again.';
+
+  @override
+  String get smartErrGpgUnauthenticated =>
+      'Unauthenticated packages. Update GPG keys: \"sudo apt-get update\".';
+
+  @override
+  String smartErrInstallFailed(String error) {
+    return 'Installation failed: $error';
+  }
+
+  @override
+  String get smartErrNotFoundAfterInstall =>
+      'Installation completed but smartctl was not found. Restart the app and try again.';
+
+  @override
+  String get servicesGuideTitle => 'Linux Services Guide';
+
+  @override
+  String get servicesGuideWhatAre => 'What are Linux Services?';
+
+  @override
+  String get servicesGuideWhatAreBody =>
+      'Services (also called daemons) are background programs that start automatically when the system boots. They provide essential functions such as network management (NetworkManager), printing (CUPS), scheduling (cron), database servers (MySQL, PostgreSQL), web servers (Apache, Nginx), and many others.\n\nSome services are essential for the system to work correctly, while others are optional and depend on the specific use of the machine.';
+
+  @override
+  String get servicesGuideHowToManage => 'How services are managed';
+
+  @override
+  String get servicesGuideHowToManageBody =>
+      'On modern Linux distributions, services are managed by systemd, the init system. Each service has a unit file (.service) that defines how it starts, stops, and behaves.\n\nIn this application you can:\n• Start and stop a service immediately\n• Enable a service so it starts automatically at boot\n• Disable a service so it does NOT start at boot\n• View the current status and logs of a service';
+
+  @override
+  String get servicesGuideHowToDisable =>
+      'How to disable a service with this software';
+
+  @override
+  String get servicesGuideHowToDisableBody =>
+      'From the \"Services\" tab, find the service you want to disable. Tap \"Stop\" to stop it immediately, or tap \"Disable\" to prevent it from starting automatically on the next boot.\n\nYou can also combine the two: tap \"Stop\" and then \"Disable\" to completely deactivate a service until you manually re-enable it.';
+
+  @override
+  String get servicesGuidePrecautions => 'Precautions and cautions';
+
+  @override
+  String get servicesGuidePrecautionsBody =>
+      '• Do NOT disable services you don\'t know: some are essential for the system (e.g. NetworkManager, accounts-daemon, systemd-logind)\n• Disabling network services (NetworkManager, systemd-networkd) will cut off Internet access\n• Disabling display managers (gdm, sddm, lightdm) will prevent the graphical interface from starting\n• Always verify that you don\'t need a service before disabling it\n• The changes are system-wide: they affect all users, not just your account\n• If you make a mistake, you can re-enable the service from the same screen using \"Enable\"';
+
+  @override
+  String get servicesGuideDontShowAgain => 'Don\'t show this guide again';
+
+  @override
+  String get servicesGuideGotIt => 'Got it!';
+
+  @override
+  String get tabRepositories => 'Repositories';
+
+  @override
+  String get repoTitle => 'Repositories';
+
+  @override
+  String get repoCount => 'repos';
+
+  @override
+  String get repoEmpty => 'No repositories found';
+
+  @override
+  String repoEnabled(Object name) {
+    return '$name enabled';
+  }
+
+  @override
+  String repoDisabled(Object name) {
+    return '$name disabled';
+  }
+
+  @override
+  String repoRemoved(Object name) {
+    return '$name removed';
+  }
+
+  @override
+  String get repoError => 'Operation failed. Check your sudo password.';
+
+  @override
+  String get repoRemoveTitle => 'Remove Repository';
+
+  @override
+  String repoRemoveConfirm(Object name) {
+    return 'Are you sure you want to remove \"$name\"?';
+  }
+
+  @override
+  String get repoEditTitle => 'Edit Repository';
+
+  @override
+  String get repoFilePathLabel => 'File:';
+
+  @override
+  String get repoContentLabel => 'Content';
+
+  @override
+  String get repoUpdated => 'Repository updated';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get tabTweaks => 'Tweaks';
+
+  @override
+  String get tweaksSwap => 'Swap';
+
+  @override
+  String get tweaksSwapRecommendations => 'Swap Recommendations';
+
+  @override
+  String get appCheckForUpdates => 'Check for updates';
+
+  @override
+  String get kernelUpdateDetectedLiquorix => 'Liquorix kernel update available';
+
+  @override
+  String get kernelUpdateDetectedXanmod => 'Xanmod kernel update available';
+
+  @override
+  String get tabSystemStatus => 'System Status';
+
+  @override
+  String get tabSecurity => 'Security';
+
+  @override
+  String get tabKernelTweaks => 'Kernel Tweaks';
+
+  @override
+  String get tabOperationHistory => 'History';
+
+  @override
+  String get statusRefresh => 'Refresh';
+
+  @override
+  String get statusReadOnlyNote =>
+      'Read-only system information. Nothing is modified.';
+
+  @override
+  String get statusTabKernel => 'Kernel';
+
+  @override
+  String get statusTabSecurity => 'Security';
+
+  @override
+  String get statusTabVirtualization => 'Virtualization';
+
+  @override
+  String get statusTabPrinters => 'Printers';
+
+  @override
+  String get statusEnabled => 'Enabled';
+
+  @override
+  String get statusDisabled => 'Disabled';
+
+  @override
+  String get statusNotAvailable => 'Not available';
+
+  @override
+  String get statusNotInstalled => 'Not installed';
+
+  @override
+  String get statusUnknown => 'Unknown';
+
+  @override
+  String get statusNone => 'None';
+
+  @override
+  String get statusEnforcing => 'Enforcing';
+
+  @override
+  String get statusPermissive => 'Permissive';
+
+  @override
+  String get statusKernelInfo => 'Kernel information';
+
+  @override
+  String get statusKernelVersion => 'Version';
+
+  @override
+  String get statusKernelBuild => 'Build';
+
+  @override
+  String get statusCpuCount => 'CPU count';
+
+  @override
+  String get statusKernelTuning => 'Kernel tuning';
+
+  @override
+  String get statusThpMode => 'Transparent Huge Pages';
+
+  @override
+  String get statusZswap => 'Zswap';
+
+  @override
+  String get statusGovernor => 'CPU governor';
+
+  @override
+  String get statusIoScheduler => 'I/O scheduler';
+
+  @override
+  String get statusMandatoryAccess => 'Mandatory access control';
+
+  @override
+  String get statusAppArmor => 'AppArmor';
+
+  @override
+  String get statusSelinux => 'SELinux';
+
+  @override
+  String get statusSecureBoot => 'Secure Boot';
+
+  @override
+  String get statusNetworkSecurity => 'Network security';
+
+  @override
+  String get statusFirewall => 'Firewall';
+
+  @override
+  String get statusFirewallBackend => 'Firewall backend';
+
+  @override
+  String get statusSshService => 'SSH service';
+
+  @override
+  String get statusRootSsh => 'Root SSH login';
+
+  @override
+  String get statusAutoUpdates => 'Automatic updates';
+
+  @override
+  String get statusVirtHost => 'Virtualization host';
+
+  @override
+  String get statusCpuVirt => 'CPU virtualization';
+
+  @override
+  String get statusKvmModule => 'KVM module';
+
+  @override
+  String get statusIommu => 'IOMMU';
+
+  @override
+  String get statusVirtAux => 'Virtualization support';
+
+  @override
+  String get statusVfio => 'VFIO';
+
+  @override
+  String get statusKsm => 'KSM';
+
+  @override
+  String get statusDocker => 'Docker';
+
+  @override
+  String get statusLibvirt => 'Libvirt';
+
+  @override
+  String get statusCups => 'CUPS';
+
+  @override
+  String get statusCupsService => 'CUPS service';
+
+  @override
+  String get statusPrinters => 'Printers';
+
+  @override
+  String get statusPrinterDrivers => 'Printer drivers';
+
+  @override
+  String get securitySubtitle =>
+      'Manage system security services. Every action is recorded in the operation history and can be undone.';
+
+  @override
+  String get securityFirewall => 'Firewall';
+
+  @override
+  String get securityFirewallDesc =>
+      'Blocks unsolicited incoming connections using UFW or firewalld.';
+
+  @override
+  String securityFirewallBackend(Object backend) {
+    return 'Active ($backend)';
+  }
+
+  @override
+  String get securitySsh => 'SSH service';
+
+  @override
+  String get securitySshDesc => 'Remote shell access over the network.';
+
+  @override
+  String get securityRootSsh => 'Root SSH login';
+
+  @override
+  String get securityRootSshDesc => 'Allow or deny direct root login over SSH.';
+
+  @override
+  String get securityRootAllowed => 'Root login allowed';
+
+  @override
+  String get securityAutoUpdates => 'Automatic updates';
+
+  @override
+  String get securityAutoUpdatesDesc =>
+      'Install security updates automatically in the background.';
+
+  @override
+  String get kernelTweaksSubtitle =>
+      'Apply kernel settings persistently: they are reapplied at every boot.';
+
+  @override
+  String get kernelTweaksPersistNote =>
+      'No persistent tweaks active yet. Applied settings are saved to a systemd service and reapplied at every boot.';
+
+  @override
+  String get kernelTweaksPersistActive =>
+      'Persistent kernel tweaks are active and reapplied at every boot.';
+
+  @override
+  String get kernelTweaksApply => 'Apply';
+
+  @override
+  String get kernelTweaksReset => 'Reset';
+
+  @override
+  String get kernelTweaksResetTitle => 'Reset kernel tweaks';
+
+  @override
+  String get kernelTweaksResetConfirm =>
+      'This removes the persistent kernel tweaks and restores the default values. Continue?';
+
+  @override
+  String get kernelTweaksThp => 'Transparent Huge Pages';
+
+  @override
+  String get kernelTweaksThpDesc =>
+      'Mode used for transparent huge page allocation.';
+
+  @override
+  String get kernelTweaksGovernor => 'CPU governor';
+
+  @override
+  String get kernelTweaksGovernorDesc =>
+      'CPU frequency scaling policy applied to all cores.';
+
+  @override
+  String get kernelTweaksScheduler => 'CPU scheduler';
+
+  @override
+  String get kernelTweaksSchedulerDesc =>
+      'Run newly forked child processes before the parent for better responsiveness.';
+
+  @override
+  String get kernelTweaksPerf => 'Performance';
+
+  @override
+  String get kernelTweaksOndemand => 'On-demand';
+
+  @override
+  String get kernelTweaksSchedutil => 'Schedutil';
+
+  @override
+  String get kernelTweaksPowersave => 'Powersave';
+
+  @override
+  String get kernelTweaksAlways => 'Always';
+
+  @override
+  String get kernelTweaksMadvise => 'Madvise';
+
+  @override
+  String get kernelTweaksNever => 'Never';
+
+  @override
+  String get kernelTweaksSchedOn => 'Child first';
+
+  @override
+  String get kernelTweaksSchedOff => 'Default';
+
+  @override
+  String get historySubtitle =>
+      'Record of performed operations. Restore to undo an action.';
+
+  @override
+  String get historyEmpty => 'No operations recorded yet.';
+
+  @override
+  String get historyRestore => 'Restore';
+
+  @override
+  String get historyRestoreTitle => 'Restore operation';
+
+  @override
+  String get historyRestoreConfirm =>
+      'This will revert the changes of this operation. Continue?';
+
+  @override
+  String get historyRestored => 'Restored';
+
+  @override
+  String get historyClearAll => 'Clear history';
+
+  @override
+  String get historyClearTitle => 'Clear history';
+
+  @override
+  String get historyClearConfirm =>
+      'Remove all recorded operations from the history. Nothing is undone. Continue?';
+
+  @override
+  String get historyFirewallEnable => 'Firewall enabled';
+
+  @override
+  String get historyFirewallDisable => 'Firewall disabled';
+
+  @override
+  String get historySshEnable => 'SSH service enabled';
+
+  @override
+  String get historySshDisable => 'SSH service disabled';
+
+  @override
+  String get historyRootAllow => 'Root SSH login allowed';
+
+  @override
+  String get historyRootDeny => 'Root SSH login denied';
+
+  @override
+  String get historyAutoUpdateEnable => 'Automatic updates enabled';
+
+  @override
+  String get historyAutoUpdateDisable => 'Automatic updates disabled';
+
+  @override
+  String get historyKernelApply => 'Kernel tweaks applied';
+
+  @override
+  String get historyKernelReset => 'Kernel tweaks reset';
+
+  @override
+  String get kernelTweaksCurrent => 'Current';
+
+  @override
+  String get kernelTweaksSavedForBoot => 'Saved for boot';
+
+  @override
+  String get tabDeviceManager => 'Device Manager';
+
+  @override
+  String get deviceManagerTitle => 'Device Manager';
+
+  @override
+  String get deviceManagerLoading => 'Detecting devices...';
+
+  @override
+  String get deviceManagerEmpty => 'No devices found';
+
+  @override
+  String get deviceManagerRefresh => 'Refresh';
+
+  @override
+  String get deviceManagerEnable => 'Enable';
+
+  @override
+  String get deviceManagerDisable => 'Disable';
+
+  @override
+  String get deviceManagerEnabled => 'Enabled';
+
+  @override
+  String get deviceManagerDisabled => 'Disabled';
+
+  @override
+  String deviceManagerToggleSuccess(Object action) {
+    return 'Device $action successfully';
+  }
+
+  @override
+  String deviceManagerToggleError(Object action) {
+    return 'Failed to $action device';
+  }
+
+  @override
+  String get deviceManagerCannotDisable => 'This device cannot be disabled';
+
+  @override
+  String get deviceManagerDetails => 'Details';
+
+  @override
+  String get deviceManagerDriver => 'Driver';
+
+  @override
+  String get deviceManagerBus => 'Bus';
+
+  @override
+  String get deviceManagerVendor => 'Vendor';
+
+  @override
+  String get deviceManagerProduct => 'Product';
+
+  @override
+  String get deviceManagerConfirmTitle => 'Confirm action';
+
+  @override
+  String get deviceManagerConfirmDisable =>
+      'Disabling this device may cause system instability. The change will persist across reboots. Continue?';
+
+  @override
+  String get deviceManagerConfirmEnable =>
+      'Enable this device? The change will persist across reboots. Continue?';
+
+  @override
+  String get deviceManagerAllDevices => 'All devices';
+
+  @override
+  String get deviceManagerShowDisabled => 'Show disabled';
+
+  @override
+  String get deviceManagerStatus => 'Status';
+
+  @override
+  String get deviceManagerProperties => 'Properties';
+
+  @override
+  String get deviceManagerClose => 'Close';
+
+  @override
+  String get deviceManagerNoSudo =>
+      'Save administrator password in Settings first';
+
+  @override
+  String get deviceManagerPersistent => 'Persists on reboot';
+
+  @override
+  String get tabDriverManager => 'Drivers';
+
+  @override
+  String get driverManagerTitle => 'Driver & Firmware Manager';
+
+  @override
+  String get driverManagerScan => 'Scan hardware';
+
+  @override
+  String get driverManagerFirmwareUpdates => 'Firmware Updates';
+
+  @override
+  String get driverManagerAvailableDrivers => 'Available drivers';
+
+  @override
+  String get driverManagerInstalledDrivers => 'Installed drivers';
+
+  @override
+  String get driverManagerAllDriversInstalled =>
+      'All known drivers are installed';
+
+  @override
+  String get driverManagerNoDriversInstalled => 'No managed drivers installed';
+
+  @override
+  String get driverManagerCurrentDriver => 'Current driver';
+
+  @override
+  String get driverManagerPackage => 'Package';
+
+  @override
+  String get driverManagerInstall => 'Install';
+
+  @override
+  String get driverManagerUpdate => 'Update';
+
+  @override
+  String get driverManagerRebootRequired => 'Reboot required after update';
+
+  @override
+  String get driverManagerLinuxFirmware => 'Linux Firmware (linux-firmware)';
+
+  @override
+  String get driverManagerLinuxFirmwareDesc =>
+      'Complete firmware package for GPU, Wi-Fi, Bluetooth and other devices';
 }

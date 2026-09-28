@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'password_storage.dart';
+import 'repository_manager.dart';
 import 'system_detector.dart';
 
 class RecoveryService {
@@ -17,8 +18,10 @@ class RecoveryService {
         .replaceAll('\\', '\\\\')
         .replaceAll('"', '\\"')
         .replaceAll('\$', '\\\$')
-        .replaceAll('`', '\\`');
-    
+        .replaceAll('`', '\\`')
+        .replaceAll('\n', '\\n')
+        .replaceAll('\r', '\\r')
+        .replaceAll("'", "\\'");    
     final fullCommand =
         'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(command)}';
     
@@ -264,93 +267,25 @@ class RecoveryService {
   }
 
   static Future<Map<String, dynamic>> restoreRepositories() async {
-    try {
-      final systemInfo = await SystemDetector.detectSystem();
-      String output = '';
-      final distLower = systemInfo.distribution.toLowerCase();
-
-      if (systemInfo.hasApt) {
-        // Ubuntu/Debian/Mint
-        try {
-          // Aggiorna le liste dei pacchetti
-          final result = await _runSudoCommand('apt update');
-          output = result.stdout.toString();
-          if (result.exitCode != 0) {
-            output += '\n${result.stderr}';
-            return {
-              'success': false,
-              'message': 'Errore durante l\'aggiornamento dei repository APT',
-              'output': output,
-            };
-          }
-        } catch (e) {
-          return {
-            'success': false,
-            'message': 'Errore durante il ripristino dei repository: $e',
-          };
-        }
-      } else if (systemInfo.hasDnf) {
-        // Fedora/RHEL/CentOS
-        try {
-          // Ricostruisce la cache DNF
-          final result = await _runSudoCommand('dnf clean all && dnf makecache');
-          output = result.stdout.toString();
-          if (result.exitCode != 0) {
-            output += '\n${result.stderr}';
-            return {
-              'success': false,
-              'message': 'Errore durante il ripristino dei repository DNF',
-              'output': output,
-            };
-          }
-        } catch (e) {
-          return {
-            'success': false,
-            'message': 'Errore durante il ripristino dei repository: $e',
-          };
-        }
-      } else if (systemInfo.hasPacman) {
-        // Arch/Manjaro
-        try {
-          // Aggiorna il database dei pacchetti
-          final result = await _runSudoCommand('pacman -Sy');
-          output = result.stdout.toString();
-          if (result.exitCode != 0) {
-            output += '\n${result.stderr}';
-            return {
-              'success': false,
-              'message': 'Errore durante l\'aggiornamento del database Pacman',
-              'output': output,
-            };
-          }
-        } catch (e) {
-          return {
-            'success': false,
-            'message': 'Errore durante il ripristino dei repository: $e',
-          };
-        }
-      } else {
-        return {
-          'success': false,
-          'message': 'Nessun package manager supportato rilevato',
-        };
-      }
-
-      return {
-        'success': true,
-        'message': 'Repository ripristinati con successo',
-        'output': output,
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Errore durante il ripristino dei repository: $e',
-      };
-    }
+    return await RepositoryManager.restoreRepositories();
   }
 
   static Future<Map<String, dynamic>> checkForUpdates() async {
     try {
+      // Prima controlla se i repository sono sani; solo se necessario li ripristina.
+      // Evita di sovrascrivere repository funzionanti ogni volta.
+      try {
+        final reposHealthy = await RepositoryManager.areRepositoriesHealthy();
+        if (!reposHealthy) {
+          await RepositoryManager.restoreRepositories();
+        }
+        final systemInfo = await SystemDetector.detectSystem();
+        final updateCmd = RepositoryManager.getUpdateCacheCommand(systemInfo);
+        if (updateCmd != null) {
+          await _runSudoCommand(updateCmd);
+        }
+      } catch (_) {}
+      // Poi procede con il check degli aggiornamenti
       final systemInfo = await SystemDetector.detectSystem();
       final updates = <String>[];
       final updateReport = <String, dynamic>{};
@@ -375,9 +310,43 @@ class RecoveryService {
           (updateReport['apt'] as Map<String, dynamic>?)?['phasedCount'] as int? ?? 0;
       final summaryPackageCount = updates.length + aptPhased;
 
+      // Estrai pacchetti kernel da APT e DNF
+      final kernelPkgs = <String>{};
+      final aptMap = updateReport['apt'] as Map<String, dynamic>?;
+      if (aptMap != null) {
+        final aptKernels = aptMap['kernelPackages'] as List? ?? [];
+        kernelPkgs.addAll(aptKernels.map((e) => e.toString()));
+      }
+      // DNF ha packaging diverso — kernel* packages
+      final dnfMap = updateReport['dnf'] as Map<String, dynamic>?;
+      if (dnfMap != null) {
+        final dnfKernels = (dnfMap['packages'] as List?)
+                ?.where((e) => _isKernelPackage(e.toString().split(RegExp(r'\s+')).first))
+                .map((e) => e.toString())
+                .toList() ??
+            <String>[];
+        kernelPkgs.addAll(dnfKernels);
+      }
+      // Pacman (Arch/Manjaro/EndeavourOS): estrai kernel (liquorix, xanmod, cachyos, ecc.)
+      final pacmanMap = updateReport['pacman'] as Map<String, dynamic>?;
+      if (pacmanMap != null) {
+        final pacmanKernels = pacmanMap['kernelPackages'] as List? ?? [];
+        kernelPkgs.addAll(pacmanKernels.map((e) => e.toString()));
+      }
+      // Filtra kernel dalla lista updates per avere updateCount "senza kernel"
+      final nonKernelUpdates = updates.where((u) {
+        final rawName = u.toString().trim().split(RegExp(r'\s+')).first;
+        return !_isKernelPackage(rawName);
+      }).toList();
+      final nonKernelLabels = nonKernelUpdates
+          .map((u) => shortUpdateDisplayName(u.toString()))
+          .toList();
+      final kernelLabels = kernelPkgs
+          .map((k) => shortUpdateDisplayName(k))
+          .toList();
+
       final installableLabels =
           updates.map((u) => shortUpdateDisplayName(u.toString())).toList();
-      final aptMap = updateReport['apt'] as Map<String, dynamic>?;
       List<String> phasedLabels = [];
       if (aptMap != null && aptMap['phasedPackages'] is List) {
         phasedLabels = (aptMap['phasedPackages'] as List)
@@ -394,6 +363,12 @@ class RecoveryService {
         'summaryPackageCount': summaryPackageCount,
         'updateInstallableLabels': installableLabels,
         'updatePhasedLabels': phasedLabels,
+        'kernelUpdates': kernelPkgs.toList(),
+        'kernelUpdateCount': kernelPkgs.length,
+        'kernelUpdateLabels': kernelLabels,
+        'nonKernelUpdates': nonKernelUpdates,
+        'nonKernelUpdateCount': nonKernelUpdates.length,
+        'nonKernelUpdateLabels': nonKernelLabels,
       };
     } catch (e) {
       return {
@@ -404,12 +379,245 @@ class RecoveryService {
     }
   }
 
+  /// Restituisce true se [packageName] è un pacchetto del kernel Linux.
+  ///
+  /// Riconosce pacchetti Debian/Ubuntu (linux-image-*, linux-headers-*, …) e
+  /// Fedora/RHEL (kernel-*, kernel-core, …).
+  /// Detects kernel packages across ALL Linux distributions.
+  ///
+  /// Supported distros:
+  /// - Debian/Ubuntu family (apt): linux-image, linux-headers, linux-modules, linux-tools, linux-libc-dev, linux-source, linux-signed, linux-base, linux-crashkernel
+  /// - Fedora/RHEL/CentOS family (dnf/yum): kernel, kernel-core, kernel-modules, kernel-devel, kernel-headers, kernel-tools, kernel-debug, kernel-rt
+  /// - Arch Linux family (pacman): linux, linux-lts, linux-zen, linux-hardened, linux-rt, linux-rt-lts, linux-cachyos, linux-bore, linux510/515/61/612 variants
+  /// - openSUSE/SUSE (zypper): kernel-default, kernel-source, kernel-devel, kernel-rt
+  /// - Gentoo (portage): sys-kernel/gentoo-kernel, sys-kernel/vanilla-kernel, sys-kernel/gentoo-sources, zen-sources, git-sources, etc.
+  /// - Alpine (apk): linux-lts, linux-virt, linux-hardened, linux-rt
+  /// - Void Linux (xbps-install): linux, linux-lts, linux-zen
+  /// - Clear Linux: kernel-native, kernel-lts, kernel-devel
+  /// - NixOS: linuxPackages.kernel, linuxPackages_latest.kernel, linuxPackages_hardened.kernel
+  /// - Raspberry Pi OS: raspberrypi-kernel, raspberrypi-bootloader, raspberrypi-headers
+  /// - Vendor kernels: xanmod, liquorix, cachyos, bore, surface, pf, ck, bmq, tkg, cjktty
+  /// - Android: lineageos-kernel, com.android.kernel
+  static bool _isKernelPackage(String name) {
+    final t = name.trim();
+
+    // ─── Exact match (no version suffix) ───
+    if (t == 'linux') return true;
+    if (t == 'kernel') return true;
+    if (t == 'linux-libc-dev') return true;
+
+    // ─── Debian/Ubuntu family (APT) ───
+    if (t.startsWith('linux-image')) return true;
+    if (t.startsWith('linux-headers')) return true;
+    if (t.startsWith('linux-modules')) return true;
+    if (t.startsWith('linux-modules-extra')) return true;
+    if (t.startsWith('linux-tools')) return true;
+    if (t.startsWith('linux-source')) return true;
+    if (t.startsWith('linux-signed')) return true;
+    if (t.startsWith('linux-base')) return true;
+    if (t.startsWith('linux-crashkernel')) return true;
+    if (t.startsWith('linux-performance-counters')) return true;
+    if (t.startsWith('linux-doc')) return true;
+    if (t.startsWith('linux-compiler-')) return true;
+    if (t.startsWith('linux-buildinfo-')) return true;
+
+    // ─── Fedora / RHEL / CentOS / Alma / Rocky (DNF/YUM) ───
+    if (t == 'kernel-core') return true;
+    if (t == 'kernel-modules') return true;
+    if (t == 'kernel-modules-extra') return true;
+    if (t == 'kernel-devel') return true;
+    if (t == 'kernel-headers') return true;
+    if (t == 'kernel-tools') return true;
+    if (t == 'kernel-tools-libs') return true;
+    if (t == 'kernel-tools-libs-devel') return true;
+    if (t == 'kernel-doc') return true;
+    if (t == 'kernel-abi-stablelists') return true;
+    if (t == 'kernel-cross-headers') return true;
+    if (t == 'kernel-debug') return true;
+    if (t == 'kernel-debug-core') return true;
+    if (t == 'kernel-debug-devel') return true;
+    if (t == 'kernel-debug-modules') return true;
+    if (t == 'kernel-debug-modules-extra') return true;
+    if (t == 'kernel-rt') return true;
+    if (t == 'kernel-rt-core') return true;
+    if (t == 'kernel-rt-devel') return true;
+    if (t == 'kernel-rt-modules') return true;
+    if (t == 'kernel-rt-modules-extra') return true;
+    if (t.startsWith('kernel-') && t.contains('.fc')) return true;  // Fedora versioned
+    if (t.startsWith('kernel-') && t.contains('.el')) return true;  // RHEL versioned
+
+    // ─── Arch Linux / Manjaro / EndeavourOS / Garuda (Pacman) ───
+    if (t == 'linux-headers') return true;
+    if (t == 'linux-lts') return true;
+    if (t == 'linux-lts-headers') return true;
+    if (t == 'linux-zen') return true;
+    if (t == 'linux-zen-headers') return true;
+    if (t == 'linux-hardened') return true;
+    if (t == 'linux-hardened-headers') return true;
+    if (t == 'linux-rt') return true;
+    if (t == 'linux-rt-headers') return true;
+    if (t == 'linux-rt-lts') return true;
+    if (t == 'linux-rt-lts-headers') return true;
+    if (t == 'linux-cachyos') return true;
+    if (t == 'linux-cachyos-headers') return true;
+    if (t == 'linux-cachyos-bore') return true;
+    if (t == 'linux-cachyos-bore-headers') return true;
+    if (t == 'linux-cachyos-hardened') return true;
+    if (t == 'linux-cachyos-hardened-headers') return true;
+    if (t == 'linux-cachyos-lts') return true;
+    if (t == 'linux-cachyos-lts-headers') return true;
+    if (t == 'linux-cachyos-rt-bore') return true;
+    if (t == 'linux-cachyos-rt-bore-headers') return true;
+    if (t == 'linux-cachyos-server') return true;
+    if (t == 'linux-cachyos-server-headers') return true;
+    if (t == 'linux-cachyos-deckify') return true;
+    if (t == 'linux-cachyos-deckify-headers') return true;
+    if (t == 'linux-bore') return true;
+    if (t == 'linux-bore-headers') return true;
+    if (t == 'linux-bore-eevdf') return true;
+    if (t == 'linux-bore-eevdf-headers') return true;
+    if (t == 'linux-bore-rt') return true;
+    if (t == 'linux-bore-rt-headers') return true;
+    if (t == 'linux-bore-cfs') return true;
+    if (t == 'linux-bore-cfs-headers') return true;
+    // Generic Arch patterns: linux-x.x.x.arch1-x, linux-lts-x.x.x-x, linux-zen-x.x.x-x
+    if (RegExp(r'^linux(-lts|-zen|-hardened|-rt|-cachyos|-bore)?(-headers|-docs|-dbgsym)?$').hasMatch(t)) return true;
+
+    // ─── openSUSE / SUSE (Zypper) ───
+    if (t == 'kernel-default') return true;
+    if (t == 'kernel-default-base') return true;
+    if (t == 'kernel-default-devel') return true;
+    if (t == 'kernel-default-extra') return true;
+    if (t == 'kernel-default-optional') return true;
+    if (t == 'kernel-source') return true;
+    if (t == 'kernel-devel') return true;
+    if (t == 'kernel-doc') return true;
+    if (t == 'kernel-macros') return true;
+    if (t == 'kernel-syms') return true;
+    if (t == 'kernel-zfcpdump') return true;
+    if (t == 'kernel-obs-build') return true;
+    if (t == 'kernel-rt') return true;
+    if (t == 'kernel-rt-devel') return true;
+    if (t == 'kernel-rt-source-rt') return true;
+    if (t == 'kernel-source-rt') return true;
+    if (t == 'kernel-devel-rt') return true;
+
+    // ─── Gentoo (Portage) ───
+    if (t.startsWith('sys-kernel/gentoo-kernel')) return true;
+    if (t.startsWith('sys-kernel/vanilla-kernel')) return true;
+    if (t.startsWith('sys-kernel/gentoo-sources')) return true;
+    if (t.startsWith('sys-kernel/vanilla-sources')) return true;
+    if (t.startsWith('sys-kernel/linux-headers')) return true;
+    if (t.startsWith('sys-kernel/debian-sources')) return true;
+    if (t.startsWith('sys-kernel/zen-sources')) return true;
+    if (t.startsWith('sys-kernel/git-sources')) return true;
+    if (t.startsWith('sys-kernel/mptcp-sources')) return true;
+    if (t.startsWith('sys-kernel/hardened-sources')) return true;
+    if (t.startsWith('sys-kernel/ck-sources')) return true;
+    if (t.startsWith('sys-kernel/bfq-sources')) return true;
+    if (t.startsWith('sys-kernel/pf-sources')) return true;
+    if (t.startsWith('sys-kernel/openrc-sources')) return true;
+
+    // ─── Alpine Linux (APK) ───
+    if (t == 'linux-lts') return true;
+    if (t == 'linux-virt') return true;
+    if (t == 'linux-hardened') return true;
+    if (t == 'linux-rt') return true;
+    if (t.startsWith('linux-lts-')) return true;
+    if (t.startsWith('linux-virt-')) return true;
+    if (t.startsWith('linux-hardened-')) return true;
+    if (t.startsWith('linux-rt-')) return true;
+
+    // ─── Void Linux (XBPS) ───
+    if (t == 'linux') return true;
+    if (t == 'linux-lts') return true;
+    if (t == 'linux-zen') return true;
+    if (t == 'linux-headers') return true;
+    if (t == 'linux-lts-headers') return true;
+    if (t == 'linux-zen-headers') return true;
+
+    // ─── Clear Linux ───
+    if (t == 'kernel-native') return true;
+    if (t == 'kernel-lts') return true;
+    if (t == 'kernel-devel') return true;
+    if (t == 'kernel-headers') return true;
+    if (t.startsWith('kernel-native-')) return true;
+    if (t.startsWith('kernel-lts-')) return true;
+    if (t.startsWith('kernel-devel-')) return true;
+
+    // ─── NixOS ───
+    if (t.startsWith('linuxPackages') && t.endsWith('.kernel')) return true;
+    if (t.startsWith('linuxPackages') && t.contains('.linux-')) return true;
+    if (t.startsWith('linux_')) return true;
+
+    // ─── Raspberry Pi OS (apt) ───
+    if (t.startsWith('raspberrypi-kernel')) return true;
+    if (t.startsWith('raspberrypi-bootloader')) return true;
+    if (t.startsWith('raspberrypi-headers')) return true;
+    if (t.startsWith('raspberrypi-kernel-headers')) return true;
+
+    // ─── Vendor/third-party kernels (universal) ───
+    if (t.startsWith('linux-xanmod')) return true;
+    if (t.startsWith('linux-liquorix')) return true;
+    if (t.startsWith('linux-cachyos')) return true;
+    if (t.startsWith('linux-bore')) return true;
+    if (t.startsWith('linux-xanmod-edge')) return true;
+    if (t.startsWith('linux-zen-git')) return true;
+    if (t.startsWith('linux-hardened-git')) return true;
+    if (t.startsWith('linux-pf')) return true;
+    if (t.startsWith('linux-ck')) return true;
+    if (t.startsWith('linux-pf-ck')) return true;
+    if (t.startsWith('linux-bmq')) return true;
+    if (t.startsWith('linux-tkg')) return true;
+    if (t.startsWith('linux-cjktty')) return true;
+    if (t.startsWith('linux-drm-tiled')) return true;
+    if (t.startsWith('linux-surface')) return true;
+    if (t.startsWith('linux-surface-headers')) return true;
+    if (t.startsWith('linux-surface-lts')) return true;
+    if (t.startsWith('linux-surface-lts-headers')) return true;
+
+    // ─── Manjaro / Garuda / EndeavourOS specific (Pacman) ───
+    if (t.startsWith('linux') && RegExp(r'^linux\d+$').hasMatch(t)) return true;  // linux510, linux515, linux61, linux612
+    if (t.startsWith('linux') && RegExp(r'^linux\d+-headers$').hasMatch(t)) return true;
+
+    // ─── NixOS (nix-env / nixos-rebuild) ───
+    if (t.startsWith('linuxPackages_latest')) return true;
+    if (t.startsWith('linuxPackages_testing')) return true;
+    if (t.startsWith('linuxPackages_latest-zfs')) return true;
+
+    // ─── Snap/Flatpak kernel-related ───
+    if (t.contains('linux-kernel') || t.contains('kernel-update')) return true;
+
+    // ─── Android kernel (Termux, LineageOS) ───
+    if (t.startsWith('kernel-') && t.contains('android')) return true;
+    if (t.startsWith('lineageos-kernel')) return true;
+    if (t.startsWith('com.android.kernel')) return true;
+
+    return false;
+  }
+
   /// Human-readable short name for UI (APT/DNF/snap/Flatpak/pacman raw lines).
   static String shortUpdateDisplayName(String raw) {
     var s = raw.trim();
     if (s.isEmpty) return s;
+
+    // Flatpak ref: app/org.appname/x86_64/stable → "Org Appname"
+    if (s.startsWith('app/') || s.startsWith('runtime/') || s.startsWith('system/')) {
+      final segments = s.split('/');
+      if (segments.length >= 2) {
+        final appId = segments[1];
+        final dotParts = appId.split('.');
+        final name = dotParts.last;
+        if (name.isNotEmpty) {
+          return '${name[0].toUpperCase()}${name.substring(1)}';
+        }
+        return appId;
+      }
+    }
+
     final parts = s.split(RegExp(r'\s+'));
     final first = parts.first;
+    // APT package pattern: firefox/focal-updates → firefox
     if (first.contains('/') && !first.startsWith('/')) {
       final idx = first.indexOf('/');
       if (idx > 0) {
@@ -420,6 +628,11 @@ class RecoveryService {
       return first.split('/').first;
     }
     return first;
+  }
+
+  /// Estrae da una lista di pacchetti quelli del kernel.
+  static List<String> _kernelPackagesFrom(List<String> pkgs) {
+    return pkgs.where(_isKernelPackage).toList();
   }
 
   static Future<Map<String, dynamic>> _checkAptUpdatesReport(List<String> updatesOut) async {
@@ -494,11 +707,14 @@ class RecoveryService {
         updatesOut
           ..clear()
           ..addAll(effectivePkgs);
+        final kernelPkgs = _kernelPackagesFrom(effectivePkgs);
         return {
           'mode': 'installable',
           'installableCount': effectivePkgs.length,
           'phasedCount': deferredPkgs.length,
           'phasedPackages': phasedList,
+          'kernelCount': kernelPkgs.length,
+          'kernelPackages': kernelPkgs,
         };
       }
 
@@ -534,11 +750,14 @@ class RecoveryService {
         updatesOut
           ..clear()
           ..addAll(effectivePkgs);
+        final kernelPkgs = _kernelPackagesFrom(effectivePkgs);
         return {
           'mode': 'installable',
           'installableCount': effectivePkgs.length,
           'phasedCount': deferredPkgs.length,
           'phasedPackages': phasedList,
+          'kernelCount': kernelPkgs.length,
+          'kernelPackages': kernelPkgs,
         };
       }
 
@@ -549,6 +768,8 @@ class RecoveryService {
         'installableCount': 0,
         'phasedCount': deferredPkgs.length,
         'phasedPackages': phasedList,
+        'kernelCount': 0,
+        'kernelPackages': <String>[],
       };
     } catch (e) {
       try {
@@ -575,11 +796,14 @@ class RecoveryService {
         updatesOut
           ..clear()
           ..addAll(lines);
+        final kernelPkgs = _kernelPackagesFrom(lines);
         return {
           'mode': lines.isNotEmpty ? 'installable' : 'none',
           'installableCount': lines.length,
           'phasedCount': 0,
           'phasedPackages': <String>[],
+          'kernelCount': kernelPkgs.length,
+          'kernelPackages': kernelPkgs,
         };
       } catch (_) {
         updatesOut.clear();
@@ -627,7 +851,14 @@ class RecoveryService {
       if (pacmanOutput.isNotEmpty) {
         final lines = pacmanOutput.split('\n').where((line) => line.trim().isNotEmpty).toList();
         updatesOut.addAll(lines);
-        return {'mode': 'installable', 'count': lines.length};
+        // Estrai pacchetti kernel (liquorix, xanmod, cachyos, ecc.)
+        final kernelPkgs = _kernelPackagesFrom(lines.map((l) => l.trim().split(RegExp(r'\s+')).first).toList());
+        return {
+          'mode': 'installable',
+          'count': lines.length,
+          'kernelCount': kernelPkgs.length,
+          'kernelPackages': kernelPkgs,
+        };
       }
       return {'mode': 'none', 'count': 0};
     } catch (e) {
@@ -768,6 +999,7 @@ class RecoveryService {
     Function(String)? onOutput,
     void Function(double progress, String? statusLabel)? onProgress,
     int expectedPackageCount = 0,
+    List<String>? selectedUpdates,
   }) async {
     try {
       final systemInfo = await SystemDetector.detectSystem();
@@ -801,7 +1033,10 @@ class RecoveryService {
           .replaceAll('\\', '\\\\')
           .replaceAll('"', '\\"')
           .replaceAll('\$', '\\\$')
-          .replaceAll('`', '\\`');
+          .replaceAll('`', '\\`')
+          .replaceAll('\n', '\\n')
+          .replaceAll('\r', '\\r')
+          .replaceAll("'", "\\'");
 
       // APT (Ubuntu/Debian/Mint): apt update separato + upgrade con avanzamento
       if (systemInfo.hasApt) {
@@ -828,7 +1063,22 @@ class RecoveryService {
           var aptSteps = 0;
           final denom = expectedPackageCount > 0 ? expectedPackageCount : 32;
 
-          cmd = _sudoBashCommand(escapedPassword, 'DEBIAN_FRONTEND=noninteractive apt upgrade -y 2>&1');
+          final isSelectiveApt = selectedUpdates != null && selectedUpdates.isNotEmpty;
+          final aptPkgs = isSelectiveApt
+              ? selectedUpdates.where((u) {
+                  final s = u.trim();
+                  return s.isNotEmpty &&
+                      !s.contains('/') &&
+                      !RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]*\.[a-zA-Z]+\s+').hasMatch(s) &&
+                      !s.contains(' ') &&
+                      !s.startsWith('app/') &&
+                      !s.startsWith('runtime/');
+                }).map((u) => u.trim().split(RegExp(r'\s+')).first).join(' ')
+              : '';
+          final aptUpgradeCmd = isSelectiveApt && aptPkgs.isNotEmpty
+              ? 'DEBIAN_FRONTEND=noninteractive apt install --only-upgrade -y $aptPkgs 2>&1'
+              : 'DEBIAN_FRONTEND=noninteractive apt upgrade -y 2>&1';
+          cmd = _sudoBashCommand(escapedPassword, aptUpgradeCmd);
           process = await Process.start('bash', ['-c', cmd], runInShell: true);
           final aptExit = await _pumpStdoutLines(
             process,
@@ -1083,6 +1333,15 @@ class RecoveryService {
   static Future<Map<String, dynamic>> _installPackages(List<String> packages, String operationName) async {
     try {
       final systemInfo = await SystemDetector.detectSystem();
+      // Assicura che i repository siano configurati per questa distro (solo se necessario)
+      final reposHealthy = await RepositoryManager.areRepositoriesHealthy();
+      if (!reposHealthy) {
+        await RepositoryManager.restoreRepositories();
+      }
+      final updateCmd = RepositoryManager.getUpdateCacheCommand(systemInfo);
+      if (updateCmd != null) {
+        try { await _runSudoCommand(updateCmd); } catch (_) {}
+      }
       String output = '';
       String command;
 
@@ -1192,6 +1451,108 @@ class RecoveryService {
 
   static Future<Map<String, dynamic>> installRsync() async {
     return _installPackages(['rsync'], 'rsync');
+  }
+
+  static Future<Map<String, dynamic>> fixWifiAutoSuspend() async {
+    try {
+      final systemInfo = await SystemDetector.detectSystem();
+      String output = '';
+
+      // Step 1: udev rule — disable USB autosuspend globally (works on ALL distros)
+      const udevRule =
+          '# Disable USB autosuspend for WiFi adapters and all USB devices\n'
+          'ACTION=="add", SUBSYSTEM=="usb", TEST=="power/control", ATTR{power/control}="on"\n'
+          'ACTION=="add", SUBSYSTEM=="usb", TEST=="power/autosuspend", ATTR{power/autosuspend}="0"\n'
+          'ACTION=="add", SUBSYSTEM=="usb", TEST=="power/autosuspend_delay_ms", ATTR{power/autosuspend_delay_ms}="0"\n';
+
+      const ruleFile = '/etc/udev/rules.d/99-wifi-disable-autosuspend.rules';
+
+      // Write udev rule via sudo tee
+      try {
+        final result = await _runSudoCommand(
+          'sh -c "cat > $ruleFile" << \'UDEV_EOF\'\n$udevRule\nUDEV_EOF',
+        );
+        output += 'udev rule: ${result.exitCode == 0 ? "written" : "error"}\n';
+        if (result.exitCode != 0) {
+          output += '${result.stderr}\n';
+        }
+      } catch (e) {
+        output += 'udev rule write failed: $e\n';
+      }
+
+      // Reload udev rules
+      try {
+        final result = await _runSudoCommand('udevadm control --reload-rules && udevadm trigger');
+        output += 'udev reload: ${result.exitCode == 0 ? "ok" : "error"}\n';
+        if (result.exitCode != 0) {
+          output += '${result.stderr}\n';
+        }
+      } catch (e) {
+        output += 'udev reload failed: $e\n';
+      }
+
+      // Step 2: Disable WiFi power saving in NetworkManager (all distros)
+      const nmConfigDir = '/etc/NetworkManager/conf.d';
+      const nmConfigFile = '$nmConfigDir/99-wifi-powersave-off.conf';
+      const nmContent = '[connection]\nwifi.powersave = 2\n';
+
+      try {
+        await _runSudoCommand('mkdir -p $nmConfigDir');
+        final result = await _runSudoCommand(
+          'sh -c "cat > $nmConfigFile" << \'NM_EOF\'\n$nmContent\nNM_EOF',
+        );
+        output += 'NM config: ${result.exitCode == 0 ? "written" : "error"}\n';
+        if (result.exitCode != 0) {
+          output += '${result.stderr}\n';
+        }
+      } catch (e) {
+        output += 'NM config write failed: $e\n';
+      }
+
+      // Restart NetworkManager to apply
+      try {
+        final result = await _runSudoCommand('systemctl restart NetworkManager');
+        output += 'NM restart: ${result.exitCode == 0 ? "ok" : "error"}\n';
+        if (result.exitCode != 0) {
+          output += '${result.stderr}\n';
+        }
+      } catch (e) {
+        output += 'NM restart failed: $e\n';
+      }
+
+      // Step 3: Also apply immediately to currently connected USB WiFi devices
+      try {
+        final result = await Process.run(
+          'bash',
+          ['-c', 'for dev in /sys/bus/usb/devices/*/power/control; do '
+              'if [ -f "\$dev" ]; then '
+              'echo on > "\$dev" 2>/dev/null; '
+              'fi; done; '
+              'for dev in /sys/bus/usb/devices/*/power/autosuspend; do '
+              'if [ -f "\$dev" ]; then '
+              'echo 0 > "\$dev" 2>/dev/null; '
+              'fi; done'],
+          runInShell: true,
+        );
+        output += 'Runtime apply: ${result.exitCode == 0 ? "ok" : "partial"}\n';
+      } catch (e) {
+        output += 'Runtime apply skipped: $e\n';
+      }
+
+      final success = output.contains('written') || output.contains('ok');
+      return {
+        'success': success,
+        'message': success
+            ? 'WiFi auto-suspend disabilitato con successo. Riavvia per applicare completamente.'
+            : 'Errore durante la disabilitazione del WiFi auto-suspend',
+        'output': output,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Errore durante il fix WiFi auto-suspend: $e',
+      };
+    }
   }
 }
 

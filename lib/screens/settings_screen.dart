@@ -6,6 +6,8 @@ import '../services/password_storage.dart';
 import '../services/font_service.dart';
 import '../services/tray_service.dart';
 import '../services/dependency_check_service.dart';
+import '../services/ram_cleanup_service.dart';
+import '../services/clipboard_history_service.dart';
 import '../services/window_close_to_tray.dart';
 import '../services/autostart_service.dart';
 import 'shutdown_scheduler_screen.dart';
@@ -18,6 +20,7 @@ class SettingsScreen extends StatefulWidget {
   final Function(Locale?)? onLocaleChanged;
   final Function(String?, double)? onFontChanged;
   final VoidCallback? onUpdateCheckPolicyChanged;
+  final VoidCallback? onRamCleanupPolicyChanged;
   
   const SettingsScreen({
     super.key,
@@ -25,6 +28,7 @@ class SettingsScreen extends StatefulWidget {
     this.onLocaleChanged,
     this.onFontChanged,
     this.onUpdateCheckPolicyChanged,
+    this.onRamCleanupPolicyChanged,
   });
 
   @override
@@ -50,6 +54,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _trayInstalling = false;
   int _updateCheckIntervalMinutes = 0;
   bool _autoAppUpdateFromGithub = true;
+  int _ramCleanupIntervalMinutes = 0;
+  int _clipboardRetentionHours = ClipboardHistoryService.defaultRetentionHours;
 
   static const String _keyUpdateCheckIntervalMinutes = 'update_check_interval_minutes';
   @override
@@ -65,12 +71,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadStartAtLogin();
     _loadUpdateCheckInterval();
     _loadAutoAppUpdateFromGithub();
+    _loadRamCleanupInterval();
+    _loadClipboardRetention();
     if (Platform.isLinux) _checkTrayDeps();
+  }
+
+  Future<void> _loadClipboardRetention() async {
+    final hours = await ClipboardHistoryService.getRetentionHours();
+    if (mounted) {
+      setState(() => _clipboardRetentionHours = hours);
+    }
+  }
+
+  Future<void> _setClipboardRetention(int hours) async {
+    await ClipboardHistoryService.setRetentionHours(hours);
+    if (mounted) {
+      setState(() => _clipboardRetentionHours = hours.clamp(1, 8));
+    }
+  }
+
+  Future<void> _loadRamCleanupInterval() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _ramCleanupIntervalMinutes =
+            prefs.getInt(RamCleanupService.prefKeyIntervalMinutes) ??
+                RamCleanupService.intervalDisabled;
+      });
+    }
+  }
+
+  Future<void> _setRamCleanupInterval(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(RamCleanupService.prefKeyIntervalMinutes, minutes);
+    setState(() => _ramCleanupIntervalMinutes = minutes);
+    widget.onRamCleanupPolicyChanged?.call();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(minutes > 0
+              ? AppLocalizations.of(context)!.ramCleanupAutoEnabled(minutes)
+              : AppLocalizations.of(context)!.ramCleanupAutoDisabled),
+        ),
+      );
+    }
   }
 
   Future<void> _loadUpdateCheckInterval() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _updateCheckIntervalMinutes = prefs.getInt(_keyUpdateCheckIntervalMinutes) ?? 0);
+    // Default 60 min se mai configurato (stesso default di HomeScreen);
+    // 0 solo se l'utente lo ha disattivato esplicitamente.
+    if (mounted) {
+      setState(() => _updateCheckIntervalMinutes =
+          prefs.containsKey(_keyUpdateCheckIntervalMinutes)
+              ? prefs.getInt(_keyUpdateCheckIntervalMinutes) ?? 0
+              : 60);
+    }
   }
 
   Future<void> _loadAutoAppUpdateFromGithub() async {
@@ -481,7 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.lock, size: 32),
+                        const Icon(Icons.lock, size: 32, color: Colors.orange),
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.settingsPasswordTitle,
@@ -622,7 +678,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.language, size: 32),
+                        const Icon(Icons.language, size: 32, color: Colors.blue),
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.settingsLanguageTitle,
@@ -692,7 +748,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.palette, size: 32),
+                        const Icon(Icons.palette, size: 32, color: Colors.purple),
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.settingsThemeTitle,
@@ -748,7 +804,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.text_fields, size: 32),
+                        const Icon(Icons.text_fields, size: 32, color: Colors.teal),
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.settingsFontTitle,
@@ -827,7 +883,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.settings_suggest, size: 32),
+                          const Icon(Icons.settings_suggest, size: 32, color: Colors.cyan),
                           const SizedBox(width: 8),
                           Text(
                             AppLocalizations.of(context)!.settingsSystemTrayTitle,
@@ -978,7 +1034,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.system_update, size: 32),
+                        const Icon(Icons.system_update, size: 32, color: Colors.blue),
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.settingsAutoUpdateCheckTitle,
@@ -1054,7 +1110,142 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.power_settings_new, size: 32),
+                        const Icon(Icons.speed, size: 32, color: Colors.deepOrange),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(context)!.ramCleanupSettingsTitle,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppLocalizations.of(context)!.ramCleanupSettingsDesc,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      value: [0, 5, 10, 15, 30]
+                              .contains(_ramCleanupIntervalMinutes)
+                          ? _ramCleanupIntervalMinutes
+                          : 0,
+                      decoration: InputDecoration(
+                        labelText:
+                            AppLocalizations.of(context)!.ramCleanupSettingsInterval,
+                        border: const OutlineInputBorder(),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 0,
+                          child: Text(
+                            AppLocalizations.of(context)!.ramCleanupNever,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 5,
+                          child: Text(
+                            AppLocalizations.of(context)!.ramCleanupEvery5Min,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 10,
+                          child: Text(
+                            AppLocalizations.of(context)!.ramCleanupEvery10Min,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 15,
+                          child: Text(
+                            AppLocalizations.of(context)!.ramCleanupEvery15Min,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 30,
+                          child: Text(
+                            AppLocalizations.of(context)!.ramCleanupEvery30Min,
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => _setRamCleanupInterval(v ?? 0),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.content_paste, size: 32, color: Colors.amber),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(context)!.clipboardSettingsTitle,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppLocalizations.of(context)!.clipboardSettingsDesc,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      value: [1, 2, 3, 4, 5, 6, 7, 8]
+                              .contains(_clipboardRetentionHours)
+                          ? _clipboardRetentionHours
+                          : ClipboardHistoryService.defaultRetentionHours,
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!
+                            .clipboardRetentionLabel,
+                        border: const OutlineInputBorder(),
+                      ),
+                      items: [1, 2, 3, 4, 5, 6, 7, 8]
+                          .map(
+                            (h) => DropdownMenuItem(
+                              value: h,
+                              child: Text(
+                                AppLocalizations.of(context)!
+                                    .clipboardRetentionHours(h),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => _setClipboardRetention(v ??
+                          ClipboardHistoryService
+                              .defaultRetentionHours),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.power_settings_new, size: 32, color: Colors.red),
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.tabShutdownScheduler,
@@ -1101,7 +1292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.info, size: 32),
+                        const Icon(Icons.info, size: 32, color: Colors.lightBlue),
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.settingsInfoTitle,

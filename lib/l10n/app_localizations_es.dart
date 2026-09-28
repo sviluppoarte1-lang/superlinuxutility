@@ -40,6 +40,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trayMemoryUsage => 'Uso de memoria RAM';
 
   @override
+  String get traySmartHealth => 'Salud del disco (SMART)';
+
+  @override
   String get trayShutdownTimer => 'Apagado automático';
 
   @override
@@ -50,6 +53,198 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get trayExit => 'Salir';
+
+  @override
+  String get traySettings => 'Configuración';
+
+  @override
+  String get traySystem => 'Sistema';
+
+  @override
+  String get trayClipboard => 'Portapapeles';
+
+  @override
+  String get clipboardTitle => 'Historial del portapapeles';
+
+  @override
+  String get clipboardEmpty =>
+      'Nada copiado todavía. Copia texto y aparecerá aquí.';
+
+  @override
+  String get clipboardEditTitle => 'Editar texto';
+
+  @override
+  String get clipboardSave => 'Guardar';
+
+  @override
+  String get clipboardCancel => 'Cancelar';
+
+  @override
+  String get clipboardDelete => 'Eliminar';
+
+  @override
+  String get clipboardDeleteTitle => '¿Eliminar esta entrada?';
+
+  @override
+  String get clipboardDeleteBody =>
+      'La entrada se eliminará permanentemente del historial.';
+
+  @override
+  String get clipboardClearAll => 'Borrar todo';
+
+  @override
+  String get clipboardClearAllTitle => '¿Borrar el historial?';
+
+  @override
+  String get clipboardClearAllBody =>
+      'Todas las entradas guardadas se eliminarán permanentemente.';
+
+  @override
+  String get clipboardSaveEntryTxt => 'Guardar como TXT';
+
+  @override
+  String get clipboardExportAll => 'Exportar todo como TXT';
+
+  @override
+  String clipboardSavedTo(String path) {
+    return 'Guardado en $path';
+  }
+
+  @override
+  String get clipboardSaveFailed => 'Error al guardar.';
+
+  @override
+  String get clipboardCopiedBack => 'Texto copiado al portapapeles.';
+
+  @override
+  String get clipboardSettingsTitle => 'Portapapeles';
+
+  @override
+  String get clipboardSettingsDesc =>
+      'La aplicación guarda automáticamente los textos que copias. Elige durante cuántas horas conservarlos: las copias caducadas se eliminan solas.';
+
+  @override
+  String get clipboardRetentionLabel => 'Conservar las copias durante';
+
+  @override
+  String clipboardRetentionHours(int n) {
+    return '$n h';
+  }
+
+  @override
+  String get tabBattery => 'Batería';
+
+  @override
+  String get trayBattery => 'Batería';
+
+  @override
+  String get trayBatteryHealth => 'Salud batería';
+
+  @override
+  String get trayChargeLimit => 'Límite de carga';
+
+  @override
+  String get trayPowerProfile => 'Perfil energía';
+
+  @override
+  String get batteryNoBattery => 'Batería no detectada';
+
+  @override
+  String get batteryNoBatteryDesc =>
+      'Esta función solo está disponible en portátiles. No se encontró batería en este sistema.';
+
+  @override
+  String get batteryHealthTitle => 'Salud de la batería';
+
+  @override
+  String get batteryCapacityNow => 'Energía actual';
+
+  @override
+  String get batteryCapacityFull => 'Capacidad residual';
+
+  @override
+  String get batteryCapacityDesign => 'Capacidad nominal';
+
+  @override
+  String get batteryHealthPct => 'Salud';
+
+  @override
+  String get batteryCycles => 'Ciclos de carga';
+
+  @override
+  String get batteryVoltage => 'Voltaje';
+
+  @override
+  String get batteryPower => 'Potencia';
+
+  @override
+  String get batteryTech => 'Tecnología';
+
+  @override
+  String get batteryStatus => 'Batería';
+
+  @override
+  String get batteryAcOnline => 'Con corriente';
+
+  @override
+  String get batteryAcOffline => 'Con batería';
+
+  @override
+  String get batteryCharging => 'Cargando';
+
+  @override
+  String get batteryDischarging => 'Descargando';
+
+  @override
+  String get batteryFull => 'Carga completa';
+
+  @override
+  String get batteryUnknown => 'Estado desconocido';
+
+  @override
+  String get batteryThresholdsTitle => 'Umbrales de carga';
+
+  @override
+  String get batteryThresholdsDesc =>
+      'Limita la carga máxima (ej. 80 %) para preservar la batería. Requiere contraseña de administrador. Compatible con ASUS, ThinkPad, Lenovo y Dell recientes.';
+
+  @override
+  String get batteryThresholdsUnsupported =>
+      'Umbrales de carga no compatibles con este hardware.';
+
+  @override
+  String get batteryEndLimit => 'Límite máximo de carga';
+
+  @override
+  String get batteryStartLimit => 'Inicio de carga';
+
+  @override
+  String get batteryGovernorTitle => 'Gobernador automático';
+
+  @override
+  String get batteryGovernorDesc =>
+      'Cambia a powersave al desconectar y a performance al cargar. Funciona mientras la aplicación está en ejecución.';
+
+  @override
+  String get batteryGovernorAuto => 'Cambio automático de gobernador';
+
+  @override
+  String get batteryGovernorOnAc => 'Gobernador en carga';
+
+  @override
+  String get batteryGovernorOnBattery => 'Gobernador con batería';
+
+  @override
+  String get batteryGovernorCurrent => 'Gobernador actual';
+
+  @override
+  String get batteryApplied => 'Ajuste aplicado.';
+
+  @override
+  String get batteryFailed => 'Operación fallida.';
+
+  @override
+  String get batteryRefresh => 'Actualizar';
 
   @override
   String get cleanupLinuxCache => 'Limpiar caché';
@@ -64,6 +259,60 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cleanupLinuxCacheError => 'Error al limpiar la caché.';
+
+  @override
+  String get advCleanupTitle => 'Limpieza avanzada (logs y cachés dev)';
+
+  @override
+  String get devPip => 'Caché pip';
+
+  @override
+  String get devCargo => 'Caché Cargo (Rust)';
+
+  @override
+  String get devNpm => 'Caché npm';
+
+  @override
+  String get devGo => 'Caché Go';
+
+  @override
+  String get devGradle => 'Caché Gradle';
+
+  @override
+  String get devDocker => 'Imágenes Docker sin usar';
+
+  @override
+  String get devKernelHeaders => 'Kernels antiguos (headers + imágenes)';
+
+  @override
+  String get advEmpty => 'No se detectaron cachés de desarrollo.';
+
+  @override
+  String get journalTitle => 'Registros del sistema (journald)';
+
+  @override
+  String get journalCurrentSize => 'Espacio usado';
+
+  @override
+  String get journalVacuumTarget => 'Reducir a';
+
+  @override
+  String get journalVacuumNow => 'Limpiar';
+
+  @override
+  String get journalLimitLabel => 'Límite permanente';
+
+  @override
+  String get journalLimitApply => 'Aplicar';
+
+  @override
+  String get advCleanSelected => 'Limpiar selección';
+
+  @override
+  String get advCleaned => 'Limpieza completada.';
+
+  @override
+  String get advFailed => 'Error en la limpieza.';
 
   @override
   String get cleanupVram => 'Limpiar VRAM';
@@ -82,6 +331,89 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get cleanupVramError =>
       'No se pudo limpiar la VRAM (reinicio de la GPU fallido).';
+
+  @override
+  String get ramCleanupTitle => 'Limpieza de RAM';
+
+  @override
+  String get ramCleanup => 'Limpiar RAM';
+
+  @override
+  String get ramCleanupConfirmTitle => 'Confirmar limpieza de RAM';
+
+  @override
+  String get ramCleanupConfirmMessage =>
+      'La limpieza profunda de la RAM vaciará las cachés del kernel (drop_caches) y reciclará el swap para liberar la memoria usada por datos inactivos. No detiene servicios del sistema ni elimina archivos temporales. Requiere contraseña de administrador. ¿Continuar?';
+
+  @override
+  String get ramCleanupSuccess => 'Limpieza de RAM completada con éxito.';
+
+  @override
+  String get ramCleanupError => 'Error durante la limpieza de la RAM.';
+
+  @override
+  String get ramUsed => 'Usada';
+
+  @override
+  String get ramAvailable => 'Disponible';
+
+  @override
+  String get ramCache => 'Caché';
+
+  @override
+  String get ramSwap => 'Swap';
+
+  @override
+  String get ramSwapNone => 'Sin swap';
+
+  @override
+  String get ramFreed => 'Memoria liberada';
+
+  @override
+  String get ramBefore => 'Antes';
+
+  @override
+  String get ramAfter => 'Después';
+
+  @override
+  String get ramStepsFailed => 'Pasos fallidos';
+
+  @override
+  String get ramCleanupSettingsTitle => 'Limpieza automática de RAM';
+
+  @override
+  String get ramCleanupSettingsDesc =>
+      'Realiza automáticamente la limpieza profunda de la RAM a intervalos regulares.';
+
+  @override
+  String get ramCleanupSettingsInterval => 'Frecuencia de limpieza de RAM';
+
+  @override
+  String get ramCleanupNever => 'Nunca';
+
+  @override
+  String get ramCleanupEvery5Min => 'Cada 5 minutos';
+
+  @override
+  String get ramCleanupEvery10Min => 'Cada 10 minutos';
+
+  @override
+  String get ramCleanupEvery15Min => 'Cada 15 minutos';
+
+  @override
+  String get ramCleanupEvery30Min => 'Cada 30 minutos';
+
+  @override
+  String ramCleanupAutoEnabled(int minutes) {
+    return 'Limpieza automática de RAM activada (cada $minutes minutos).';
+  }
+
+  @override
+  String get ramCleanupAutoDisabled =>
+      'Limpieza automática de RAM desactivada.';
+
+  @override
+  String get ramCleanupAutoDone => 'Limpieza automática de RAM completada';
 
   @override
   String get tabServices => 'Servicios';
@@ -728,7 +1060,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get appDescription =>
-      'Super Linux Utility es una aplicación completa para la gestión avanzada del sistema Linux. Ofrece herramientas poderosas para optimizar el rendimiento, gestionar servicios, aplicaciones y personalizar la apariencia del sistema.';
+      'Super Linux Utility es una aplicación de escritorio para gestionar un sistema Linux: servicios, aplicaciones de inicio, limpieza, paquetes instalados, monitorización de recursos y ajustes de apariencia.';
 
   @override
   String get features => 'Características';
@@ -739,6 +1071,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get infoProjectWebsite => 'Sitio web del proyecto';
+
+  @override
+  String get infoChangelog => 'Registro de cambios';
+
+  @override
+  String get infoChangelogShowAll => 'Ver registro completo';
 
   @override
   String get applicationIdLabel => 'ID de la aplicación (escritorio)';
@@ -808,8 +1146,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsLanguageDesc => 'Seleccione el idioma de la interfaz';
 
   @override
-  String get languageRestartMessage =>
-      'El idioma se aplicará al reiniciar la aplicación';
+  String get languageRestartMessage => 'Idioma actualizado';
 
   @override
   String get servicesSlow => 'Servicios Lentos';
@@ -1659,13 +1996,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Actualiza y restaura los repositorios del gestor de paquetes (APT, DNF, Pacman) para solucionar problemas de actualización.';
 
   @override
-  String get recoveryCheckUpdates => 'Buscar Actualizaciones';
-
-  @override
-  String get recoveryCheckUpdatesDesc =>
-      'Busca actualizaciones disponibles para todos los gestores de paquetes instalados (APT, DNF, Pacman, Snap, Flatpak).';
-
-  @override
   String get recoveryPerformUpdates => 'Realizar Actualizaciones';
 
   @override
@@ -1674,9 +2004,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get recoveryTabRecovery => 'Recovery';
-
-  @override
-  String get recoveryTabCheckUpdates => 'Buscar actualizaciones';
 
   @override
   String get recoveryTabSoftwareInstaller =>
@@ -1720,6 +2047,13 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get recoveryInstallRsyncDesc =>
       'Herramienta eficiente para sincronización y transferencia de archivos.';
+
+  @override
+  String get recoveryFixWifiAutoSuspend => 'Corregir Auto-Suspend WiFi';
+
+  @override
+  String get recoveryFixWifiAutoSuspendDesc =>
+      'Deshabilita la suspensión automática USB para adaptadores WiFi y receptores inalámbricos internos para evitar desconexiones aleatorias.';
 
   @override
   String get install => 'Instalar';
@@ -1993,6 +2327,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get diskAnalyzerMainDirectories => 'Directorios Principales';
 
   @override
+  String get diskIndexingNotice =>
+      'Indexación del disco en curso: el primer análisis puede tardar. Los datos se guardarán en la caché para futuras sesiones.';
+
+  @override
   String get hardwareSuggestionsTitle => 'Sugerencias GRUB basadas en Hardware';
 
   @override
@@ -2105,8 +2443,27 @@ class AppLocalizationsEs extends AppLocalizations {
       'Reducir swappiness cuando hay RAM suficiente';
 
   @override
+  String get grubSuggestionGpuNvidiaWaylandPageTable =>
+      'NVIDIA: UsePageAttributeTable mejora el rendimiento de renderizado en Wayland';
+
+  @override
+  String get grubSuggestionGpuNvidiaWaylandResizableBar =>
+      'NVIDIA: EnableResizableBar aumenta el rendimiento de la GPU un 10-15% (PCIe ReBAR)';
+
+  @override
+  String get grubSuggestionGpuNvidiaWaylandGpuFirmware =>
+      'NVIDIA: EnableGpuFirmware=0 mejora la estabilidad y compatibilidad en Wayland';
+
+  @override
+  String get grubSuggestionGpuNvidiaWaylandFbdev =>
+      'NVIDIA: fbdev=1 habilita la consola de framebuffer en Wayland';
+
+  @override
   String get settingsPasswordSecurityMessage =>
       'La contraseña se guarda de forma segura utilizando el keyring del sistema.';
+
+  @override
+  String get tabSmart => 'SMART';
 
   @override
   String get tabShutdownScheduler => 'Apagado Automático';
@@ -2258,4 +2615,768 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get licenseActivateCardDesc =>
       'La versión Advanced cuesta 19,99 €. Introduzca sus datos y el código de licencia recibido tras el pago correcto para desbloquear GRUB, Kernel y Recovery. Sin un pago válido, la aplicación no puede activarse.';
+
+  @override
+  String get noSmartDisksFound => 'No se encontraron discos con soporte SMART.';
+
+  @override
+  String get smartctlNotFound => 'smartctl no encontrado';
+
+  @override
+  String get smartctlInstallPrompt =>
+      'Se necesita smartmontools para monitorear la salud del disco. ¿Quieres instalarlo?';
+
+  @override
+  String get installing => 'Instalando...';
+
+  @override
+  String get installSmartctl => 'Instalar smartmontools';
+
+  @override
+  String get selectDisk => 'Seleccionar Disco';
+
+  @override
+  String get smartHealthPassed => 'Salud: SUPERADA';
+
+  @override
+  String get smartHealthFailed => 'Salud: FALLIDA';
+
+  @override
+  String get powerOnHours => 'Horas de Encendido';
+
+  @override
+  String get powerCycleCount => 'Ciclos de Encendido';
+
+  @override
+  String get diskInformation => 'Información del Disco';
+
+  @override
+  String get serialNumber => 'Número de Serie';
+
+  @override
+  String get firmware => 'Firmware';
+
+  @override
+  String get interface => 'Interfaz';
+
+  @override
+  String get smartAvailable => 'SMART Disponible';
+
+  @override
+  String get smartEnabled => 'SMART Habilitado';
+
+  @override
+  String get smartAttributes => 'Atributos SMART';
+
+  @override
+  String get attributes => 'atributos';
+
+  @override
+  String get failedAttributes => 'Atributos Fallidos';
+
+  @override
+  String get attributeId => 'ID';
+
+  @override
+  String get attributeName => 'Atributo';
+
+  @override
+  String get attributeValue => 'Valor';
+
+  @override
+  String get attributeWorst => 'Peor';
+
+  @override
+  String get attributeThreshold => 'Umbral';
+
+  @override
+  String get attributeRaw => 'Valor Bruto';
+
+  @override
+  String get selfTest => 'Self-Test';
+
+  @override
+  String get shortTest => 'Prueba Corta';
+
+  @override
+  String get longTest => 'Prueba Extendida';
+
+  @override
+  String get selfTestHint =>
+      'Se pondrá en cola un self-test en el disco. Consulta los resultados más tarde en la tabla de atributos.';
+
+  @override
+  String get selfTestStarted =>
+      'Self-test iniciado correctamente. Consulta los resultados más tarde.';
+
+  @override
+  String get selfTestFailed => 'No se pudo iniciar el self-test';
+
+  @override
+  String get attributeFailedWarning =>
+      '¡Este atributo ha FALLADO! El disco podría necesitar reemplazo.';
+
+  @override
+  String get smartDataNotAvailable =>
+      'Datos SMART no disponibles para este disco.';
+
+  @override
+  String get smartUsbInfoTitle => 'Unidad USB';
+
+  @override
+  String get smartUsbInfoBody =>
+      'Los puentes USB-SATA a menudo limitan los datos SMART al estado de salud y la temperatura. Es posible que la tabla completa de atributos no esté disponible. Si es posible, prueba una conexión SATA directa.';
+
+  @override
+  String get smartSudoPasswordRequired =>
+      'Guarda primero tu contraseña de sudo en Configuración.';
+
+  @override
+  String get smartInstallFailed => 'Instalación fallida.';
+
+  @override
+  String smartInstallError(String error) {
+    return 'Error de instalación: $error';
+  }
+
+  @override
+  String get smartErrNoPassword =>
+      'Contraseña no guardada. Guarda tu contraseña en Configuración.';
+
+  @override
+  String get smartErrWrongPassword => 'Contraseña incorrecta.';
+
+  @override
+  String get smartErrPasswordRequired =>
+      'Se requiere contraseña pero no se proporcionó.';
+
+  @override
+  String get smartErrPasswordTimeout =>
+      'Tiempo de espera agotado al validar la contraseña.';
+
+  @override
+  String smartErrPasswordGeneric(String error) {
+    return 'Error de validación: $error';
+  }
+
+  @override
+  String smartErrSudo(String error) {
+    return 'Error de sudo: $error';
+  }
+
+  @override
+  String get smartErrUnsupportedPm => 'Gestor de paquetes no compatible.';
+
+  @override
+  String smartErrUnexpected(String error) {
+    return 'Error inesperado: $error';
+  }
+
+  @override
+  String get smartErrAptLock =>
+      'No se pudo actualizar: otro proceso está usando apt. Inténtalo de nuevo en unos segundos.';
+
+  @override
+  String get smartErrAptNoRepos =>
+      'Repositorios no encontrados. Revisa la configuración de los repositorios.';
+
+  @override
+  String smartErrAptUpdateFailed(String error) {
+    return 'Error al actualizar la caché: $error';
+  }
+
+  @override
+  String get smartErrDpkgInterrupted =>
+      'dpkg interrumpido. Ejecuta \"sudo dpkg --configure -a\" e inténtalo de nuevo.';
+
+  @override
+  String get smartErrGpgUnauthenticated =>
+      'Paquetes no autenticados. Actualiza las claves GPG: \"sudo apt-get update\".';
+
+  @override
+  String smartErrInstallFailed(String error) {
+    return 'Error de instalación: $error';
+  }
+
+  @override
+  String get smartErrNotFoundAfterInstall =>
+      'Instalación completada pero smartctl no encontrado. Reinicia la aplicación e inténtalo de nuevo.';
+
+  @override
+  String get servicesGuideTitle => 'Linux Services Guide';
+
+  @override
+  String get servicesGuideWhatAre => 'What are Linux Services?';
+
+  @override
+  String get servicesGuideWhatAreBody =>
+      'Services (also called daemons) are background programs that start automatically when the system boots. They provide essential functions such as network management (NetworkManager), printing (CUPS), scheduling (cron), database servers (MySQL, PostgreSQL), web servers (Apache, Nginx), and many others.\n\nSome services are essential for the system to work correctly, while others are optional and depend on the specific use of the machine.';
+
+  @override
+  String get servicesGuideHowToManage => 'How services are managed';
+
+  @override
+  String get servicesGuideHowToManageBody =>
+      'On modern Linux distributions, services are managed by systemd, the init system. Each service has a unit file (.service) that defines how it starts, stops, and behaves.\n\nIn this application you can:\n• Start and stop a service immediately\n• Enable a service so it starts automatically at boot\n• Disable a service so it does NOT start at boot\n• View the current status and logs of a service';
+
+  @override
+  String get servicesGuideHowToDisable =>
+      'How to disable a service with this software';
+
+  @override
+  String get servicesGuideHowToDisableBody =>
+      'From the \"Services\" tab, find the service you want to disable. Tap \"Stop\" to stop it immediately, or tap \"Disable\" to prevent it from starting automatically on the next boot.\n\nYou can also combine the two: tap \"Stop\" and then \"Disable\" to completely deactivate a service until you manually re-enable it.';
+
+  @override
+  String get servicesGuidePrecautions => 'Precautions and cautions';
+
+  @override
+  String get servicesGuidePrecautionsBody =>
+      '• Do NOT disable services you don\'t know: some are essential for the system (e.g. NetworkManager, accounts-daemon, systemd-logind)\n• Disabling network services (NetworkManager, systemd-networkd) will cut off Internet access\n• Disabling display managers (gdm, sddm, lightdm) will prevent the graphical interface from starting\n• Always verify that you don\'t need a service before disabling it\n• The changes are system-wide: they affect all users, not just your account\n• If you make a mistake, you can re-enable the service from the same screen using \"Enable\"';
+
+  @override
+  String get servicesGuideDontShowAgain => 'Don\'t show this guide again';
+
+  @override
+  String get servicesGuideGotIt => 'Got it!';
+
+  @override
+  String get tabRepositories => 'Repositorios';
+
+  @override
+  String get repoTitle => 'Repositorios';
+
+  @override
+  String get repoCount => 'repos';
+
+  @override
+  String get repoEmpty => 'No se encontraron repositorios';
+
+  @override
+  String repoEnabled(Object name) {
+    return '$name habilitado';
+  }
+
+  @override
+  String repoDisabled(Object name) {
+    return '$name deshabilitado';
+  }
+
+  @override
+  String repoRemoved(Object name) {
+    return '$name eliminado';
+  }
+
+  @override
+  String get repoError => 'Operación fallida. Verifica tu contraseña sudo.';
+
+  @override
+  String get repoRemoveTitle => 'Eliminar Repositorio';
+
+  @override
+  String repoRemoveConfirm(Object name) {
+    return '¿Estás seguro de que quieres eliminar \"$name\"?';
+  }
+
+  @override
+  String get repoEditTitle => 'Editar Repositorio';
+
+  @override
+  String get repoFilePathLabel => 'Archivo:';
+
+  @override
+  String get repoContentLabel => 'Contenido';
+
+  @override
+  String get repoUpdated => 'Repositorio actualizado';
+
+  @override
+  String get edit => 'Editar';
+
+  @override
+  String get tabTweaks => 'Ajustes';
+
+  @override
+  String get tweaksSwap => 'Swap';
+
+  @override
+  String get tweaksSwapRecommendations => 'Recomendaciones de Swap';
+
+  @override
+  String get appCheckForUpdates => 'Buscar actualizaciones';
+
+  @override
+  String get kernelUpdateDetectedLiquorix =>
+      'Actualización del kernel Liquorix disponible';
+
+  @override
+  String get kernelUpdateDetectedXanmod =>
+      'Actualización del kernel Xanmod disponible';
+
+  @override
+  String get tabSystemStatus => 'Estado del sistema';
+
+  @override
+  String get tabSecurity => 'Seguridad';
+
+  @override
+  String get tabKernelTweaks => 'Ajustes del kernel';
+
+  @override
+  String get tabOperationHistory => 'Historial';
+
+  @override
+  String get statusRefresh => 'Actualizar';
+
+  @override
+  String get statusReadOnlyNote =>
+      'Información del sistema de solo lectura. No se modifica nada.';
+
+  @override
+  String get statusTabKernel => 'Kernel';
+
+  @override
+  String get statusTabSecurity => 'Seguridad';
+
+  @override
+  String get statusTabVirtualization => 'Virtualización';
+
+  @override
+  String get statusTabPrinters => 'Impresoras';
+
+  @override
+  String get statusEnabled => 'Activado';
+
+  @override
+  String get statusDisabled => 'Desactivado';
+
+  @override
+  String get statusNotAvailable => 'No disponible';
+
+  @override
+  String get statusNotInstalled => 'No instalado';
+
+  @override
+  String get statusUnknown => 'Desconocido';
+
+  @override
+  String get statusNone => 'Ninguno';
+
+  @override
+  String get statusEnforcing => 'Enforcing';
+
+  @override
+  String get statusPermissive => 'Permisivo';
+
+  @override
+  String get statusKernelInfo => 'Información del kernel';
+
+  @override
+  String get statusKernelVersion => 'Versión';
+
+  @override
+  String get statusKernelBuild => 'Build';
+
+  @override
+  String get statusCpuCount => 'Número de CPU';
+
+  @override
+  String get statusKernelTuning => 'Ajuste del kernel';
+
+  @override
+  String get statusThpMode => 'Transparent Huge Pages';
+
+  @override
+  String get statusZswap => 'Zswap';
+
+  @override
+  String get statusGovernor => 'Gobernador de CPU';
+
+  @override
+  String get statusIoScheduler => 'Planificador I/O';
+
+  @override
+  String get statusMandatoryAccess => 'Control de acceso obligatorio';
+
+  @override
+  String get statusAppArmor => 'AppArmor';
+
+  @override
+  String get statusSelinux => 'SELinux';
+
+  @override
+  String get statusSecureBoot => 'Secure Boot';
+
+  @override
+  String get statusNetworkSecurity => 'Seguridad de red';
+
+  @override
+  String get statusFirewall => 'Firewall';
+
+  @override
+  String get statusFirewallBackend => 'Backend del firewall';
+
+  @override
+  String get statusSshService => 'Servicio SSH';
+
+  @override
+  String get statusRootSsh => 'Inicio de sesión root SSH';
+
+  @override
+  String get statusAutoUpdates => 'Actualizaciones automáticas';
+
+  @override
+  String get statusVirtHost => 'Host de virtualización';
+
+  @override
+  String get statusCpuVirt => 'Virtualización de CPU';
+
+  @override
+  String get statusKvmModule => 'Módulo KVM';
+
+  @override
+  String get statusIommu => 'IOMMU';
+
+  @override
+  String get statusVirtAux => 'Soporte de virtualización';
+
+  @override
+  String get statusVfio => 'VFIO';
+
+  @override
+  String get statusKsm => 'KSM';
+
+  @override
+  String get statusDocker => 'Docker';
+
+  @override
+  String get statusLibvirt => 'Libvirt';
+
+  @override
+  String get statusCups => 'CUPS';
+
+  @override
+  String get statusCupsService => 'Servicio CUPS';
+
+  @override
+  String get statusPrinters => 'Impresoras';
+
+  @override
+  String get statusPrinterDrivers => 'Controladores de impresora';
+
+  @override
+  String get securitySubtitle =>
+      'Administra los servicios de seguridad del sistema. Cada acción se registra en el historial de operaciones y se puede deshacer.';
+
+  @override
+  String get securityFirewall => 'Firewall';
+
+  @override
+  String get securityFirewallDesc =>
+      'Bloquea las conexiones entrantes no solicitadas con UFW o firewalld.';
+
+  @override
+  String securityFirewallBackend(Object backend) {
+    return 'Activo ($backend)';
+  }
+
+  @override
+  String get securitySsh => 'Servicio SSH';
+
+  @override
+  String get securitySshDesc => 'Acceso remoto a shell a través de la red.';
+
+  @override
+  String get securityRootSsh => 'Inicio de sesión root SSH';
+
+  @override
+  String get securityRootSshDesc =>
+      'Permitir o denegar el inicio de sesión root directo por SSH.';
+
+  @override
+  String get securityRootAllowed => 'Inicio de sesión root permitido';
+
+  @override
+  String get securityAutoUpdates => 'Actualizaciones automáticas';
+
+  @override
+  String get securityAutoUpdatesDesc =>
+      'Instala automáticamente las actualizaciones de seguridad en segundo plano.';
+
+  @override
+  String get kernelTweaksSubtitle =>
+      'Aplica los ajustes del kernel de forma persistente: se vuelven a aplicar en cada arranque.';
+
+  @override
+  String get kernelTweaksPersistNote =>
+      'Sin ajustes persistentes activos. Los ajustes aplicados se guardan en un servicio systemd y se vuelven a aplicar en cada arranque.';
+
+  @override
+  String get kernelTweaksPersistActive =>
+      'Los ajustes persistentes del kernel están activos y se vuelven a aplicar en cada arranque.';
+
+  @override
+  String get kernelTweaksApply => 'Aplicar';
+
+  @override
+  String get kernelTweaksReset => 'Restablecer';
+
+  @override
+  String get kernelTweaksResetTitle => 'Restablecer ajustes del kernel';
+
+  @override
+  String get kernelTweaksResetConfirm =>
+      'Esto elimina los ajustes persistentes del kernel y restaura los valores predeterminados. ¿Continuar?';
+
+  @override
+  String get kernelTweaksThp => 'Transparent Huge Pages';
+
+  @override
+  String get kernelTweaksThpDesc =>
+      'Modo utilizado para la asignación de páginas grandes transparentes.';
+
+  @override
+  String get kernelTweaksGovernor => 'Gobernador de CPU';
+
+  @override
+  String get kernelTweaksGovernorDesc =>
+      'Política de escalado de frecuencia de CPU aplicada a todos los núcleos.';
+
+  @override
+  String get kernelTweaksScheduler => 'Planificador de CPU';
+
+  @override
+  String get kernelTweaksSchedulerDesc =>
+      'Ejecuta los procesos hijos recién creados antes que el padre para una mayor capacidad de respuesta.';
+
+  @override
+  String get kernelTweaksPerf => 'Rendimiento';
+
+  @override
+  String get kernelTweaksOndemand => 'Bajo demanda';
+
+  @override
+  String get kernelTweaksSchedutil => 'Schedutil';
+
+  @override
+  String get kernelTweaksPowersave => 'Ahorro de energía';
+
+  @override
+  String get kernelTweaksAlways => 'Siempre';
+
+  @override
+  String get kernelTweaksMadvise => 'Madvise';
+
+  @override
+  String get kernelTweaksNever => 'Nunca';
+
+  @override
+  String get kernelTweaksSchedOn => 'Hijos primero';
+
+  @override
+  String get kernelTweaksSchedOff => 'Predeterminado';
+
+  @override
+  String get historySubtitle =>
+      'Registro de las operaciones realizadas. Restaura para deshacer una acción.';
+
+  @override
+  String get historyEmpty => 'Aún no hay operaciones registradas.';
+
+  @override
+  String get historyRestore => 'Restaurar';
+
+  @override
+  String get historyRestoreTitle => 'Restaurar operación';
+
+  @override
+  String get historyRestoreConfirm =>
+      'Esto revertirá los cambios de esta operación. ¿Continuar?';
+
+  @override
+  String get historyRestored => 'Restaurada';
+
+  @override
+  String get historyClearAll => 'Vaciar historial';
+
+  @override
+  String get historyClearTitle => 'Vaciar historial';
+
+  @override
+  String get historyClearConfirm =>
+      'Elimina todas las operaciones registradas del historial. No se deshace nada. ¿Continuar?';
+
+  @override
+  String get historyFirewallEnable => 'Firewall activado';
+
+  @override
+  String get historyFirewallDisable => 'Firewall desactivado';
+
+  @override
+  String get historySshEnable => 'Servicio SSH activado';
+
+  @override
+  String get historySshDisable => 'Servicio SSH desactivado';
+
+  @override
+  String get historyRootAllow => 'Inicio de sesión root SSH permitido';
+
+  @override
+  String get historyRootDeny => 'Inicio de sesión root SSH denegado';
+
+  @override
+  String get historyAutoUpdateEnable => 'Actualizaciones automáticas activadas';
+
+  @override
+  String get historyAutoUpdateDisable =>
+      'Actualizaciones automáticas desactivadas';
+
+  @override
+  String get historyKernelApply => 'Ajustes del kernel aplicados';
+
+  @override
+  String get historyKernelReset => 'Ajustes del kernel restablecidos';
+
+  @override
+  String get kernelTweaksCurrent => 'Actual';
+
+  @override
+  String get kernelTweaksSavedForBoot => 'Guardado para el arranque';
+
+  @override
+  String get tabDeviceManager => 'Administrador de dispositivos';
+
+  @override
+  String get deviceManagerTitle => 'Administrador de dispositivos';
+
+  @override
+  String get deviceManagerLoading => 'Detectando dispositivos...';
+
+  @override
+  String get deviceManagerEmpty => 'No se encontraron dispositivos';
+
+  @override
+  String get deviceManagerRefresh => 'Actualizar';
+
+  @override
+  String get deviceManagerEnable => 'Habilitar';
+
+  @override
+  String get deviceManagerDisable => 'Deshabilitar';
+
+  @override
+  String get deviceManagerEnabled => 'Habilitado';
+
+  @override
+  String get deviceManagerDisabled => 'Deshabilitado';
+
+  @override
+  String deviceManagerToggleSuccess(Object action) {
+    return 'Dispositivo $action correctamente';
+  }
+
+  @override
+  String deviceManagerToggleError(Object action) {
+    return 'Error al $action el dispositivo';
+  }
+
+  @override
+  String get deviceManagerCannotDisable =>
+      'Este dispositivo no se puede deshabilitar';
+
+  @override
+  String get deviceManagerDetails => 'Detalles';
+
+  @override
+  String get deviceManagerDriver => 'Controlador';
+
+  @override
+  String get deviceManagerBus => 'Bus';
+
+  @override
+  String get deviceManagerVendor => 'Fabricante';
+
+  @override
+  String get deviceManagerProduct => 'Producto';
+
+  @override
+  String get deviceManagerConfirmTitle => 'Confirmar acción';
+
+  @override
+  String get deviceManagerConfirmDisable =>
+      'Deshabilitar este dispositivo puede causar inestabilidad del sistema. El cambio persistirá después del reinicio. ¿Continuar?';
+
+  @override
+  String get deviceManagerConfirmEnable =>
+      '¿Habilitar este dispositivo? El cambio persistirá después del reinicio. ¿Continuar?';
+
+  @override
+  String get deviceManagerAllDevices => 'Todos los dispositivos';
+
+  @override
+  String get deviceManagerShowDisabled => 'Mostrar deshabilitados';
+
+  @override
+  String get deviceManagerStatus => 'Estado';
+
+  @override
+  String get deviceManagerProperties => 'Propiedades';
+
+  @override
+  String get deviceManagerClose => 'Cerrar';
+
+  @override
+  String get deviceManagerNoSudo =>
+      'Guarda primero la contraseña de administrador en Configuración';
+
+  @override
+  String get deviceManagerPersistent => 'Persiste después del reinicio';
+
+  @override
+  String get tabDriverManager => 'Controladores';
+
+  @override
+  String get driverManagerTitle => 'Gestor de Controladores y Firmware';
+
+  @override
+  String get driverManagerScan => 'Escanear hardware';
+
+  @override
+  String get driverManagerFirmwareUpdates => 'Actualizaciones de Firmware';
+
+  @override
+  String get driverManagerAvailableDrivers => 'Controladores disponibles';
+
+  @override
+  String get driverManagerInstalledDrivers => 'Controladores instalados';
+
+  @override
+  String get driverManagerAllDriversInstalled =>
+      'Todos los controladores conocidos están instalados';
+
+  @override
+  String get driverManagerNoDriversInstalled => 'Ningún controlador instalado';
+
+  @override
+  String get driverManagerCurrentDriver => 'Controlador actual';
+
+  @override
+  String get driverManagerPackage => 'Paquete';
+
+  @override
+  String get driverManagerInstall => 'Instalar';
+
+  @override
+  String get driverManagerUpdate => 'Actualizar';
+
+  @override
+  String get driverManagerRebootRequired =>
+      'Reinicio necesario tras la actualización';
+
+  @override
+  String get driverManagerLinuxFirmware => 'Firmware Linux (linux-firmware)';
+
+  @override
+  String get driverManagerLinuxFirmwareDesc =>
+      'Paquete de firmware completo para GPU, Wi-Fi, Bluetooth y otros dispositivos';
 }

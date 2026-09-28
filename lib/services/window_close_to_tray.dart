@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
-import 'app_memory_maintenance.dart';
 import 'tray_service.dart';
 
 class _CloseToTrayListener extends WindowListener {
@@ -10,8 +9,7 @@ class _CloseToTrayListener extends WindowListener {
     final prefs = await SharedPreferences.getInstance();
     final closeToTray = prefs.getBool(TrayService.prefKeyCloseToTray) ?? true;
     if (closeToTray && TrayService.isInitialized) {
-      await windowManager.hide();
-      AppMemoryMaintenance.notifyMainWindowHiddenToTray();
+      TrayService.hideWindow();
     }
   }
 
@@ -20,8 +18,7 @@ class _CloseToTrayListener extends WindowListener {
     final prefs = await SharedPreferences.getInstance();
     final closeToTray = prefs.getBool(TrayService.prefKeyCloseToTray) ?? true;
     if (closeToTray && TrayService.isInitialized) {
-      await windowManager.hide();
-      AppMemoryMaintenance.notifyMainWindowHiddenToTray();
+      TrayService.hideWindow();
     }
   }
 }
@@ -43,7 +40,6 @@ Future<void> initWindowCloseToTray() async {
     if (startMinimized && TrayService.isInitialized) {
       void doHide() {
         TrayService.hideWindow();
-        windowManager.hide();
       }
       doHide();
       // Ripeti dopo un ritardo: la finestra su Linux può essere creata dopo il primo frame

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../services/cleanup_service.dart';
+import '../services/advanced_cleanup_service.dart';
+import '../services/ram_cleanup_service.dart';
 import '../services/tray_service.dart';
 
 class CleanupScreen extends StatefulWidget {
@@ -17,14 +19,30 @@ class _CleanupScreenState extends State<CleanupScreen> {
   bool _isLoading = false;
   bool _isCleaning = false;
   bool _isCleaningCache = false;
+  bool _isCleaningRam = false;
+  RamStats? _ramStats;
+  RamCleanupResult? _ramResult;
   String? _error;
   Set<String> _excludedPaths = {};
+  // Pulizia avanzata (log + cache sviluppo)
+  List<DevCacheInfo> _devCaches = [];
+  Set<String> _devSelected = {};
+  bool _devLoading = false;
+  bool _devLoaded = false;
+  bool _advCleaning = false;
+  int? _journalBytes;
+  bool _journalLoading = false;
+  String? _journalLimit;
+  String _vacuumTarget = '500M';
+  String _limitTarget = '500M';
+  bool _journalBusy = false;
 
   @override
   void initState() {
     super.initState();
     _loadExcludedPaths();
     _loadSizes();
+    _loadRamStats();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (TrayService.runCleanupWhenScreenShown) {
         TrayService.runCleanupWhenScreenShown = false;
@@ -319,8 +337,249 @@ class _CleanupScreenState extends State<CleanupScreen> {
     }
   }
 
+  Future<void> _loadRamStats() async {
+    final stats = await RamCleanupService.getRamStats();
+    if (mounted) {
+      setState(() {
+        _ramStats = stats;
+      });
+    }
+  }
+
+  Future<void> _cleanRam() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.ramCleanupConfirmTitle),
+        content: Text(
+          l10n.ramCleanupConfirmMessage,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              l10n.ramCleanup,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isCleaningRam = true;
+      _error = null;
+      _ramResult = null;
+    });
+
+    try {
+      final result = await RamCleanupService.cleanupRam();
+      if (mounted) {
+        setState(() {
+          _ramResult = result;
+          _isCleaningRam = false;
+          _ramStats = result.after;
+        });
+        final freed = result.freedBytes ?? 0;
+        final message = freed > 0
+            ? '${l10n.ramCleanupSuccess}: ${RamCleanupService.formatSize(freed)}'
+            : l10n.ramCleanupSuccess;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: result.success ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCleaningRam = false;
+          _error = e.toString();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.error}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   int _getTotalSize() {
     return _sizes.values.fold(0, (sum, size) => sum + size);
+  }
+
+  Future<void> _loadAdvanced() async {
+    if (!mounted) return;
+    setState(() {
+      _devLoading = true;
+      _journalLoading = true;
+    });
+    try {
+      final dev = await AdvancedCleanupService.getDevCaches();
+      final jb = await AdvancedCleanupService.getJournalBytes();
+      final limit = await AdvancedCleanupService.getJournalSystemMaxUse();
+      if (!mounted) return;
+      setState(() {
+        _devCaches = dev;
+        _devLoaded = true;
+        _devLoading = false;
+        // Seleziona tutto di default (tranne kernel: prudenza).
+        _devSelected = dev
+            .where((d) => d.id != 'kernel-headers')
+            .map((d) => d.id)
+            .toSet();
+        _journalBytes = jb;
+        _journalLoading = false;
+        _journalLimit = limit;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _devLoading = false;
+          _journalLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _cleanSelectedDev() async {
+    if (_devSelected.isEmpty || !mounted) return;
+    setState(() => _advCleaning = true);
+    var okCount = 0;
+    for (final id in _devSelected.toList()) {
+      try {
+        if (await AdvancedCleanupService.cleanDevCache(id)) okCount++;
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    setState(() => _advCleaning = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(okCount == _devSelected.length
+            ? AppLocalizations.of(context)!.advCleaned
+            : AppLocalizations.of(context)!.advFailed),
+        backgroundColor:
+            okCount == _devSelected.length ? Colors.green : Colors.orange,
+      ),
+    );
+    await _loadAdvanced();
+    await _loadSizes();
+  }
+
+  Future<void> _vacuumJournal() async {
+    if (!mounted) return;
+    setState(() => _journalBusy = true);
+    try {
+      final ok =
+          await AdvancedCleanupService.vacuumJournal(_vacuumTarget);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok
+              ? AppLocalizations.of(context)!.advCleaned
+              : AppLocalizations.of(context)!.advFailed),
+          backgroundColor: ok ? Colors.green : Colors.red,
+        ),
+      );
+      await _loadAdvanced();
+    } finally {
+      if (mounted) setState(() => _journalBusy = false);
+    }
+  }
+
+  Future<void> _applyJournalLimit() async {
+    if (!mounted) return;
+    setState(() => _journalBusy = true);
+    try {
+      final ok = await AdvancedCleanupService.setJournalSystemMaxUse(
+          _limitTarget);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok
+              ? AppLocalizations.of(context)!.advCleaned
+              : AppLocalizations.of(context)!.advFailed),
+          backgroundColor: ok ? Colors.green : Colors.red,
+        ),
+      );
+      await _loadAdvanced();
+    } finally {
+      if (mounted) setState(() => _journalBusy = false);
+    }
+  }
+
+  String _devTitle(AppLocalizations l10n, String id) {
+    switch (id) {
+      case 'pip':
+        return l10n.devPip;
+      case 'cargo':
+        return l10n.devCargo;
+      case 'npm':
+        return l10n.devNpm;
+      case 'go':
+        return l10n.devGo;
+      case 'gradle':
+        return l10n.devGradle;
+      case 'docker':
+        return l10n.devDocker;
+      case 'kernel-headers':
+        return l10n.devKernelHeaders;
+      default:
+        return id;
+    }
+  }
+
+  Color _devColor(String id) {
+    switch (id) {
+      case 'pip':
+        return Colors.blue;
+      case 'cargo':
+        return Colors.brown;
+      case 'npm':
+        return Colors.red;
+      case 'go':
+        return Colors.cyan;
+      case 'gradle':
+        return Colors.green;
+      case 'docker':
+        return Colors.indigo;
+      case 'kernel-headers':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _devIcon(String id) {
+    switch (id) {
+      case 'pip':
+        return Icons.code;
+      case 'cargo':
+        return Icons.construction;
+      case 'npm':
+        return Icons.javascript;
+      case 'go':
+        return Icons.play_arrow;
+      case 'gradle':
+        return Icons.build;
+      case 'docker':
+        return Icons.inventory;
+      case 'kernel-headers':
+        return Icons.memory;
+      default:
+        return Icons.folder;
+    }
   }
 
   @override
@@ -381,6 +640,362 @@ class _CleanupScreenState extends State<CleanupScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.tertiary,
                     foregroundColor: Theme.of(context).colorScheme.onTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_ramStats != null)
+            Card(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.speed, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(context)!.ramCleanupTitle,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _RamStatItem(
+                            label: AppLocalizations.of(context)!.ramUsed,
+                            value: RamCleanupService.formatSize(
+                              _ramStats!.usedBytes,
+                            ),
+                            valueColor: Colors.orange,
+                          ),
+                        ),
+                        Expanded(
+                          child: _RamStatItem(
+                            label: AppLocalizations.of(context)!.ramAvailable,
+                            value: RamCleanupService.formatSize(
+                              _ramStats!.availableBytes,
+                            ),
+                            valueColor: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _RamStatItem(
+                            label: AppLocalizations.of(context)!.ramCache,
+                            value: RamCleanupService.formatSize(
+                              _ramStats!.cachedBytes,
+                            ),
+                            valueColor: Colors.blue,
+                          ),
+                        ),
+                        Expanded(
+                          child: _RamStatItem(
+                            label: AppLocalizations.of(context)!.ramSwap,
+                            value: _ramStats!.hasSwap
+                                ? '${RamCleanupService.formatSize(_ramStats!.swapUsedBytes)} / ${RamCleanupService.formatSize(_ramStats!.swapTotalBytes)}'
+                                : AppLocalizations.of(context)!.ramSwapNone,
+                            valueColor: Colors.purple,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_ramResult != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _ramResult!.freedBytes != null &&
+                                      _ramResult!.freedBytes! > 0
+                                  ? '${AppLocalizations.of(context)!.ramFreed}: ${RamCleanupService.formatSize(_ramResult!.freedBytes!)}'
+                                  : AppLocalizations.of(context)!.ramCleanupSuccess,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: _ramResult!.success
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                            if (_ramResult!.before != null &&
+                                _ramResult!.after != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '${AppLocalizations.of(context)!.ramBefore}: ${RamCleanupService.formatSize(_ramResult!.before!.usedBytes)}  →  ${AppLocalizations.of(context)!.ramAfter}: ${RamCleanupService.formatSize(_ramResult!.after!.usedBytes)}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                            if (_ramResult!.stepsFailed.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '${AppLocalizations.of(context)!.ramStepsFailed}: ${_ramResult!.stepsFailed.join(", ")}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: (_isCleaningRam || _isCleaning || _isLoading)
+                          ? null
+                          : _cleanRam,
+                      icon: _isCleaningRam
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cleaning_services),
+                      label: Text(AppLocalizations.of(context)!.ramCleanup),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          Card(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: ExpansionTile(
+              leading: const Icon(Icons.cleaning_services,
+                  size: 22, color: Colors.teal),
+              title: Text(
+                AppLocalizations.of(context)!.advCleanupTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onExpansionChanged: (expanded) {
+                if (expanded && !_devLoaded && !_devLoading) {
+                  _loadAdvanced();
+                }
+              },
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_devLoading || _journalLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else ...[
+                        ..._devCaches.map((d) {
+                          final selected =
+                              _devSelected.contains(d.id);
+                          return CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            controlAffinity:
+                                ListTileControlAffinity.leading,
+                            value: selected,
+                            onChanged: (v) {
+                              setState(() {
+                                if (v == true) {
+                                  _devSelected.add(d.id);
+                                } else {
+                                  _devSelected.remove(d.id);
+                                }
+                              });
+                            },
+                            secondary: Icon(
+                              _devIcon(d.id),
+                              color: _devColor(d.id),
+                            ),
+                            title: Text(
+                              _devTitle(
+                                  AppLocalizations.of(context)!,
+                                  d.id),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              '${d.subtitle}\n${CleanupService.formatSize(d.sizeBytes)}',
+                            ),
+                            isThreeLine: true,
+                          );
+                        }),
+                        if (_devCaches.isEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(AppLocalizations.of(context)!
+                                .advEmpty),
+                          ),
+                        if (_devCaches.isNotEmpty)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: FilledButton.icon(
+                              onPressed: (_advCleaning ||
+                                      _devSelected.isEmpty)
+                                  ? null
+                                  : _cleanSelectedDev,
+                              icon: _advCleaning
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child:
+                                          CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.delete_sweep),
+                              label: Text(
+                                  AppLocalizations.of(context)!
+                                      .advCleanSelected),
+                            ),
+                          ),
+                        const Divider(height: 24),
+                        Row(
+                          children: [
+                            const Icon(Icons.article,
+                                size: 22, color: Colors.brown),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppLocalizations.of(context)!
+                                  .journalTitle,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${AppLocalizations.of(context)!.journalCurrentSize}: ${_journalBytes != null ? CleanupService.formatSize(_journalBytes!) : '—'}${_journalLimit != null ? ' • ${_journalLimit!}' : ''}',
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<
+                                  String>(
+                                value: _vacuumTarget,
+                                decoration: InputDecoration(
+                                  labelText:
+                                      AppLocalizations.of(context)!
+                                          .journalVacuumTarget,
+                                  border:
+                                      const OutlineInputBorder(),
+                                ),
+                                items: const [
+                                  '100M',
+                                  '250M',
+                                  '500M',
+                                  '1G',
+                                  '2G'
+                                ]
+                                    .map((s) =>
+                                        DropdownMenuItem(
+                                          value: s,
+                                          child: Text(s),
+                                        ))
+                                    .toList(),
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    setState(
+                                        () => _vacuumTarget = v);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: _journalBusy
+                                  ? null
+                                  : _vacuumJournal,
+                              icon: const Icon(Icons.compress),
+                              label: Text(
+                                  AppLocalizations.of(context)!
+                                      .journalVacuumNow),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<
+                                  String>(
+                                value: _limitTarget,
+                                decoration: InputDecoration(
+                                  labelText:
+                                      AppLocalizations.of(context)!
+                                          .journalLimitLabel,
+                                  border:
+                                      const OutlineInputBorder(),
+                                ),
+                                items: const [
+                                  '100M',
+                                  '250M',
+                                  '500M',
+                                  '1G',
+                                  '2G'
+                                ]
+                                    .map((s) =>
+                                        DropdownMenuItem(
+                                          value: s,
+                                          child: Text(s),
+                                        ))
+                                    .toList(),
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    setState(
+                                        () => _limitTarget = v);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: _journalBusy
+                                  ? null
+                                  : _applyJournalLimit,
+                              icon: const Icon(Icons.save),
+                              label: Text(
+                                  AppLocalizations.of(context)!
+                                      .journalLimitApply),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
@@ -580,6 +1195,43 @@ class _CleanupScreenState extends State<CleanupScreen> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _RamStatItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  const _RamStatItem({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
+        ),
+      ],
     );
   }
 }

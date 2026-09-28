@@ -12,3 +12,5 @@ NoDisplay=false
 MimeType=
 Keywords=system;utility;linux;settings;tools;maintenance;
 
+
+StartupWMClass=com.superlinux.utility

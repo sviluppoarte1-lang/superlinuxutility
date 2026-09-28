@@ -6,6 +6,7 @@ import 'package:process_run/process_run.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/disk_analyzer_service.dart';
+import '../services/disk_indexing_engine.dart';
 import '../services/password_storage.dart';
 import '../services/disk_cache_service.dart';
 
@@ -38,14 +39,22 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   // Ordinamento
   SortType _currentSort = SortType.sizeDescending;
   
-  // Cache
-  bool _isGeneratingCache = false;
-  bool _hasShownCacheMessage = false;
   bool _isChartLoading = false;
-  /// Invalida aggiornamenti grafico du quando l'utente cambia cartella durante lo scan
-  int _chartScanToken = 0;
-  /// Evita burst di listDirectory+JSON quando si apre spesso la stessa cartella dalla cache
   int _dirListIncrementalToken = 0;
+  int _chartScanToken = 0;
+
+  /// True quando il disco selezionato è già stato indicizzato (prima scansione completa).
+  bool _isIndexed = true;
+
+  /// Verifica se il disco selezionato è già stato indicizzato.
+  Future<void> _refreshIndexedState(String path) async {
+    final indexed = await DiskIndexingEngine.isIndexed(path);
+    if (mounted) {
+      setState(() {
+        _isIndexed = indexed;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -73,7 +82,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       // skipHistory=false significa che è una nuova navigazione, quindi resetta il grafico
       if (!skipHistory && _currentPath.isNotEmpty) {
         _directorySizes = [];
-        _isGeneratingCache = true; // Mostra loading durante la navigazione
       }
     });
 
@@ -143,7 +151,12 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                 _pathHistory.removeRange(_historyIndex + 1, _pathHistory.length);
               }
               _pathHistory.add(path);
-              _historyIndex = _pathHistory.length - 1;
+              if (_pathHistory.length > 100) {
+                _pathHistory.removeRange(0, _pathHistory.length - 100);
+                _historyIndex = _pathHistory.length - 1;
+              } else {
+                _historyIndex = _pathHistory.length - 1;
+              }
             }
           });
           
@@ -202,7 +215,12 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
             _pathHistory.removeRange(_historyIndex + 1, _pathHistory.length);
           }
           _pathHistory.add(path);
-          _historyIndex = _pathHistory.length - 1;
+          if (_pathHistory.length > 100) {
+            _pathHistory.removeRange(0, _pathHistory.length - 100);
+            _historyIndex = _pathHistory.length - 1;
+          } else {
+            _historyIndex = _pathHistory.length - 1;
+          }
         }
       });
       
@@ -248,6 +266,19 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     Future<void>(() async {
       await Future.delayed(const Duration(milliseconds: 1200));
       if (!mounted || t != _dirListIncrementalToken) return;
+      // Verifica se la cache è recente (meno di 60 secondi) — se sì, salta il refresh
+      try {
+        final cache = await DiskCacheService.loadCache(diskPath);
+        if (cache != null) {
+          final ts = cache['timestamp'] as String?;
+          if (ts != null) {
+            final cacheTime = DateTime.tryParse(ts);
+            if (cacheTime != null && DateTime.now().difference(cacheTime).inSeconds < 60) {
+              return; // Cache troppo recente, salva I/O
+            }
+          }
+        }
+      } catch (_) {}
       await _updateCacheIncrementalForPath(diskPath, directoryPath);
     });
   }
@@ -274,17 +305,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     }).toList();
   }
 
-  /// Aggiorna la cache delle dimensioni in modo incrementale (solo cartelle nuove/cancellate).
-  Future<void> _updateDirectorySizesCacheIncremental(String diskPath, List<Map<String, dynamic>> cachedSizes) async {
-    try {
-      final items = await DiskAnalyzerService.listDirectory(diskPath, calculateSizes: false);
-      final topDirs = items.where((e) => e.isDirectory).map((e) => {'name': e.name, 'path': e.path}).toList();
-      await DiskCacheService.updateDirectorySizesIncremental(diskPath, topDirs, cachedSizes);
-    } catch (e) {
-      // Ignora errori aggiornamento cache
-    }
-  }
-
   Future<void> _calculateSizesInBackground(
     List<FileSystemItem> items, {
     required String diskPath,
@@ -304,8 +324,9 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
 
     final normListPath = DiskCacheService.normalizeListedDirectoryPath(listPath);
 
-    // Calcola le dimensioni in parallelo (max 5 alla volta per non sovraccaricare)
-    const maxConcurrent = 5;
+    // Calcola le dimensioni in parallelo (max 10 alla volta per sfruttare meglio I/O)
+    const maxConcurrent = 10;
+    bool needsSort = false;
     for (int i = 0; i < directoriesToCalculate.length; i += maxConcurrent) {
       final batch = directoriesToCalculate.skip(i).take(maxConcurrent).toList();
 
@@ -313,7 +334,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
         try {
           final size = await DiskAnalyzerService.getDirectorySize(item.path)
               .timeout(
-                const Duration(seconds: 60),
+                const Duration(seconds: 30),
                 onTimeout: () => 0,
               );
           return {'item': item, 'size': size};
@@ -325,29 +346,34 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       final results = await Future.wait(futures);
 
       if (mounted) {
-        setState(() {
-          for (final result in results) {
-            final item = result['item'] as FileSystemItem;
-            final size = result['size'] as int;
+        for (final result in results) {
+          final item = result['item'] as FileSystemItem;
+          final size = result['size'] as int;
 
-            final index = _currentItems.indexWhere((el) => el.path == item.path);
-            if (index >= 0) {
-              _currentItems[index] = FileSystemItem(
-                path: item.path,
-                name: item.name,
-                size: size,
-                isDirectory: item.isDirectory,
-                modified: item.modified,
-                mimeType: item.mimeType,
-              );
-            }
+          final index = _currentItems.indexWhere((el) => el.path == item.path);
+          if (index >= 0) {
+            _currentItems[index] = FileSystemItem(
+              path: item.path,
+              name: item.name,
+              size: size,
+              isDirectory: item.isDirectory,
+              modified: item.modified,
+              mimeType: item.mimeType,
+            );
+            needsSort = true;
           }
-          _sortItems();
-        });
+        }
+        // Aggiorna UI una volta per batch invece di una volta per item
+        if (needsSort) {
+          setState(() {
+            _sortItems();
+            _rebuildChartFromCurrentItems();
+          });
+          needsSort = false;
+        }
       }
     }
 
-    // Un solo salvataggio cache su disco: prima si riscritta il JSON ad ogni batch (lento + blocchi UI)
     if (mounted) {
       final stillSameDir =
           DiskCacheService.normalizeListedDirectoryPath(_currentPath) == normListPath;
@@ -368,67 +394,87 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     _selectedDiskIndex = -1;
     _pathHistory.clear();
     _historyIndex = -1;
-    _hasShownCacheMessage = false; // Reset per nuovo disco
     
-    // Verifica se esiste cache per questo disco
-    final hasCache = await DiskCacheService.hasCache(path);
-    
-    // Carica prima le info base e mostra la directory subito
     final diskInfo = await _getDiskInfo(path);
     final diskBytes = await _getDiskBytes(path);
     setState(() {
       _selectedDiskInfo = diskInfo;
       _selectedDiskBytes = diskBytes;
-      _directorySizes = []; // Reset per mostrare il loading
-      _isGeneratingCache = !hasCache; // Mostra messaggio solo se non c'è cache
+      _directorySizes = [];
       _isChartLoading = true;
     });
     
-    // Carica la directory subito (senza resettare il grafico qui, lo facciamo sopra)
     _loadDirectory(path, skipHistory: true);
-    
-    // Carica il grafico in background senza bloccare - assicurati che venga sempre caricato
-    _loadDirectorySizesAsync(path).catchError((error) {
-      // Se il caricamento fallisce, mantieni il grafico vuoto ma non bloccare
-      if (mounted) {
-        setState(() {
-          _directorySizes = [];
-          _isGeneratingCache = false;
-          _isChartLoading = false;
+    _loadDirectorySizesAsync(path);
+    _refreshIndexedState(path);
+  }
+
+  /// Ricostruisce _directorySizes dalle directory in _currentItems con size > 0.
+  void _rebuildChartFromCurrentItems() {
+    final dirs = <Map<String, dynamic>>[];
+    for (final item in _currentItems) {
+      if (item.isDirectory && item.size > 0) {
+        dirs.add({
+          'name': item.name,
+          'path': item.path,
+          'size': item.size,
+          'sizeFormatted': DiskAnalyzerService.formatSize(item.size),
         });
       }
-    });
+    }
+    dirs.sort((a, b) => (b['size'] as int).compareTo(a['size'] as int));
+    _directorySizes = dirs;
   }
-  
-  /// Carica le dimensioni delle directory in background con cache
+
+  void _selectExternalDisk(int index) async {
+    if (index >= 0 && index < _mountedDisks.length) {
+      final disk = _mountedDisks[index];
+      final mountPoint = disk['mountPoint']!;
+      _selectedDiskIndex = index;
+      _selectedBasePath = mountPoint;
+      _pathHistory.clear();
+      _historyIndex = -1;
+      
+      final diskBytes = await _getDiskBytes(mountPoint);
+      setState(() {
+        _selectedDiskInfo = {
+          'used': disk['used'] ?? '',
+          'available': disk['available'] ?? '',
+          'size': disk['size'] ?? '',
+        };
+        _selectedDiskBytes = diskBytes;
+        _directorySizes = [];
+        _isChartLoading = true;
+      });
+      
+      _loadDirectory(mountPoint, skipHistory: true);
+      _loadDirectorySizesAsync(mountPoint);
+      _refreshIndexedState(mountPoint);
+    }
+  }
+
   Future<void> _loadDirectorySizesAsync(String path) async {
-    // Normalizza il percorso (rimuovi trailing slash se presente, tranne per root)
     final normalizedPath = path.endsWith('/') && path.length > 1
         ? path.substring(0, path.length - 1)
         : path;
-    
-    // Determina se stiamo navigando nel disco base o in una sottocartella
-    final normalizedBasePath = _selectedBasePath.isNotEmpty 
+
+    final normalizedBasePath = _selectedBasePath.isNotEmpty
         ? (_selectedBasePath.endsWith('/') && _selectedBasePath.length > 1
             ? _selectedBasePath.substring(0, _selectedBasePath.length - 1)
             : _selectedBasePath)
         : '/';
-    final isBasePath = normalizedPath == normalizedBasePath || (normalizedBasePath.isEmpty && normalizedPath == '/');
-    
-    // Se stiamo navigando in una sottocartella, non usare la cache del disco base
-    // ma genera sempre i dati per la cartella corrente
+    final isBasePath = normalizedPath == normalizedBasePath ||
+        (normalizedBasePath.isEmpty && normalizedPath == '/');
+
     if (!isBasePath) {
       final chartToken = ++_chartScanToken;
-      // Reset del flag per mostrare il loading durante la navigazione
       if (mounted) {
         setState(() {
           _directorySizes = [];
-          _isGeneratingCache = true;
           _isChartLoading = true;
         });
       }
-      
-      // Genera i dati per la cartella corrente (senza cache)
+
       final directorySizes = await _getTopDirectories(
         normalizedPath,
         chartToken: chartToken,
@@ -439,47 +485,30 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           });
         },
       );
-      
+
       if (mounted) {
         setState(() {
           _directorySizes = directorySizes;
-          _isGeneratingCache = false;
           _isChartLoading = false;
         });
       }
       return;
     }
-    
-    // Per il disco base, usa la cache
+
     final diskPath = normalizedBasePath.isNotEmpty ? normalizedBasePath : '/';
-    
-    // Prova a caricare dalla cache
+
     final cachedSizes = await DiskCacheService.loadDirectorySizes(diskPath);
-    
+
     if (cachedSizes != null && cachedSizes.isNotEmpty) {
-      // Usa la cache (aggiornamento incrementale in background, non rigenerazione)
       if (mounted) {
         setState(() {
           _directorySizes = cachedSizes;
-          _isGeneratingCache = false;
           _isChartLoading = false;
-          _hasShownCacheMessage = true;
         });
       }
-      _updateDirectorySizesCacheIncremental(diskPath, cachedSizes);
       return;
     }
-    
-    // Se non c'è cache, genera e mostra il messaggio la prima volta
-    if (!_hasShownCacheMessage && mounted) {
-      setState(() {
-        _isGeneratingCache = true;
-        _isChartLoading = true;
-        _hasShownCacheMessage = true;
-      });
-    }
-    
-    // Genera i dati (streaming + risultati parziali per il grafico)
+
     final chartToken = ++_chartScanToken;
     final directorySizes = await _getTopDirectories(
       normalizedPath,
@@ -491,64 +520,27 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
         });
       },
     );
-    
-    // Salva nella cache solo per il disco base
+
     await DiskCacheService.saveDirectorySizes(diskPath, directorySizes);
-    
+
+    // Prima scansione completa del disco: segna come indicizzato.
+    await DiskIndexingEngine.markIndexed(diskPath);
+    if (mounted) {
+      setState(() {
+        _isIndexed = true;
+      });
+    }
+
     if (mounted) {
       setState(() {
         _directorySizes = directorySizes;
-        _isGeneratingCache = false;
         _isChartLoading = false;
-      });
-    }
-  }
-
-  void _selectExternalDisk(int index) async {
-    if (index >= 0 && index < _mountedDisks.length) {
-      final disk = _mountedDisks[index];
-      final mountPoint = disk['mountPoint']!;
-      _selectedDiskIndex = index;
-      _selectedBasePath = mountPoint;
-      _pathHistory.clear();
-      _historyIndex = -1;
-      _hasShownCacheMessage = false; // Reset per nuovo disco
-      
-      // Verifica se esiste cache per questo disco
-      final hasCache = await DiskCacheService.hasCache(mountPoint);
-      
-      // Carica prima le info base e mostra la directory subito
-      final diskBytes = await _getDiskBytes(mountPoint);
-      setState(() {
-        _selectedDiskInfo = {
-          'used': disk['used'] ?? '',
-          'available': disk['available'] ?? '',
-          'size': disk['size'] ?? '',
-        };
-        _selectedDiskBytes = diskBytes;
-        _directorySizes = []; // Reset per mostrare il loading
-        _isGeneratingCache = !hasCache; // Mostra messaggio solo se non c'è cache
-      });
-      
-      // Carica la directory subito (senza resettare il grafico qui, lo facciamo sopra)
-      _loadDirectory(mountPoint, skipHistory: true);
-      
-      // Carica il grafico in background senza bloccare - assicurati che venga sempre caricato
-      _loadDirectorySizesAsync(mountPoint).catchError((error) {
-        // Se il caricamento fallisce, mantieni il grafico vuoto ma non bloccare
-        if (mounted) {
-          setState(() {
-            _directorySizes = [];
-            _isGeneratingCache = false;
-          });
-        }
       });
     }
   }
 
   void _navigateTo(String path) {
     _loadDirectory(path);
-    // Aggiorna il grafico con le dimensioni delle sottocartelle
     _loadDirectorySizesAsync(path);
   }
 
@@ -559,7 +551,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       });
       final path = _pathHistory[_historyIndex];
       _loadDirectory(path, skipHistory: true);
-      // Aggiorna il grafico con le dimensioni delle sottocartelle
       _loadDirectorySizesAsync(path);
     }
   }
@@ -571,7 +562,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       });
       final path = _pathHistory[_historyIndex];
       _loadDirectory(path, skipHistory: true);
-      // Aggiorna il grafico con le dimensioni delle sottocartelle
       _loadDirectorySizesAsync(path);
     }
   }
@@ -579,7 +569,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   void _goToRoot() {
     if (_selectedBasePath.isNotEmpty) {
       _loadDirectory(_selectedBasePath);
-      // Aggiorna il grafico con le dimensioni delle sottocartelle
       _loadDirectorySizesAsync(_selectedBasePath);
     }
   }
@@ -669,8 +658,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           );
           if (success) {
             _loadDirectory(_currentPath);
-            // Aggiorna il grafico
-            _loadDirectorySizesAsync(_currentPath);
           }
         }
       }
@@ -717,8 +704,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           );
           if (success) {
             _loadDirectory(_currentPath);
-            // Aggiorna il grafico
-            _loadDirectorySizesAsync(_currentPath);
           }
         }
       }
@@ -812,11 +797,8 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           ),
         );
         if (success) {
-          // Ricarica la directory
           final parent = Directory(item.path).parent.path;
           _loadDirectory(parent);
-          // Aggiorna il grafico
-          _loadDirectorySizesAsync(parent);
         }
       }
     }
@@ -900,31 +882,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Messaggio cache in corso
-          if (_isGeneratingCache)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: Colors.blue.withOpacity(0.1),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      l10n.diskCacheGenerating,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           // Selezione percorso base
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1108,8 +1065,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                           _showHiddenFiles = !_showHiddenFiles;
                         });
                         _loadDirectory(_currentPath, skipHistory: true);
-                        // Aggiorna il grafico
-                        _loadDirectorySizesAsync(_currentPath);
                       }
                     },
                     itemBuilder: (context) => [
@@ -1136,6 +1091,33 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
               ),
             ),
           
+          // Avviso di indicizzazione (solo per la prima scansione del disco)
+          if (!_isIndexed && _selectedBasePath.isNotEmpty)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.hourglass_top, size: 16, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.diskIndexingNotice,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Contenuto principale: Grafico a sinistra e Cartelle a destra
           if (_isLoading)
             const Expanded(
@@ -1173,7 +1155,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                 children: [
                   // Grafico a sinistra
                   Flexible(
-                    flex: 2,
+                    flex: 3,
                     child: Container(
                       margin: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0, right: 8.0),
                       padding: const EdgeInsets.all(12.0),
@@ -1362,7 +1344,8 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           '2>/dev/null';
     }
     final escapedPath = normRoot.replaceAll("'", "'\\''");
-    return "cd '$escapedPath' && for item in * .[!.]*; do [ -d \"\$item\" ] && du -sh \"\$item\" 2>/dev/null; done";
+    // Usa du -h -d1 invece di un loop for che spawnerebbe N processi
+    return "du -h -d1 '$escapedPath' 2>/dev/null";
   }
 
   List<Map<String, dynamic>> _sortedDirectoryMapsFromAccum(
@@ -1395,7 +1378,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     return Process.start('bash', ['-c', cmd], runInShell: true);
   }
 
-  /// Legge stdout a chunk, emette risultati parziali (throttle), rispetta [maxDuration] poi termina il processo.
+  /// Legge stdout a chunk, emette risultati parziali (periodico), rispetta [maxDuration] poi termina il processo.
   Future<List<Map<String, dynamic>>> _drainDuStdoutToMaps(
     Process process,
     String normRoot, {
@@ -1404,16 +1387,16 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     void Function(List<Map<String, dynamic>> partial)? onPartial,
     required Duration maxDuration,
   }) async {
-    Timer? throttle;
     var remainder = '';
     final sw = Stopwatch()..start();
+    Timer? periodic;
 
-    void schedulePartial() {
-      if (onPartial == null) return;
-      throttle?.cancel();
-      throttle = Timer(const Duration(milliseconds: 400), () {
-        throttle = null;
-        if (chartToken == null || chartToken != _chartScanToken || !mounted) return;
+    if (onPartial != null) {
+      periodic = Timer.periodic(const Duration(milliseconds: 200), (_) {
+        if (chartToken != null && chartToken != _chartScanToken || !mounted) {
+          periodic?.cancel();
+          return;
+        }
         final sorted = _sortedDirectoryMapsFromAccum(byPath);
         if (sorted.isNotEmpty) onPartial(sorted);
       });
@@ -1432,7 +1415,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           final row = _tryParseDuLine(rawLine, normRoot);
           if (row != null) {
             byPath[row['path'] as String] = row;
-            schedulePartial();
           }
         }
       }
@@ -1441,7 +1423,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
         if (row != null) byPath[row['path'] as String] = row;
       }
     } finally {
-      throttle?.cancel();
+      periodic?.cancel();
       try {
         await process.exitCode.timeout(const Duration(seconds: 2));
       } catch (_) {
@@ -1663,6 +1645,15 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       }
     }
     return 0;
+  }
+
+  @override
+  void dispose() {
+    _pathHistory.clear();
+    _currentItems = [];
+    _directorySizes = [];
+    _mountedDisks = [];
+    super.dispose();
   }
 }
 
@@ -2405,6 +2396,7 @@ class _DiskPieChartState extends State<_DiskPieChart> {
                                     dirName.length > 18 ? '${dirName.substring(0, 18)}...' : dirName,
                                     style: TextStyle(
                                       fontSize: 11,
+                                      fontWeight: FontWeight.bold,
                                       color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                     textAlign: TextAlign.right,
@@ -2461,6 +2453,7 @@ class _DiskPieChartState extends State<_DiskPieChart> {
                                   '0',
                                   style: TextStyle(
                                     fontSize: 10,
+                                    fontWeight: FontWeight.bold,
                                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                   ),
                                 ),
@@ -2471,6 +2464,7 @@ class _DiskPieChartState extends State<_DiskPieChart> {
                                   _formatCompactSize(DiskAnalyzerService.formatSize(value)),
                                   style: TextStyle(
                                     fontSize: 10,
+                                    fontWeight: FontWeight.bold,
                                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                   ),
                                 );
@@ -2496,6 +2490,8 @@ class _DiskPieChartState extends State<_DiskPieChart> {
                             final percentage = maxSize > 0 ? (size / maxSize) : 0.0;
                             final color = _colors[index % _colors.length];
                             
+                            final sizeText = _formatCompactSize(dir['sizeFormatted'] as String);
+
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 1.5),
                               child: SizedBox(
@@ -2503,58 +2499,67 @@ class _DiskPieChartState extends State<_DiskPieChart> {
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      child: Stack(
-                                        children: [
-                                          // Linee di griglia verticali
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                            children: List.generate(5, (i) {
-                                              return Expanded(
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    border: Border(
-                                                      right: i < 4
-                                                          ? BorderSide(
-                                                              color: Theme.of(context).dividerColor.withOpacity(0.2),
-                                                              width: 1,
-                                                            )
-                                                          : BorderSide.none,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: Stack(
+                                          children: [
+                                            // Linee di griglia verticali
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              children: List.generate(5, (i) {
+                                                return Expanded(
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      border: Border(
+                                                        right: i < 4
+                                                            ? BorderSide(
+                                                                color: Theme.of(context).dividerColor.withOpacity(0.2),
+                                                                width: 1,
+                                                              )
+                                                            : BorderSide.none,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              );
-                                            }),
-                                          ),
-                                          // Sfondo grigio
-                                          Container(
-                                            height: 24,
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                              borderRadius: BorderRadius.circular(4),
+                                                );
+                                              }),
                                             ),
-                                          ),
-                                          // Barra colorata
-                                          FractionallySizedBox(
-                                            widthFactor: percentage,
-                                            child: Container(
+                                            // Sfondo grigio
+                                            Container(
                                               height: 24,
                                               decoration: BoxDecoration(
-                                                color: color,
-                                                borderRadius: BorderRadius.circular(4),
+                                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                               ),
-                                              alignment: Alignment.centerRight,
-                                              padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                              child: Text(
-                                                _formatCompactSize(dir['sizeFormatted'] as String),
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
+                                            ),
+                                            // Barra colorata
+                                            FractionallySizedBox(
+                                              widthFactor: percentage,
+                                              child: Container(
+                                                height: 24,
+                                                decoration: BoxDecoration(
+                                                  color: color,
+                                                  borderRadius: percentage >= 0.15
+                                                      ? BorderRadius.circular(4)
+                                                      : BorderRadius.zero,
                                                 ),
                                               ),
                                             ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    // Etichetta allineata a destra per tutte le barre
+                                    SizedBox(
+                                      width: 64,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(left: 4),
+                                        child: Text(
+                                          sizeText,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.onSurface,
                                           ),
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   ],

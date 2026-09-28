@@ -54,10 +54,23 @@ static void my_application_activate(GApplication* application) {
 
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
-  gdk_rgba_parse(&background_color, "#000000");
+  gdk_rgba_parse(&background_color, "#FFFFFF");
   fl_view_set_background_color(view, &background_color);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
+
+  // Forza sfondo bianco per evitare che il tema GTK (es. Mint-Y su Cinnamon)
+  // mostri uno sfondo celestino.
+  GtkCssProvider* css_provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_data(css_provider,
+      "window { background-color: #FFFFFF; }"
+      "flutter_view { background-color: #FFFFFF; }",
+      -1, NULL);
+  gtk_style_context_add_provider_for_screen(
+      gtk_widget_get_screen(GTK_WIDGET(window)),
+      GTK_STYLE_PROVIDER(css_provider),
+      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  g_object_unref(css_provider);
 
   g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
                            self);

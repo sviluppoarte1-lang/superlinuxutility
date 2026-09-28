@@ -14,6 +14,10 @@ enum GrubSuggestionReasonKind {
   gpuNvidiaVideoMemory,
   gpuAmdPpfeaturemask,
   gpuVideoMode,
+  gpuNvidiaWaylandPageTable,
+  gpuNvidiaWaylandResizableBar,
+  gpuNvidiaWaylandGpuFirmware,
+  gpuNvidiaWaylandFbdev,
   firmwareUefiQuietSplash,
   perfElevatorNone,
   perfVmSwappiness,
@@ -282,6 +286,54 @@ class GrubSuggestionsService {
           currentValue: currentCmdline.isEmpty ? null : currentCmdline,
           suggestedValue: _addToCmdline(currentCmdline, 'nvidia.NVreg_PreserveVideoMemoryAllocations=1'),
           reasonKind: GrubSuggestionReasonKind.gpuNvidiaVideoMemory,
+          priority: SuggestionPriority.medium,
+          isAlreadyPresent: false,
+        ));
+      }
+
+      // nvidia.NVreg_UsePageAttributeTable=1 migliora le performance su Wayland
+      if (!currentCmdline.contains('nvidia.NVreg_UsePageAttributeTable=')) {
+        suggestions.add(GrubSuggestion(
+          parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
+          currentValue: currentCmdline.isEmpty ? null : currentCmdline,
+          suggestedValue: _addToCmdline(currentCmdline, 'nvidia.NVreg_UsePageAttributeTable=1'),
+          reasonKind: GrubSuggestionReasonKind.gpuNvidiaWaylandPageTable,
+          priority: SuggestionPriority.medium,
+          isAlreadyPresent: false,
+        ));
+      }
+
+      // nvidia.NVreg_EnableResizableBar=1 abilita PCIe Resizable BAR (10-15% di performance in più)
+      if (!currentCmdline.contains('nvidia.NVreg_EnableResizableBar=')) {
+        suggestions.add(GrubSuggestion(
+          parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
+          currentValue: currentCmdline.isEmpty ? null : currentCmdline,
+          suggestedValue: _addToCmdline(currentCmdline, 'nvidia.NVreg_EnableResizableBar=1'),
+          reasonKind: GrubSuggestionReasonKind.gpuNvidiaWaylandResizableBar,
+          priority: SuggestionPriority.medium,
+          isAlreadyPresent: false,
+        ));
+      }
+
+      // nvidia.NVreg_EnableGpuFirmware=0 migliora la compatibilità Wayland
+      if (!currentCmdline.contains('nvidia.NVreg_EnableGpuFirmware=')) {
+        suggestions.add(GrubSuggestion(
+          parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
+          currentValue: currentCmdline.isEmpty ? null : currentCmdline,
+          suggestedValue: _addToCmdline(currentCmdline, 'nvidia.NVreg_EnableGpuFirmware=0'),
+          reasonKind: GrubSuggestionReasonKind.gpuNvidiaWaylandGpuFirmware,
+          priority: SuggestionPriority.medium,
+          isAlreadyPresent: false,
+        ));
+      }
+
+      // nvidia_drm.fbdev=1 abilita fbdev su Wayland
+      if (!currentCmdline.contains('nvidia_drm.fbdev=')) {
+        suggestions.add(GrubSuggestion(
+          parameter: 'GRUB_CMDLINE_LINUX_DEFAULT',
+          currentValue: currentCmdline.isEmpty ? null : currentCmdline,
+          suggestedValue: _addToCmdline(currentCmdline, 'nvidia_drm.fbdev=1'),
+          reasonKind: GrubSuggestionReasonKind.gpuNvidiaWaylandFbdev,
           priority: SuggestionPriority.medium,
           isAlreadyPresent: false,
         ));

@@ -537,6 +537,14 @@ String _localizedGrubSuggestionReason(BuildContext context, GrubSuggestion s) {
       return l10n.grubSuggestionPerfElevatorNone;
     case GrubSuggestionReasonKind.perfVmSwappiness:
       return l10n.grubSuggestionPerfVmSwappiness;
+    case GrubSuggestionReasonKind.gpuNvidiaWaylandPageTable:
+      return l10n.grubSuggestionGpuNvidiaWaylandPageTable;
+    case GrubSuggestionReasonKind.gpuNvidiaWaylandResizableBar:
+      return l10n.grubSuggestionGpuNvidiaWaylandResizableBar;
+    case GrubSuggestionReasonKind.gpuNvidiaWaylandGpuFirmware:
+      return l10n.grubSuggestionGpuNvidiaWaylandGpuFirmware;
+    case GrubSuggestionReasonKind.gpuNvidiaWaylandFbdev:
+      return l10n.grubSuggestionGpuNvidiaWaylandFbdev;
   }
 }
 

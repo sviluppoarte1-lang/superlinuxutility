@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'screens/home_screen.dart';
+import 'screens/tray_task_manager_dialog.dart';
+import 'screens/clipboard_history_dialog.dart';
 import 'screens/warning_screen.dart';
 import 'screens/password_setup_screen.dart';
 import 'screens/language_selection_screen.dart';
@@ -50,9 +53,51 @@ void main() async {
   PaintingBinding.instance.imageCache.maximumSize = 40;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 48 << 20;
 
+  // Modalità standalone: lancia solo la utility richiesta senza la finestra principale.
+  final standaloneMode = Platform.environment['SUPER_LINUX_UTILITY_MODE'];
+  if (standaloneMode == 'task-manager' ||
+      standaloneMode == 'check-updates' ||
+      standaloneMode == 'clipboard') {
+    await _runStandalone(standaloneMode!);
+    return;
+  }
+
   if (Platform.isLinux) {
     try {
       await windowManager.ensureInitialized();
+      // Icona finestra per dock/taskbar (assets/icons/icon.png del bundle).
+      // Prova più percorsi: bundle standard, installazioni .deb, run sorgente.
+      try {
+        final exeDir = File(Platform.resolvedExecutable).parent.path;
+        final candidates = <String>[
+          '$exeDir/data/flutter_assets/assets/icons/icon.png',
+          '/usr/share/super-linux-utility/data/flutter_assets/assets/icons/icon.png',
+          '/usr/share/super-linux-utility-advanced/data/flutter_assets/assets/icons/icon.png',
+          '/usr/share/super-linux-utility-personal/data/flutter_assets/assets/icons/icon.png',
+          'assets/icons/icon.png',
+        ];
+        String? used;
+        for (final p in candidates) {
+          try {
+            if (await File(p).exists()) {
+              used = p;
+              break;
+            }
+          } catch (_) {}
+        }
+        if (used != null) {
+          await windowManager.setIcon(used);
+          // ignore: avoid_print
+          print('SuperLinuxUtility: window icon set from $used');
+        } else {
+          // ignore: avoid_print
+          print('SuperLinuxUtility: WARNING window icon not found '
+              '(tried ${candidates.length} paths, first: ${candidates.first})');
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('SuperLinuxUtility: WARNING setIcon failed: $e');
+      }
     } catch (_) {}
   }
 
@@ -144,6 +189,170 @@ class _AlreadyRunningApp extends StatelessWidget {
   }
 }
 
+/// Lancia una finestra standalone per una utility (task manager, check updates,
+/// cronologia appunti). Il processo è separato dalla finestra principale e
+/// mostra solo la schermata richiesta.
+Future<void> _runStandalone(String mode) async {
+  final isTaskManager = mode == 'task-manager';
+  final isClipboard = mode == 'clipboard';
+  final prefs = await SharedPreferences.getInstance();
+
+  // Legge preferenza lingua (serve anche per il titolo finestra)
+  final localeStr = prefs.getString('locale');
+  Locale? locale;
+  if (localeStr != null && localeStr.isNotEmpty) {
+    locale = Locale(localeStr);
+  }
+
+  final title = _standaloneTitle(mode, localeStr);
+  final size = isTaskManager
+      ? const Size(900, 600)
+      : isClipboard
+          ? const Size(680, 600)
+          : const Size(560, 640);
+
+  // Legge preferenza tema (chiave 'theme_mode' come il resto dell'app;
+  // 'themeMode' è la vecchia chiave, mantenuta come fallback)
+  final themeModeStr = prefs.getString('theme_mode') ?? prefs.getString('themeMode') ?? 'system';
+  final themeMode = themeModeStr == 'dark'
+      ? ThemeMode.dark
+      : themeModeStr == 'light'
+          ? ThemeMode.light
+          : ThemeMode.system;
+
+  // Configura finestra
+  if (Platform.isLinux) {
+    try {
+      await windowManager.ensureInitialized();
+      await windowManager.waitUntilReadyToShow(
+        WindowOptions(size: size),
+        () async {
+          await windowManager.setTitle('Super Linux Utility - $title');
+          await windowManager.center();
+          await windowManager.show();
+          await windowManager.focus();
+        },
+      );
+    } catch (_) {}
+  }
+
+  runApp(_StandaloneApp(
+    themeMode: themeMode,
+    locale: locale,
+    mode: mode,
+  ));
+}
+
+/// Titolo della finestra standalone nella lingua dell'utente.
+/// Se la preferenza non è ancora salvata usa la lingua di sistema,
+/// con fallback finale sull'italiano (lingua predefinita dell'app).
+String _standaloneTitle(String mode, String? localeStr) {
+  final sysLang = ui.PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+  final lang = (localeStr ?? sysLang).split('_').first.toLowerCase();
+  const titles = <String, Map<String, String>>{
+    'task-manager': {
+      'it': 'Processi',
+      'en': 'Processes',
+      'fr': 'Processus',
+      'es': 'Procesos',
+      'de': 'Prozesse',
+      'pt': 'Processos',
+    },
+    'check-updates': {
+      'it': 'Aggiornamenti',
+      'en': 'Updates',
+      'fr': 'Mises à jour',
+      'es': 'Actualizaciones',
+      'de': 'Aktualisierungen',
+      'pt': 'Atualizações',
+    },
+    'clipboard': {
+      'it': 'Appunti',
+      'en': 'Clipboard',
+      'fr': 'Presse-papiers',
+      'es': 'Portapapeles',
+      'de': 'Zwischenablage',
+      'pt': 'Área de transferência',
+    },
+  };
+  return titles[mode]?[lang] ?? titles[mode]?['it'] ?? mode;
+}
+
+class _StandaloneApp extends StatelessWidget {
+  final ThemeMode themeMode;
+  final Locale? locale;
+  final String mode;
+
+  const _StandaloneApp({
+    required this.themeMode,
+    this.locale,
+    required this.mode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Super Linux Utility',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: themeMode,
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('it', ''),
+        Locale('en', ''),
+        Locale('fr', ''),
+        Locale('es', ''),
+        Locale('de', ''),
+        Locale('pt', ''),
+      ],
+      home: _StandaloneScreen(mode: mode),
+    );
+  }
+}
+
+class _StandaloneScreen extends StatefulWidget {
+  final String mode;
+  const _StandaloneScreen({required this.mode});
+  @override
+  State<_StandaloneScreen> createState() => _StandaloneScreenState();
+}
+
+class _StandaloneScreenState extends State<_StandaloneScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final dialog = widget.mode == 'task-manager'
+          ? const TrayTaskManagerDialog()
+          : widget.mode == 'clipboard'
+              ? const ClipboardHistoryDialog()
+              : const TrayCheckUpdatesDialog();
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => dialog,
+      ).then((_) {
+        if (mounted) SystemNavigator.pop();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -157,6 +366,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   String? _fontFamily;
   double _fontSize = 14.0;
   Timer? _memoryMaintenanceTimer;
+  Timer? _autoRestartTimer;
 
   @override
   void initState() {
@@ -166,16 +376,40 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _loadLocale();
     _loadFontSettings();
     _memoryMaintenanceTimer = Timer.periodic(
-      const Duration(minutes: 5),
+      const Duration(minutes: 2),
       (_) => AppMemoryMaintenance.requestTrim(),
+    );
+    _autoRestartTimer = Timer.periodic(
+      const Duration(minutes: 90),
+      (_) => _performAutoRestart(),
     );
   }
 
   @override
   void dispose() {
     _memoryMaintenanceTimer?.cancel();
+    _autoRestartTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// Chiude e riapre l'app per liberare memoria accumulata.
+  Future<void> _performAutoRestart() async {
+    _memoryMaintenanceTimer?.cancel();
+    _autoRestartTimer?.cancel();
+    try {
+      // Nascondi la finestra PRIMA di tutto: quando il tray viene distrutto,
+      // il window manager potrebbe rendere la finestra visibile per un istante.
+      try {
+        await windowManager.hide();
+      } catch (_) {}
+      await releaseSingleInstanceLock();
+      if (TrayService.isInitialized) {
+        TrayService.destroy();
+      }
+      await Process.start(Platform.resolvedExecutable, []);
+    } catch (_) {}
+    await SystemNavigator.pop();
   }
 
   @override
@@ -213,13 +447,48 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Future<void> _loadThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
     final themeModeString = prefs.getString('theme_mode') ?? 'system';
-    setState(() {
-      _themeMode = themeModeString == 'light'
-          ? ThemeMode.light
-          : themeModeString == 'dark'
-              ? ThemeMode.dark
-              : ThemeMode.system;
-    });
+    ThemeMode mode;
+    if (themeModeString == 'light') {
+      mode = ThemeMode.light;
+    } else if (themeModeString == 'dark') {
+      mode = ThemeMode.dark;
+    } else {
+      // Su Cinnamon/Linux, rileva preferenza tema da gsettings
+      mode = await _detectSystemTheme();
+    }
+    if (mounted) {
+      setState(() => _themeMode = mode);
+    }
+  }
+
+  /// Rileva se il sistema usa tema scuro o chiaro.
+  /// Fallback a ThemeMode.system se non rilevabile.
+  static Future<ThemeMode> _detectSystemTheme() async {
+    if (!Platform.isLinux) return ThemeMode.system;
+    try {
+      // Prova gsettings (GNOME/Cinnamon/Budgie)
+      final result = await Process.run(
+        'gsettings',
+        ['get', 'org.gnome.desktop.interface', 'color-scheme'],
+        runInShell: false,
+      ).timeout(const Duration(seconds: 2));
+      if (result.exitCode == 0) {
+        final scheme = (result.stdout as String).trim().toLowerCase();
+        if (scheme.contains('dark')) return ThemeMode.dark;
+        if (scheme.contains('light') || scheme.contains('default')) return ThemeMode.light;
+      }
+      // Fallback: Cinnamon usa proprio schema
+      final cinResult = await Process.run(
+        'gsettings',
+        ['get', 'org.cinnamon.desktop.interface', 'gtk-theme'],
+        runInShell: false,
+      ).timeout(const Duration(seconds: 2));
+      if (cinResult.exitCode == 0) {
+        final theme = (cinResult.stdout as String).trim().toLowerCase();
+        if (theme.contains('dark')) return ThemeMode.dark;
+      }
+    } catch (_) {}
+    return ThemeMode.system;
   }
 
   Future<void> _loadLocale() async {
@@ -282,7 +551,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ],
       locale: _locale,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.light,
+        ).copyWith(
+          inversePrimary: const Color(0xFFE8E8E8),
+          surfaceContainerHighest: const Color(0xFFECECEC),
+          surfaceContainerHigh: const Color(0xFFF2F2F2),
+          surfaceContainerLow: const Color(0xFFF8F8F8),
+          surfaceContainerLowest: Colors.white,
+        ),
+        scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
         fontFamily: _fontFamily,
         textTheme: TextTheme(
@@ -305,9 +584,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: Colors.blueGrey,
           brightness: Brightness.dark,
+        ).copyWith(
+          inversePrimary: const Color(0xFF3A3A3A),
+          surfaceContainerHighest: const Color(0xFF2A2A2A),
+          surfaceContainerHigh: const Color(0xFF242424),
+          surfaceContainerLow: const Color(0xFF1E1E1E),
+          surfaceContainerLowest: const Color(0xFF121212),
         ),
+        scaffoldBackgroundColor: const Color(0xFF121212),
         useMaterial3: true,
         fontFamily: _fontFamily,
         textTheme: TextTheme(
@@ -329,11 +615,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ),
       ),
       themeMode: _themeMode,
-      home: InitialScreen(
-        onThemeModeChanged: (mode) => setThemeMode(mode),
-        onLocaleChanged: (locale) => setLocale(locale),
-        onFontChanged: (fontFamily, fontSize) => setFont(fontFamily, fontSize),
-      ),
+      // NB: usare SOLO routes['/'] (home + routes['/'] insieme violano
+      // l'assert di MaterialApp e la navigazione pushReplacementNamed('/').
       routes: {
         '/': (context) => InitialScreen(
           onThemeModeChanged: (mode) => setThemeMode(mode),

@@ -18,6 +18,7 @@ class CpuInfo {
   final int threads;
   final double usagePercent;
   final List<double> coreUsage;
+  final double? currentSpeedMhz; // velocità attuale in MHz (dal primo core)
 
   CpuInfo({
     required this.model,
@@ -25,6 +26,7 @@ class CpuInfo {
     required this.threads,
     required this.usagePercent,
     this.coreUsage = const [],
+    this.currentSpeedMhz,
   });
 }
 

@@ -71,13 +71,12 @@ class DiskAnalyzerService {
   /// Supporta anche cartelle molto grandi (oltre 1TB) con timeout più lunghi
   static Future<int> getDirectorySize(String path) async {
     try {
-      // Prova prima con du -sb (preciso, ma può essere lento per cartelle molto grandi)
-      // Usa un timeout più lungo (30 secondi) per cartelle di grandi dimensioni
+      // Metodo principale: du -sb (preciso, veloce per la maggior parte delle cartelle)
       final result = await Process.run(
         'bash',
-        ['-c', 'timeout 30 du -sb "$path" 2>/dev/null | tail -1 | cut -f1'],
+        ['-c', 'timeout 20 du -sb "$path" 2>/dev/null | tail -1 | cut -f1'],
       ).timeout(
-        const Duration(seconds: 35),
+        const Duration(seconds: 25),
       );
       if (result.exitCode == 0) {
         final output = (result.stdout as String).trim();
@@ -95,9 +94,9 @@ class DiskAnalyzerService {
         // Questo metodo è utile per cartelle molto grandi che richiederebbero troppo tempo
         final result = await Process.run(
           'bash',
-          ['-c', 'timeout 15 du -sh "$path" 2>/dev/null | cut -f1'],
+          ['-c', 'timeout 10 du -sh "$path" 2>/dev/null | cut -f1'],
         ).timeout(
-          const Duration(seconds: 20),
+          const Duration(seconds: 15),
         );
         if (result.exitCode == 0) {
           final output = (result.stdout as String).trim();
@@ -107,25 +106,7 @@ class DiskAnalyzerService {
           }
         }
       } catch (e2) {
-        // Se anche questo fallisce, prova un metodo ancora più veloce usando stat
-        // Questo è utile per cartelle molto grandi su dischi esterni
-        try {
-          // Usa du con --apparent-size per velocità (non conta i link hard)
-          final result = await Process.run(
-            'bash',
-            ['-c', 'timeout 20 du -sb --apparent-size "$path" 2>/dev/null | tail -1 | cut -f1'],
-          ).timeout(
-            const Duration(seconds: 25),
-          );
-          if (result.exitCode == 0) {
-            final output = (result.stdout as String).trim();
-            if (output.isNotEmpty) {
-              return int.tryParse(output) ?? 0;
-            }
-          }
-        } catch (e3) {
-          // Ignora errori finali
-        }
+        // Ignora errori finali
       }
     }
     return 0;
@@ -1447,10 +1428,6 @@ Future<List<Map<String, dynamic>>> _isolateListViaDirectoryList({
         )) {
       try {
         if (path == '/' && _isolateRootSkipPaths.contains(entity.path)) continue;
-        final stat = await entity.stat().timeout(
-          const Duration(milliseconds: 500),
-          onTimeout: () => throw TimeoutException('Stat timeout'),
-        );
         final isDir = entity is Directory;
         final name = entity.path.split('/').last;
         String? mimeType;
@@ -1459,20 +1436,43 @@ Future<List<Map<String, dynamic>>> _isolateListViaDirectoryList({
           mimeType = _isolateMimeType(extension);
         }
         var size = 0;
+        var modifiedMs = 0;
         if (!isDir) {
+          // Per i file, usa stat solo se richiesto (calculateSizes) o per modified time
+          final stat = await entity.stat().timeout(
+                const Duration(milliseconds: 200),
+                onTimeout: () => throw TimeoutException('Stat timeout'),
+              );
           size = stat.size;
+          modifiedMs = stat.modified.millisecondsSinceEpoch;
         } else if (calculateSizes && !_isolateShouldSkipForRoot(entity.path)) {
+          // Per le directory, stat è necessario solo per modified time
+          final stat = await entity.stat().timeout(
+                const Duration(milliseconds: 200),
+                onTimeout: () => throw TimeoutException('Stat timeout'),
+              );
+          modifiedMs = stat.modified.millisecondsSinceEpoch;
           size = await DiskAnalyzerService.getDirectorySize(entity.path).timeout(
             const Duration(seconds: 5),
             onTimeout: () => 0,
           );
+        } else {
+          // Per directory quando non calcoliamo dimensioni, prova a ottenere modified time
+          // senza bloccare — se fallisce, va bene comunque
+          try {
+            final stat = await entity.stat().timeout(
+                  const Duration(milliseconds: 100),
+                  onTimeout: () => throw TimeoutException('Stat timeout'),
+                );
+            modifiedMs = stat.modified.millisecondsSinceEpoch;
+          } catch (_) {}
         }
         items.add({
           'path': entity.path,
           'name': name,
           'size': size,
           'isDirectory': isDir,
-          'modifiedMs': stat.modified.millisecondsSinceEpoch,
+          'modifiedMs': modifiedMs > 0 ? modifiedMs : null,
           'mimeType': mimeType,
         });
       } catch (_) {

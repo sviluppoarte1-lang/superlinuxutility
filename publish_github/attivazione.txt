@@ -1,6 +1,0 @@
-  dart run tools/license_key_generator.dart "Nome" "Cognome" "email@example.com"
-  Come testare in locale
-Standard (nessuna licenza):
-flutter run -d linux --dart-define=APP_BUILD=standard
-Advanced (con attivazione):
-flutter run -d linux --dart-define=APP_BUILD=advanced

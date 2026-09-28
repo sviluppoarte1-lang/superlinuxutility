@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'package:super_linux_utility/config/app_build.dart';
 import 'package:super_linux_utility/config/application_constants.dart';
 import 'package:super_linux_utility/services/license_service.dart';
+import 'package:super_linux_utility/widgets/changelog_view.dart';
 import 'license_activation_dialog.dart';
 
 class InfoScreen extends StatefulWidget {
@@ -18,15 +20,17 @@ class InfoScreen extends StatefulWidget {
 }
 
 class _InfoScreenState extends State<InfoScreen> {
-  String _appVersion = '1.8.6';
+  String _appVersion = '1.9.2';
   String _appName = 'Super Linux Utility';
   bool _licenseActivated = false;
   bool _licenseCheckDone = false;
+  List<ChangelogSection> _changelogSections = const [];
 
   @override
   void initState() {
     super.initState();
     _loadAppInfoAsync();
+    _loadChangelog();
     if (isAdvancedBuild) _checkLicense();
   }
 
@@ -106,6 +110,63 @@ class _InfoScreenState extends State<InfoScreen> {
     }
   }
 
+  /// Carica CHANGELOG.md dall'asset bundle e lo analizza in sezioni.
+  Future<void> _loadChangelog() async {
+    try {
+      final markdown = await rootBundle.loadString('CHANGELOG.md');
+      if (!mounted) return;
+      setState(() => _changelogSections = parseChangelog(markdown));
+    } catch (_) {
+      // Asset non disponibile: la card changelog resta nascosta.
+    }
+  }
+
+  void _showFullChangelog() {
+    final localizations = AppLocalizations.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640, maxHeight: 640),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.history),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        localizations?.infoChangelog ?? 'Changelog',
+                        style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: MaterialLocalizations.of(ctx).closeButtonTooltip,
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: ChangelogView(sections: _changelogSections),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -166,15 +227,6 @@ class _InfoScreenState extends State<InfoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    localizations.appDescription.split('.').isNotEmpty 
-                        ? localizations.appDescription.split('.')[0] + '.'
-                        : localizations.appDescription,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 12),
                   Text(
                     localizations.appDescription,
                     style: const TextStyle(fontSize: 16, height: 1.5),
@@ -320,6 +372,46 @@ class _InfoScreenState extends State<InfoScreen> {
             ),
           ),
           const SizedBox(height: 24),
+
+          // Changelog
+          if (_changelogSections.isNotEmpty) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.history,
+                            color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          localizations.infoChangelog,
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ChangelogView(sections: _changelogSections, maxSections: 1),
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _showFullChangelog,
+                        icon: const Icon(Icons.open_in_full, size: 16),
+                        label: Text(localizations.infoChangelogShowAll),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
 
           // Caratteristiche principali
           Card(

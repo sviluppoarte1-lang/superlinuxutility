@@ -1,15 +1,19 @@
 import 'dart:io';
 
+enum DisplayServer { wayland, x11, xWayland, unknown }
+
 class SystemDetectionInfo {
   final String distribution;
   final String distributionVersion;
   final String desktopEnvironment;
+  final DisplayServer displayServer;
   final bool hasGrub;
   final bool hasSystemd;
   final bool hasGsettings;
   final bool hasGnome;
   final bool hasKde;
   final bool hasXfce;
+  final bool hasCinnamon;
   final bool hasSnap;
   final bool hasFlatpak;
   final bool hasApt;
@@ -22,12 +26,14 @@ class SystemDetectionInfo {
     required this.distribution,
     required this.distributionVersion,
     required this.desktopEnvironment,
+    required this.displayServer,
     required this.hasGrub,
     required this.hasSystemd,
     required this.hasGsettings,
     required this.hasGnome,
     required this.hasKde,
     required this.hasXfce,
+    required this.hasCinnamon,
     required this.hasSnap,
     required this.hasFlatpak,
     required this.hasApt,
@@ -49,12 +55,14 @@ class SystemDetector {
     final distribution = await _detectDistribution();
     final distributionVersion = await _detectDistributionVersion(distribution);
     final desktopEnvironment = await _detectDesktopEnvironment();
+    final displayServer = _detectDisplayServer();
     final hasGrub = await _hasGrub();
     final hasSystemd = await _hasSystemd();
     final hasGsettings = await _hasGsettings();
     final hasGnome = desktopEnvironment.toLowerCase().contains('gnome');
     final hasKde = desktopEnvironment.toLowerCase().contains('kde');
     final hasXfce = desktopEnvironment.toLowerCase().contains('xfce');
+    final hasCinnamon = desktopEnvironment.toLowerCase().contains('cinnamon');
     final hasSnap = await _hasCommand('snap');
     final hasFlatpak = await _hasCommand('flatpak');
     final hasApt = await _hasCommand('apt');
@@ -68,12 +76,14 @@ class SystemDetector {
       distribution: distribution,
       distributionVersion: distributionVersion,
       desktopEnvironment: desktopEnvironment,
+      displayServer: displayServer,
       hasGrub: hasGrub,
       hasSystemd: hasSystemd,
       hasGsettings: hasGsettings,
       hasGnome: hasGnome,
       hasKde: hasKde,
       hasXfce: hasXfce,
+      hasCinnamon: hasCinnamon,
       hasSnap: hasSnap,
       hasFlatpak: hasFlatpak,
       hasApt: hasApt,
@@ -324,6 +334,27 @@ class SystemDetector {
     } else {
       return '/boot/grub/grub.cfg';
     }
+  }
+
+  /// Rileva il display server (Wayland, X11, XWayland).
+  static DisplayServer _detectDisplayServer() {
+    final sessionType = Platform.environment['XDG_SESSION_TYPE']?.toLowerCase();
+    final waylandDisplay = Platform.environment['WAYLAND_DISPLAY'];
+    final xDisplay = Platform.environment['DISPLAY'];
+
+    if (sessionType == 'wayland' || (waylandDisplay != null && waylandDisplay.isNotEmpty)) {
+      return DisplayServer.wayland;
+    }
+
+    if (xDisplay != null && xDisplay.isNotEmpty && waylandDisplay != null && waylandDisplay.isNotEmpty) {
+      return DisplayServer.xWayland;
+    }
+
+    if (sessionType == 'x11' || (xDisplay != null && xDisplay.isNotEmpty)) {
+      return DisplayServer.x11;
+    }
+
+    return DisplayServer.unknown;
   }
 
   /// Invalida la cache

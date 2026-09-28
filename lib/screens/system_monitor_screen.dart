@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../models/system_process.dart';
 import '../models/system_info.dart';
 import '../services/system_monitor.dart';
 import '../services/app_memory_maintenance.dart';
+import '../widgets/circular_gauge.dart';
+import 'system_status_screen.dart';
 
 class SystemMonitorScreen extends StatefulWidget {
   const SystemMonitorScreen({super.key});
@@ -53,7 +56,7 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_onTabChanged);
     _loadData();
     // Aggiorna automaticamente ogni 5 secondi (ridotto da 3 per ottimizzare)
@@ -158,16 +161,16 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
     return name.isNotEmpty ? name : process.name.toLowerCase();
   }
   
-  /// Raggruppa i processi per nome base dell'applicazione
+  /// Raggruppa i processi per nome esatto (stesso binary caricato più volte)
   List<_ProcessGroup> _groupProcesses(List<SystemProcess> processes) {
     final Map<String, List<SystemProcess>> groups = {};
     
     for (final process in processes) {
-      final baseName = _getBaseAppName(process);
-      if (!groups.containsKey(baseName)) {
-        groups[baseName] = [];
+      final key = process.name.toLowerCase();
+      if (!groups.containsKey(key)) {
+        groups[key] = [];
       }
-      groups[baseName]!.add(process);
+      groups[key]!.add(process);
     }
     
     return groups.entries.map((e) => _ProcessGroup(e.key, e.value)).toList();
@@ -252,8 +255,10 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
     if (_sortColumn != column) {
       return const Icon(Icons.unfold_more, size: 16, color: Colors.grey);
     }
+    // Freccia su = ordinamento decrescente (numero più alto prima)
+    // Freccia giù = ordinamento crescente (numero più basso prima)
     return Icon(
-      _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+      _sortAscending ? Icons.arrow_downward : Icons.arrow_upward,
       size: 16,
       color: Theme.of(context).primaryColor,
     );
@@ -417,11 +422,14 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Column(
         children: [
+          // Barra info CPU in tempo reale
+          _buildCpuHeaderBar(),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: Column(
               children: [
                 Row(
@@ -548,6 +556,7 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
             tabs: [
               Tab(icon: const Icon(Icons.memory), text: AppLocalizations.of(context)!.processes),
               Tab(icon: const Icon(Icons.info), text: AppLocalizations.of(context)!.system),
+              Tab(icon: const Icon(Icons.insights), text: AppLocalizations.of(context)!.status),
             ],
           ),
           Expanded(
@@ -556,6 +565,7 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
               children: [
                 _buildProcessesTab(),
                 _buildSystemInfoTab(),
+                const SystemStatusScreen(),
               ],
             ),
           ),
@@ -565,6 +575,7 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
   }
 
   Widget _buildProcessesTab() {
+    final l10n = AppLocalizations.of(context)!;
     if (_isLoading && _processes.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -577,352 +588,296 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
       );
     }
 
-    // Se c'è una ricerca attiva, mostra i processi raggruppati
-    if (_searchQuery.isNotEmpty && _isSelectionMode) {
-      final groups = _groupProcesses(filtered);
+    // Vista raggruppata per nome processo (sempre)
+    final groups = _groupProcesses(filtered);
+    // Ordina i gruppi in base alla colonna selezionata dall'utente
+    if (_sortColumn == 'cpu') {
+      groups.sort((a, b) => _sortAscending
+          ? a.totalCpu.compareTo(b.totalCpu)
+          : b.totalCpu.compareTo(a.totalCpu));
+    } else if (_sortColumn == 'memory') {
+      groups.sort((a, b) => _sortAscending
+          ? a.totalMemory.compareTo(b.totalMemory)
+          : b.totalMemory.compareTo(a.totalMemory));
+    } else if (_sortColumn == 'name') {
+      groups.sort((a, b) => _sortAscending
+          ? a.baseName.compareTo(b.baseName)
+          : b.baseName.compareTo(a.baseName));
+    } else {
+      // Default: decrescente per CPU
       groups.sort((a, b) => b.totalCpu.compareTo(a.totalCpu));
-      
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          child: RepaintBoundary(
-            child: DataTable(
-              columns: [
-                DataColumn(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(AppLocalizations.of(context)!.app, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () => _sortProcesses('name'),
-                        child: _buildSortIcon('name'),
-                      ),
-                    ],
-                  ),
-                ),
-                DataColumn(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(AppLocalizations.of(context)!.processes, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-                DataColumn(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(AppLocalizations.of(context)!.cpuPercent, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () => _sortProcesses('cpu'),
-                        child: _buildSortIcon('cpu'),
-                      ),
-                    ],
-                  ),
-                  numeric: true,
-                ),
-                DataColumn(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(AppLocalizations.of(context)!.memory, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () => _sortProcesses('memory'),
-                        child: _buildSortIcon('memory'),
-                      ),
-                    ],
-                  ),
-                  numeric: true,
-                ),
-                const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold))),
-              ],
-              rows: groups.map((group) {
-                final isSelected = _isGroupSelected(group);
-                final isPartiallySelected = _isGroupPartiallySelected(group);
-                
-                return DataRow(
-                  selected: isSelected || isPartiallySelected,
-                  cells: [
-                    DataCell(
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: isSelected,
-                            tristate: true,
-                            isError: isPartiallySelected,
-                            onChanged: (_) => _toggleGroupSelection(group),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: _getCpuColor(group.totalCpu),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              group.baseName,
-                              style: const TextStyle(fontWeight: FontWeight.w500),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    DataCell(Text('${group.processCount}')),
-                    DataCell(
-                      Text(
-                        '${group.totalCpu.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          color: _getCpuColor(group.totalCpu),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    DataCell(Text(_formatBytes(group.totalMemory))),
-                    DataCell(
-                      PopupMenuButton(
-                        icon: const Icon(Icons.more_vert, size: 18),
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'select_all',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.check_box, size: 18),
-                                const SizedBox(width: 8),
-                                Text('${AppLocalizations.of(context)!.selectAll} (${group.processCount})'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'kill',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.stop, color: Colors.orange, size: 18),
-                                const SizedBox(width: 8),
-                                Text(AppLocalizations.of(context)!.terminateAll),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'kill_force',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.delete, color: Colors.red, size: 18),
-                                const SizedBox(width: 8),
-                                Text(AppLocalizations.of(context)!.terminateAllForce),
-                              ],
-                            ),
-                          ),
-                        ],
-                        onSelected: (value) {
-                          if (value == 'select_all') {
-                            _toggleGroupSelection(group);
-                          } else if (value == 'kill') {
-                            _killMultipleProcesses(group.processes);
-                          } else if (value == 'kill_force') {
-                            _killMultipleProcesses(group.processes, force: true);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      );
     }
 
-    // Vista normale con checkbox per selezione multipla
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
-        child: RepaintBoundary(
-          child: DataTable(
-          sortColumnIndex: _sortColumn == 'cpu' ? 2 : (_sortColumn == 'memory' ? 3 : null),
-          sortAscending: _sortAscending,
-          columns: [
-            if (_isSelectionMode)
-              const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(AppLocalizations.of(context)!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: () => _sortProcesses('name'),
-                    child: _buildSortIcon('name'),
-                  ),
-                ],
-              ),
-            ),
-            DataColumn(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(AppLocalizations.of(context)!.pid, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: () => _sortProcesses('pid'),
-                    child: _buildSortIcon('pid'),
-                  ),
-                ],
-              ),
-            ),
-            DataColumn(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(AppLocalizations.of(context)!.cpuPercent, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: () => _sortProcesses('cpu'),
-                    child: _buildSortIcon('cpu'),
-                  ),
-                ],
-              ),
-              numeric: true,
-            ),
-            DataColumn(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(AppLocalizations.of(context)!.memory, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: () => _sortProcesses('memory'),
-                    child: _buildSortIcon('memory'),
-                  ),
-                ],
-              ),
-              numeric: true,
-            ),
-            DataColumn(label: Text(AppLocalizations.of(context)!.user, style: const TextStyle(fontWeight: FontWeight.bold))),
-            const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold))),
-          ],
-          rows: filtered.map((process) {
-            final isSelected = _selectedPids.contains(process.pid);
-            return DataRow(
-              selected: isSelected,
-              cells: [
-                if (_isSelectionMode)
-                  DataCell(
-                    Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => _toggleSelection(process),
-                    ),
-                  ),
-                DataCell(
-                  Tooltip(
-                    message: process.command ?? process.name,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: _getCpuColor(process.cpuPercent),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            process.name,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                DataCell(Text('${process.pid}')),
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${process.cpuPercent.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          color: _getCpuColor(process.cpuPercent),
-                          fontWeight: FontWeight.bold,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Process table (left, expandable)
+        Expanded(
+          flex: 3,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SingleChildScrollView(
+              child: RepaintBoundary(
+                child: DataTable(
+                  columns: [
+                    DataColumn(
+                      label: GestureDetector(
+                        onTap: () => _sortProcesses('name'),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(l10n.app, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 4),
+                            _buildSortIcon('name'),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                DataCell(Text(process.memoryFormatted)),
-                DataCell(
-                  Text(
-                    process.user,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
-                  ),
-                ),
-                DataCell(
-                  PopupMenuButton(
-                    icon: const Icon(Icons.more_vert, size: 18),
-                    itemBuilder: (context) => [
-                      if (_isSelectionMode)
-                        PopupMenuItem(
-                          value: 'select',
-                          child: Row(
+                    DataColumn(
+                      label: Text(l10n.processes, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    DataColumn(
+                      label: GestureDetector(
+                        onTap: () => _sortProcesses('cpu'),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(l10n.cpuPercent, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 4),
+                            _buildSortIcon('cpu'),
+                          ],
+                        ),
+                      ),
+                      numeric: true,
+                    ),
+                    DataColumn(
+                      label: GestureDetector(
+                        onTap: () => _sortProcesses('memory'),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(l10n.memory, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 4),
+                            _buildSortIcon('memory'),
+                          ],
+                        ),
+                      ),
+                      numeric: true,
+                    ),
+                    const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold))),
+                  ],
+                  rows: groups.map((group) {
+                    final isSelected = _isGroupSelected(group);
+                    final isPartiallySelected = _isGroupPartiallySelected(group);
+
+                    return DataRow(
+                      selected: isSelected || isPartiallySelected,
+                      cells: [
+                        DataCell(
+                          Row(
                             children: [
-                              Icon(isSelected ? Icons.check_box : Icons.check_box_outline_blank, size: 18),
+                              Checkbox(
+                                value: isSelected,
+                                tristate: true,
+                                isError: isPartiallySelected,
+                                onChanged: (_) => _toggleGroupSelection(group),
+                              ),
                               const SizedBox(width: 8),
-                              Text(isSelected ? 'Deseleziona' : 'Seleziona'),
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: _getCpuColor(group.totalCpu),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  group.baseName,
+                                  style: const TextStyle(fontWeight: FontWeight.w500),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                      PopupMenuItem(
-                        value: 'kill',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.stop, color: Colors.orange, size: 18),
-                            const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)!.kill),
-                          ],
+                        DataCell(Text('${group.processCount}')),
+                        DataCell(
+                          Text(
+                            '${group.totalCpu.toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              color: _getCpuColor(group.totalCpu),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'kill_force',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete, color: Colors.red, size: 18),
-                            const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)!.killForce),
-                          ],
+                        DataCell(Text(_formatBytes(group.totalMemory))),
+                        DataCell(
+                          PopupMenuButton(
+                            icon: const Icon(Icons.more_vert, size: 18),
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'select_all',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.check_box, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text('${l10n.selectAll} (${group.processCount})'),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'kill',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.stop, color: Colors.orange, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(l10n.terminateAll),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'kill_force',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.delete, color: Colors.red, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(l10n.terminateAllForce),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onSelected: (value) {
+                              if (value == 'select_all') {
+                                _toggleGroupSelection(group);
+                              } else if (value == 'kill') {
+                                _killMultipleProcesses(group.processes);
+                              } else if (value == 'kill_force') {
+                                _killMultipleProcesses(group.processes, force: true);
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      if (value == 'select') {
-                        _toggleSelection(process);
-                      } else if (value == 'kill') {
-                        _killProcess(process);
-                      } else if (value == 'kill_force') {
-                        _killProcess(process, force: true);
-                      }
-                    },
-                  ),
+                      ],
+                    );
+                  }).toList(),
                 ),
-              ],
-            );
-          }).toList(),
+              ),
+            ),
           ),
         ),
+        // Gauge panel (right, fixed width)
+        Container(
+          width: 220,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularGauge(
+                value: _systemInfo?.cpu.usagePercent ?? 0,
+                label: AppLocalizations.of(context)!.cpuPercent,
+                subtitle: _systemInfo != null ? '${_systemInfo!.cpu.cores} cores' : '',
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              CircularGauge(
+                value: _systemInfo?.memory.usagePercent ?? 0,
+                label: 'RAM',
+                subtitle: _systemInfo != null
+                    ? '${_systemInfo!.memory.formatBytes(_systemInfo!.memory.usedBytes)} / ${_systemInfo!.memory.formatBytes(_systemInfo!.memory.totalBytes)}'
+                    : '',
+                color: Colors.blue,
+              ),
+              if (_systemInfo?.gpu != null && _systemInfo!.gpu!.usagePercent != null) ...[
+                const SizedBox(height: 16),
+                CircularGauge(
+                  value: _systemInfo!.gpu!.usagePercent!,
+                  label: 'GPU',
+                  subtitle: _systemInfo!.gpu!.model,
+                  color: Colors.green,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static const List<Color> _coreColors = [
+    Color(0xFFE53935), // rosso
+    Color(0xFF1E88E5), // blu
+    Color(0xFF43A047), // verde
+    Color(0xFFFB8C00), // arancione
+    Color(0xFF8E24AA), // viola
+    Color(0xFF00ACC1), // ciano
+    Color(0xFFF4511E), // arancione scuro
+    Color(0xFF3949AB), // indaco
+    Color(0xFFC0CA33), // lime
+    Color(0xFFD81B60), // rosa
+    Color(0xFF00897B), // teal
+    Color(0xFF6D4C41), // marrone
+    Color(0xFF546E7A), // blue-grey
+    Color(0xFFFDD835), // giallo
+    Color(0xFF5E35B1), // viola scuro
+    Color(0xFF00BCD4), // ciano chiaro
+  ];
+
+  Widget _buildCpuHeaderBar() {
+    final info = _systemInfo;
+    if (info == null) return const SizedBox.shrink();
+
+    final cpu = info.cpu;
+    final speedText = cpu.currentSpeedMhz != null
+        ? '${(cpu.currentSpeedMhz! / 1000).toStringAsFixed(2)} GHz'
+        : '';
+    final processCount = _processes.length;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (speedText.isNotEmpty)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.speed, size: 16, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 4),
+                Text(speedText, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              ],
+            ),
+          if (cpu.coreUsage.isNotEmpty) ...[
+            Text('Cores:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ...List.generate(cpu.coreUsage.length, (i) {
+              final u = cpu.coreUsage[i];
+              final color = _coreColors[i % _coreColors.length];
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: color.withOpacity(0.3), width: 0.5),
+                ),
+                child: Text(
+                  'C$i: ${u.toStringAsFixed(0)}%',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+                ),
+              );
+            }),
+          ],
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.memory, size: 16, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 4),
+              Text('$processCount', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -952,6 +907,8 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
             const SizedBox(height: 16),
             _buildGpuCard(info.gpu!),
           ],
+          const SizedBox(height: 16),
+          _buildDisplayServerCard(),
         ],
       ),
     );
@@ -1163,6 +1120,60 @@ class _SystemMonitorScreenState extends State<SystemMonitorScreen> with SingleTi
             ],
             if (gpu.temperature != null)
               Text('${AppLocalizations.of(context)!.temperature}: ${gpu.temperature!.toStringAsFixed(1)}${AppLocalizations.of(context)!.temperatureUnit}'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisplayServerCard() {
+    final sessionType = Platform.environment['XDG_SESSION_TYPE'] ?? 'unknown';
+    final waylandDisplay = Platform.environment['WAYLAND_DISPLAY'];
+    final xDisplay = Platform.environment['DISPLAY'];
+    final desktop = Platform.environment['XDG_CURRENT_DESKTOP'] ?? 'unknown';
+
+    String displayServer;
+    IconData icon;
+    Color color;
+    if (sessionType == 'wayland' || (waylandDisplay != null && waylandDisplay.isNotEmpty)) {
+      displayServer = 'Wayland';
+      icon = Icons.desktop_windows;
+      color = Colors.indigo;
+    } else if (xDisplay != null && waylandDisplay != null && waylandDisplay.isNotEmpty) {
+      displayServer = 'XWayland (Wayland + X11)';
+      icon = Icons.desktop_windows;
+      color = Colors.deepPurple;
+    } else if (sessionType == 'x11' || (xDisplay != null && xDisplay.isNotEmpty)) {
+      displayServer = 'X11';
+      icon = Icons.desktop_windows;
+      color = Colors.blueGrey;
+    } else {
+      displayServer = 'Unknown';
+      icon = Icons.desktop_windows;
+      color = Colors.grey;
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Display',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('Server: $displayServer'),
+            Text('Desktop: $desktop'),
+            if (waylandDisplay != null) Text('WAYLAND_DISPLAY: $waylandDisplay'),
+            if (xDisplay != null) Text('DISPLAY: $xDisplay'),
           ],
         ),
       ),

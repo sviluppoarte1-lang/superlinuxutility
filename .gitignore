@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release artifacts (belong to GitHub Releases, not the repo)
+*.deb
+*.AppImage
+*.pkg.tar.zst
+Versione Arch Linux/
+
+# Personal build outputs (not distributed; rebuilt by build_deb.sh)
+deb_package_personal/

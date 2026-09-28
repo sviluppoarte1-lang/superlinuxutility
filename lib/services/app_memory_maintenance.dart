@@ -1,5 +1,6 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter/scheduler.dart';
+import 'smart_service.dart';
 
 /// Soft memory hygiene for long-running sessions (Flutter image cache grows unbounded by default).
 ///
@@ -30,10 +31,28 @@ abstract final class AppMemoryMaintenance {
   }
 
   static void _trimNow() {
+    // 1. Svuota cache immagini Flutter
     try {
       final cache = PaintingBinding.instance.imageCache;
       cache.clear();
       cache.clearLiveImages();
+    } catch (_) {}
+
+    // 2. Svuota le nostre cache interne
+    try {
+      SmartService.invalidateCache();
+    } catch (_) {}
+
+    // 3. Alloca e rilascia per stimolare la GC Dart (aiuta a ridurre l'RSS nel tempo)
+    try {
+      final tmp = List.generate(200000, (i) => i);
+      // ignore: unused_local_variable
+      final _ = tmp.length;
+    } catch (_) {}
+
+    // 4. Forza un nuovo frame per processare risorse in attesa
+    try {
+      SchedulerBinding.instance.scheduleFrame();
     } catch (_) {}
   }
 
@@ -51,5 +70,21 @@ abstract final class AppMemoryMaintenance {
       cache.maximumSize = maxCount;
       cache.maximumSizeBytes = maxBytes;
     } catch (_) {}
+
+    // Stessa pulizia extra di _trimNow()
+    try {
+      SmartService.invalidateCache();
+    } catch (_) {}
+
+    try {
+      final tmp = List.generate(200000, (i) => i);
+      // ignore: unused_local_variable
+      final _ = tmp.length;
+    } catch (_) {}
+
+    try {
+      SchedulerBinding.instance.scheduleFrame();
+    } catch (_) {}
   }
 }
+

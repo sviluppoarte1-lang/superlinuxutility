@@ -1,4 +1,3 @@
-
 <img width="676" height="651" alt="Schermata del 2026-09-19 11-24-35" src="https://github.com/user-attachments/assets/460a7954-acdb-402f-82fb-6c90f32d92ac" />
 <img width="383" height="459" alt="Schermata del 2026-09-19 11-24-18" src="https://github.com/user-attachments/assets/eb7b3dd0-b877-4b34-8ea1-b01e4bf5db10" />
 <img width="1918" height="1045" alt="Schermata del 2026-09-19 11-24-02" src="https://github.com/user-attachments/assets/f73941ca-8003-4d04-aa1e-7a218ba781d8" />
@@ -10,184 +9,196 @@
 
 # Super Linux Utility
 
-A full-featured system manager for Linux. Manage systemd services, startup apps, temp cleanup, installed packages (APT, Snap, Flatpak), monitor CPU/RAM/disks, analyze disk usage, and customize appearance. Free standard edition; paid advanced edition adds GRUB editor, kernel management, and recovery tools.
-
-**Project website:** [https://github.com/sviluppoarte1-lang/superlinuxutility](https://github.com/sviluppoarte1-lang/superlinuxutility)
-
----
-
-## Overview
-
-Super Linux Utility is a complete Flutter application for advanced Linux/Ubuntu system management and optimization. It provides powerful tools to improve performance, manage services and applications, and customize the system. The application is designed for expert users who need fine-grained control over their system.
-
-### Editions
-
-- **Standard (free):** Core features: services, startup apps, cleanup, installed apps, system monitor, disk analyzer, appearance customization.
-- **Advanced (paid):** Same as standard plus GRUB editor, kernel management, and system recovery tools. License activation required.
-  
-
-This software is distributed under the **GPL-3.0 or later** license.
+**Version 2.1.0** — All-in-one Linux system management utility with system tray integration.
 
 ---
 
 ## Features
 
-### Systemd services
+### System Tray
+- Live CPU/GPU temperature, disk usage, memory usage, and SMART health in the tray menu
+- Quick actions: check updates, clean temp files, shutdown timer, clipboard history, battery status
+- System submenu for power/session items; colored emoji labels (Cinnamon)
+- 5-second refresh interval for live monitoring
+- Wayland & X11 support
+- Start at login, minimize to tray, close to tray options
 
-- Scan and analyze all systemd services on the system.
-- Identify services that slow down boot (startup time &gt; 2 seconds).
-- View detailed information for each service (status, startup time, description).
-- Enable, disable, stop, or restart services.
-- List disabled services for easy re-enabling.
+### System Monitor
+- Real-time CPU usage per-core with color-coded percentage display
+- CPU model, cores, threads, current frequency (MHz/GHz)
+- Memory usage with detailed breakdown
+- Disk usage per partition
+- GPU monitoring (NVIDIA, AMD, Intel) with temperature and utilization
+- Display server detection (Wayland, X11, XWayland)
+- Process manager with grouped-by-name view, search, sort, kill/force kill
 
-### Startup applications
+### Package & System Updates
+- GitHub release check for app self-updates (checks for newer `.deb`)
+- Automatic download & install with user confirmation dialog
+- Release notes preview before installing
+- Package manager support: APT (Debian/Ubuntu), DNF (Fedora), Pacman (Arch), Snap, Flatpak
+- Kernel updates detected separately with explicit confirmation required
 
-- Scan applications configured to start automatically.
-- Search in `~/.config/autostart` and `/etc/xdg/autostart`.
-- Enable, disable, or remove startup entries.
-- Clear view of enabled vs disabled apps.
-- Optional process termination when disabling an app.
-- Protection for critical system applications.
+### Disk Analyzer
+- Root filesystem analysis using `du`
+- Real-time streaming with progress updates
+- Per-directory size visualization with color-coded bars
 
-### Temporary files and cache cleanup
+### SMART Monitoring
+- Full S.M.A.R.T. data for ATA, NVMe, and USB drives
+- Auto-installs `smartmontools` if missing
+- Health assessment, temperature, power-on hours, self-test log
+- USB drive support with automatic vendor-specific `-d` type probing
+- Per-device cached working variant (persisted across restarts)
+- Self-test execution (short/long/conveyance)
 
-- Calculate space used by temporary files.
-- Automatic detection of common app temp/cache locations:
-  - Browsers (Chrome, Firefox, Edge, Opera, Brave)
-  - Editors (VS Code, Atom, Sublime Text)
-  - Development (npm, pip, cargo, gradle, maven)
-  - System (APT cache, Snap, Flatpak)
-  - Media (VLC, Spotify)
-- Delete temporary files from standard and app-specific folders.
-- Trash and cache cleanup.
+### Services Management
+- List, start, stop, enable, disable systemd services
+- Service status with color indicators
+- Filter by running/stopped/enabled/disabled
+- Beginner-friendly guide dialog on first launch
 
-### Installed applications
+### Startup Applications
+- Manage user systemd services and autostart `.desktop` files
+- Enable/disable startup entries
+- Protection against accidental changes
 
-- View applications installed via:
-  - APT (Debian/Ubuntu packages)
-  - Snap
-  - Flatpak
-  - GNOME (desktop applications)
-- Dependency checks before removal.
-- Warnings for system packages and shared dependencies.
-- Filters by package manager and search.
+### Cleanup
+- Temporary files, system cache, trash cleanup
+- APT cache, journal logs, thumbnail cache, browser caches
+- Advanced cleanup: pip/cargo/npm/go/gradle/docker caches, journald vacuuming, old kernel removal
+- Configurable cleanup scope
+- One-click RAM cleaning (page cache, dentries, inodes) with before/after figures
+- Optional automatic RAM cleaning at configurable intervals
 
-### System monitor
+### Drivers & Firmware
+- Hardware detection via `lspci`/`lsusb` with a known-chipset database (NVIDIA, AMD, Realtek, Broadcom, Intel)
+- One-click driver installation with per-distro package fallbacks (APT, DNF, Pacman, Zypper)
+- Kernel header check before DKMS installs (standard, XanMod, Liquorix, LTS, Zen kernels)
+- Firmware updates via `fwupdmgr`, with reboot indicator
 
-- **Processes:** Full list of active processes with CPU %, memory, and disk usage; sort by CPU or memory (ascending/descending); terminate processes (normal or force); search.
-- **System information:** CPU (model, cores, threads, usage); memory (total, used, free, cache, swap); disks (internal and external with usage); GPU (model, driver, temperature when available).
+### Battery
+- Health, cycle count, capacity and charge threshold (20-100%)
+- Automatic governor switching; live percentage in the tray
 
-### Disk analyzer
+### Clipboard History
+- Polls the clipboard every 2s, persisted across restarts
+- 1-8h retention with auto-prune (max 500 entries); tray entry included
 
-- Analyze disk usage by directory and file type.
-- Visualize space usage; identify large files and folders.
-- Cache of scan results for faster navigation.
+### Recovery & Repositories
+- System recovery operations with an operation history
+- Repository manager: view, toggle, edit and restore official distribution repositories (APT, DNF, Pacman), including Ubuntu 24.04+ DEB822 format
+- Software installer and security settings
 
+### Kernel Management
+- List installed kernels
+- Remove old/unused kernels
+- Set default kernel
+- Cleanup kernel packages
 
+### GRUB Editor
+- Edit GRUB configuration
+- Add custom kernel parameters (including NVIDIA Wayland optimizations)
+- Backup, restore, and update GRUB
+- Preset configurations for common scenarios
 
-### GRUB editor (Advanced)
+### Tweaks
+- Swap file/zram management: create, resize and remove with automatic priority
+- DaVinci Resolve dependency installer
+- Kernel tweaks (Advanced): Transparent Huge Pages, CPU governor, scheduler toggle
 
-- Edit `/etc/default/grub` with built-in editor.
-- Automatic backups before changes.
-- Apply changes and update bootloader.
-- Restore from previous backup.
+### Shutdown Timer
+- Schedule system shutdown, reboot, or suspend
+- Configurable delay with countdown
 
+### Appearance
+- Theme switching (Light/Dark/System)
+- Accent color selection
+- Font size adjustment
+- Wallpaper management
+- Window behavior settings
 
-### System recovery (Advanced)
+### Security
+- Admin password management (sudo)
+- Warning screen on first launch
+- Safe mode options
 
-- Restore systemd default targets, GRUB, network, Flatpak/Flathub, and package manager repositories.
-- One-click restoration for common misconfigurations.
+### Multi-language Support
+- English, Italian, French, Spanish, German, Portuguese
 
-### Security and password
+---
 
-- Store administrator password securely (e.g. system keyring when available).
-- Automatic use for commands requiring sudo.
-- Dedicated settings screen to manage or clear stored password.
+## Build Types
 
-### System tray (Linux)
+| Type | Description |
+|------|-------------|
+| **Standard** (free) | Full feature set, no license required |
+| **Advanced** (paid) | All features + license activation |
 
-- Optional system tray icon with quick actions: check updates, cleanup, CPU/GPU temp, disk usage, task manager (processes), shutdown timer, show main window, exit.
-- Close to tray and start minimized options when supported.
+Build with:
+```bash
+# Standard (free)
+flutter build linux --dart-define=APP_BUILD=standard
 
-### Other
+# Advanced (paid)
+flutter build linux --dart-define=APP_BUILD=advanced
 
-- Shutdown timer: schedule automatic shutdown via systemd timers.
-- Check for system updates from the tray or UI.
-- Multi-language support (e.g. Italian, English, French, Spanish, German, Portuguese).
-- Light/dark/system theme.
+```
 
 ---
 
 ## Requirements
 
-- Ubuntu 20.04+ or other systemd-based Linux distributions.
-- Administrator (sudo) privileges for some operations.
-
-### Linux dependencies (when running from build/bundle)
-
-If you run the app from `build/linux/x64/release/bundle` (without using the .deb package), some distributions may lack the library for the **system tray** (notification area icon).
-
-- **Fedora / RHEL** (e.g. error `libayatana-appindicator3.so.1: cannot open shared object file`):
-  ```bash
-  sudo dnf install libayatana-appindicator-gtk3
-  ```
-  On **Fedora** (e.g. 42) with KDE/GNOME, the system tray can cause a segmentation fault due to plugin incompatibility with libayatana. The app **automatically disables the tray on Fedora**; it runs without the tray icon and all other features work.
-- **Debian / Ubuntu** (if not using the .deb):
-  ```bash
-  sudo apt install libayatana-appindicator3-1
-  ```
-- **Arch Linux**:
-  ```bash
-  sudo pacman -S libayatana-appindicator
-  ```
-
-To disable the system tray on any distribution (e.g. to avoid crashes), run with:
-`SUPER_LINUX_UTILITY_NO_TRAY=1 ./super_linux_utility`.
-
-After installing the dependency where needed, run `./super_linux_utility` again from the bundle directory.
+- Linux desktop (GTK3)
+- Flutter SDK 3.10+ (to build from source)
+- Runtime: `libayatana-appindicator` (system tray), `smartmontools`, `lscpu`, `mpstat` (optional, falls back to `/proc/stat`)
 
 ---
 
 ## Installation
 
-### Install the .deb package
+### From GitHub Releases (.deb)
+1. Download the latest `.deb` from [releases](https://github.com/sviluppoarte1-lang/superlinuxutility/releases)
+2. Install with: `sudo dpkg -i super-linux-utility_*.deb`
+3. Launch from application menu or run `super_linux_utility`
 
-Download the appropriate `.deb` from the [Releases](https://github.com/sviluppoarte1-lang/superlinuxutility/releases) page, then:
+### AppImage
+1. Download the `.AppImage` from [releases](https://github.com/sviluppoarte1-lang/superlinuxutility/releases) (static runtime, no FUSE required)
+2. `chmod +x super-linux-utility-*.AppImage && ./super-linux-utility-*.AppImage`
 
+### Arch Linux package
 ```bash
-sudo dpkg -i super_linux_utility_*.deb
+sudo pacman -U super-linux-utility-*.pkg.tar.zst
 ```
 
-If there are missing dependencies:
-
-```bash
-sudo apt-get install -f
-```
+### Auto-update
+The app can check for updates automatically via GitHub releases. When a new version is found:
+1. A dialog shows the new version and release notes
+2. User confirms download & install
+3. The `.deb` is downloaded and installed via `sudo dpkg -i`
+4. Restart the app to use the new version
 
 ---
 
-## Usage
+## Technical Details
 
-1. **Initial setup:** Go to the **Settings** tab and save the administrator password if you want to use features that require sudo.
-2. **Services:** Use the **Services** tab to find and manage services that slow down boot.
-3. **Startup apps:** Use the **Startup Apps** tab to view and manage applications that start automatically.
-4. **Cleanup:** Use the **Cleanup** tab to see space used by temp/cache and run cleanup.
-5. **Installed apps:** Use the **Installed Apps** tab to view and remove applications.
-6. **Monitor:** Use the **Monitor** tab to view running processes and system information (CPU, RAM, disks, GPU).
-7. **Disk analyzer:** Use the **Disk Analyzer** tab to inspect disk usage by folder and file type.
-8. **Appearance:** Use the **Appearance** tab to customize fonts, themes, and wallpaper (GNOME).
-9. **GRUB / Kernel / Recovery:** In the Advanced (or Personal) edition, use the corresponding tabs for boot and kernel management and system recovery.
-
----
-
-## Security notes
-
-- The password is stored using the available secure mechanism (e.g. system keyring when supported).
-- The password is used only when needed for commands that require administrator privileges.
-- Use with care: disabling critical services or startup apps, editing GRUB, or removing kernels can affect system stability or bootability. Creating backups is recommended.
+- **Password storage**: Base64-encoded in SharedPreferences (used for sudo operations)
+- **SMART USB probing**: Progressive discovery — one vendor variant per tray refresh cycle (5s), or all at once in the SMART screen
+- **CPU monitoring**: Reads `/proc/stat` directly (no external dependencies required for basic stats; `mpstat` used if available for per-core data)
+- **Memory monitoring**: Reads `/proc/meminfo` directly
+- **GPU monitoring**: Uses `nvidia-smi` for NVIDIA, `/sys/class/drm/` for others (30s cache)
+- **GLib compatibility**: Ships weak symbol stubs for GLib < 2.78 (MX Linux, Debian 12)
 
 ---
 
 ## License
 
-This project is provided "as is" without warranty. It is distributed under the **GPL-3.0 or later** license. See the [LICENSE](LICENSE) file for details.
+GNU General Public License v3.0 — see the app's Info screen for details.
+
+---
+
+## Author
+
+**Marco Di Giangiacomo**
+
+[GitHub Repository](https://github.com/sviluppoarte1-lang/superlinuxutility)

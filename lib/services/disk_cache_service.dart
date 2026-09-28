@@ -5,7 +5,18 @@ import 'dart:convert';
 /// Ottimizza la lettura dei dati salvando le informazioni delle directory in cache
 class DiskCacheService {
   static String? _cacheDir;
-  
+
+  /// In-memory cache: evita letture disco ripetute per la stessa sessione
+  /// Key: cache file path, Value: decoded JSON
+  static final Map<String, Map<String, dynamic>> _memoryCache = {};
+
+  /// Timestamp dell'ultimo caricamento disco per ogni file di cache
+  /// Usato per decidere se ricaricare da disco o usare la memoria
+  static final Map<String, DateTime> _diskLoadTime = {};
+
+  /// Durata massima di validità della cache in memoria (30 secondi)
+  static const _memoryCacheTtl = Duration(seconds: 30);
+
   /// Ottiene la directory della cache (in .local/share dell'app, non in .cache, per non essere cancellata dalla pulizia file temporanei)
   static Future<String> _getCacheDir() async {
     if (_cacheDir != null) return _cacheDir!;
@@ -54,11 +65,12 @@ class DiskCacheService {
     return '$cacheDir/$key.json';
   }
   
-  /// Verifica se esiste una cache per un disco (il file viene creato una sola volta, poi solo aggiornato)
+  /// Verifica se esiste una cache per un disco (controlla memoria, poi disco)
   static Future<bool> hasCache(String diskPath) async {
     try {
       final path = _normalizeDiskPath(diskPath);
       final cacheFile = await _getCacheFile(path);
+      if (_memoryCache.containsKey(cacheFile)) return true;
       final file = File(cacheFile);
       return await file.exists();
     } catch (e) {
@@ -66,26 +78,42 @@ class DiskCacheService {
     }
   }
 
-  /// Carica i dati dalla cache (nessuna scadenza: la cache si aggiorna solo incrementalmente)
+  /// Carica i dati dalla cache (nessuna scadenza: la cache si aggiorna solo incrementalmente).
+  /// Usa cache in memoria se disponibile e fresca, altrimenti legge da disco.
   static Future<Map<String, dynamic>?> loadCache(String diskPath) async {
     try {
       final path = _normalizeDiskPath(diskPath);
       final cacheFile = await _getCacheFile(path);
-      final file = File(cacheFile);
 
+      // Prova cache in memoria
+      final memData = _memoryCache[cacheFile];
+      if (memData != null) {
+        final loadTime = _diskLoadTime[cacheFile];
+        if (loadTime != null && DateTime.now().difference(loadTime) < _memoryCacheTtl) {
+          return memData;
+        }
+      }
+
+      // Cache in memoria scaduta o assente: leggi da disco
+      final file = File(cacheFile);
       if (!await file.exists()) {
         return null;
       }
 
       final content = await file.readAsString();
       final data = jsonDecode(content) as Map<String, dynamic>;
+
+      // Aggiorna cache in memoria
+      _memoryCache[cacheFile] = data;
+      _diskLoadTime[cacheFile] = DateTime.now();
+
       return data;
     } catch (e) {
       return null;
     }
   }
   
-  /// Salva i dati nella cache
+  /// Salva i dati nella cache (aggiorna sia disco che memoria)
   static Future<void> saveCache(
     String diskPath,
     Map<String, dynamic> data,
@@ -101,6 +129,10 @@ class DiskCacheService {
         'diskPath': diskPath,
       };
       
+      // Aggiorna memoria e disco in parallelo
+      _memoryCache[cacheFile] = cacheData;
+      _diskLoadTime[cacheFile] = DateTime.now();
+
       await file.writeAsString(
         jsonEncode(cacheData),
         mode: FileMode.write,
@@ -285,10 +317,12 @@ class DiskCacheService {
     }
   }
 
-  /// Invalida la cache per un disco specifico
+  /// Invalida la cache per un disco specifico (disco + memoria)
   static Future<void> invalidateCache(String diskPath) async {
     try {
       final cacheFile = await _getCacheFile(diskPath);
+      _memoryCache.remove(cacheFile);
+      _diskLoadTime.remove(cacheFile);
       final file = File(cacheFile);
       if (await file.exists()) {
         await file.delete();
@@ -298,9 +332,11 @@ class DiskCacheService {
     }
   }
   
-  /// Pulisce tutta la cache
+  /// Pulisce tutta la cache (disco + memoria)
   static Future<void> clearAllCache() async {
     try {
+      _memoryCache.clear();
+      _diskLoadTime.clear();
       final cacheDir = await _getCacheDir();
       final dir = Directory(cacheDir);
       if (await dir.exists()) {

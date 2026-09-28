@@ -24,14 +24,12 @@ class _ServicesScreenState extends State<ServicesScreen> with SingleTickerProvid
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
-      // Carica i servizi solo quando necessario (lazy loading)
       if (_tabController.index == 1 && _services.isEmpty && !_isAnalyzing) {
         _analyzeAllServices();
       }
     });
     _loadSlowServices();
     _loadDisabledServices();
-    // NON caricare tutti i servizi all'avvio - solo quando necessario
   }
 
   @override

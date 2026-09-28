@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'password_storage.dart';
+import 'repository_manager.dart';
 import 'system_detector.dart';
 
 /// Risultato del check di una dipendenza
@@ -76,20 +77,35 @@ class DependencyCheckService {
         .replaceAll('\\', '\\\\')
         .replaceAll('"', '\\"')
         .replaceAll('\$', '\\\$')
-        .replaceAll('`', '\\`');
+        .replaceAll('`', '\\`')
+        .replaceAll('\n', '\\n')
+        .replaceAll('\r', '\\r')
+        .replaceAll("'", "\\'");
     try {
       final result = await Process.run(
         'bash',
-        ['-c', 'printf "%s\\n" "$escaped" | sudo -S bash -c "$cmd"'],
+        ['-c', 'printf "%s\\n" "$escaped" | sudo -S bash -c "$cmd" 2>&1'],
         runInShell: true,
       );
       if (result.exitCode == 0) {
         return {'success': true, 'message': 'Dipendenze installate.', 'output': result.stdout.toString()};
       }
-      return {
-        'success': false,
-        'message': result.stderr?.toString() ?? result.stdout?.toString() ?? 'Errore installazione',
-      };
+      final err = (result.stderr?.toString() ?? '').trim();
+      final out = (result.stdout?.toString() ?? '').trim();
+      String message;
+      if (err.contains('incorrect password') || err.contains('wrong password') ||
+          out.contains('incorrect password') || out.contains('wrong password')) {
+        message = 'Password non corretta. Verifica la password nelle Impostazioni.';
+      } else if (err.contains('Could not lock') || out.contains('Could not lock')) {
+        message = 'Impossibile accedere ad apt: un altro processo lo sta usando. Riprova tra qualche secondo.';
+      } else if (err.isNotEmpty) {
+        message = err;
+      } else if (out.isNotEmpty) {
+        message = out;
+      } else {
+        message = 'Errore sconosciuto durante l\'installazione.';
+      }
+      return {'success': false, 'message': message};
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -110,5 +126,58 @@ class DependencyCheckService {
       );
     }
     return results;
+  }
+
+  /// Assicura che i repository della distribuzione siano configurati.
+  /// Utile prima di installare pacchetti su qualsiasi distribuzione.
+  static Future<Map<String, dynamic>> ensureRepositories() async {
+    try {
+      final info = await SystemDetector.detectSystem();
+      final updateCmd = RepositoryManager.getUpdateCacheCommand(info);
+      // Verifica se i repository sono già sani prima di sovrascriverli
+      final reposHealthy = await RepositoryManager.areRepositoriesHealthy();
+      if (!reposHealthy) {
+        final result = await RepositoryManager.restoreRepositories();
+        if (result['success'] == true && updateCmd != null) {
+          final password = await PasswordStorage.getPassword();
+          if (password != null && password.isNotEmpty) {
+            final escaped = password
+                .replaceAll('\\', '\\\\')
+                .replaceAll('"', '\\"')
+                .replaceAll('\$', '\\\$')
+                .replaceAll('`', '\\`');
+            try {
+              await Process.run(
+                'bash',
+                ['-c', 'printf "%s\\n" "$escaped" | sudo -S bash -c \'${updateCmd.replaceAll("'", "'\\''")}\''],
+                runInShell: true,
+              );
+            } catch (_) {}
+          }
+        }
+        return result;
+      }
+      // Repository già corretti, aggiorna solo la cache
+      if (updateCmd != null) {
+        final password = await PasswordStorage.getPassword();
+        if (password != null && password.isNotEmpty) {
+          final escaped = password
+              .replaceAll('\\', '\\\\')
+              .replaceAll('"', '\\"')
+              .replaceAll('\$', '\\\$')
+              .replaceAll('`', '\\`');
+          try {
+            await Process.run(
+              'bash',
+              ['-c', 'printf "%s\\n" "$escaped" | sudo -S bash -c \'${updateCmd.replaceAll("'", "'\\''")}\''],
+              runInShell: true,
+            );
+          } catch (_) {}
+        }
+      }
+      return {'success': true, 'message': 'Repository già configurati correttamente.', 'output': ''};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
   }
 }

@@ -2,7 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../models/system_process.dart';
+import '../models/system_info.dart';
 import '../services/system_monitor.dart';
+
+class _ProcessGroup {
+  final String baseName;
+  final List<SystemProcess> processes;
+  _ProcessGroup(this.baseName, this.processes);
+  double get totalCpu => processes.fold(0.0, (s, p) => s + p.cpuPercent);
+  int get totalMemory => processes.fold(0, (s, p) => s + p.memoryBytes);
+  int get processCount => processes.length;
+}
 
 /// Dialog mostrato dal tray quando si clicca su "Uso memoria RAM".
 /// Mostra solo i processi (nessuna sezione System) con ricerca, ordinamento, dettagli e terminazione.
@@ -15,12 +25,15 @@ class TrayTaskManagerDialog extends StatefulWidget {
 
 class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
   List<SystemProcess> _processes = [];
+  SystemInfo? _systemInfo;
   String _searchQuery = '';
   String _sortColumn = 'cpu';
   bool _sortAscending = false;
   bool _isLoading = true;
   String? _error;
   Timer? _searchDebounceTimer;
+  Timer? _refreshTimer;
+  bool _isRefreshing = false;
   List<SystemProcess>? _cachedFiltered;
   String _cachedSearchQuery = '';
   String _cachedSortColumn = '';
@@ -30,12 +43,28 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
   void initState() {
     super.initState();
     _loadProcesses();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!_isRefreshing) _refreshSystemInfo();
+    });
   }
 
   @override
   void dispose() {
     _searchDebounceTimer?.cancel();
+    _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _refreshSystemInfo() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+    try {
+      final info = await SystemMonitor.getSystemInfo();
+      if (mounted) setState(() { _systemInfo = info; });
+    } catch (_) {}
+    finally {
+      _isRefreshing = false;
+    }
   }
 
   Future<void> _loadProcesses() async {
@@ -45,10 +74,14 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
       _cachedFiltered = null;
     });
     try {
-      final list = await SystemMonitor.getProcesses();
+      final results = await Future.wait([
+        SystemMonitor.getProcesses(),
+        SystemMonitor.getSystemInfo(),
+      ]);
       if (mounted) {
         setState(() {
-          _processes = list;
+          _processes = results[0] as List<SystemProcess>;
+          _systemInfo = results[1] as SystemInfo;
           _isLoading = false;
           _invalidateCache();
         });
@@ -62,6 +95,17 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
         });
       }
     }
+  }
+
+  // Raggruppa per nome esatto
+  List<_ProcessGroup> _groupProcesses(List<SystemProcess> processes) {
+    final Map<String, List<SystemProcess>> groups = {};
+    for (final p in processes) {
+      final key = p.name.toLowerCase();
+      groups.putIfAbsent(key, () => []);
+      groups[key]!.add(p);
+    }
+    return groups.entries.map((e) => _ProcessGroup(e.key, e.value)).toList();
   }
 
   List<SystemProcess> get _filteredProcesses {
@@ -143,7 +187,7 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
       return const Icon(Icons.unfold_more, size: 16, color: Colors.grey);
     }
     return Icon(
-      _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+      _sortAscending ? Icons.arrow_downward : Icons.arrow_upward,
       size: 16,
       color: Theme.of(context).primaryColor,
     );
@@ -193,6 +237,49 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
           SnackBar(content: Text('$e'), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  Future<void> _killMultipleProcesses(List<SystemProcess> processes, {bool force = false}) async {
+    final l10n = AppLocalizations.of(context)!;
+    final count = processes.length;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(force ? l10n.killForce : l10n.kill),
+        content: Text(
+          '${l10n.kill} ${count} process${count > 1 ? 'i' : 'o'} (${processes.first.name}${count > 1 ? '…' : ''})?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              force ? l10n.terminateAllForce : l10n.terminateAll,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    int ok = 0, fail = 0;
+    for (final p in processes) {
+      try {
+        if (await SystemMonitor.killProcess(p.pid, force: force)) ok++; else fail++;
+      } catch (_) { fail++; }
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terminati: $ok, Errori: $fail'),
+          backgroundColor: fail == 0 ? Colors.green : Colors.orange,
+        ),
+      );
+      _loadProcesses();
     }
   }
 
@@ -254,6 +341,87 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
     );
   }
 
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  static const List<Color> _coreColors = [
+    Color(0xFFE53935),
+    Color(0xFF1E88E5),
+    Color(0xFF43A047),
+    Color(0xFFFB8C00),
+    Color(0xFF8E24AA),
+    Color(0xFF00ACC1),
+    Color(0xFFF4511E),
+    Color(0xFF3949AB),
+    Color(0xFFC0CA33),
+    Color(0xFFD81B60),
+    Color(0xFF00897B),
+    Color(0xFF6D4C41),
+    Color(0xFF546E7A),
+    Color(0xFFFDD835),
+    Color(0xFF5E35B1),
+    Color(0xFF00BCD4),
+  ];
+
+  Widget _buildCpuHeaderBar() {
+    final info = _systemInfo;
+    if (info == null) return const SizedBox.shrink();
+    final cpu = info.cpu;
+    final speedText = cpu.currentSpeedMhz != null
+        ? '${(cpu.currentSpeedMhz! / 1000).toStringAsFixed(2)} GHz'
+        : '';
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (speedText.isNotEmpty)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.speed, size: 16, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 4),
+                Text(speedText, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+              ],
+            ),
+          if (cpu.coreUsage.isNotEmpty) ...[
+            Text('Cores:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ...List.generate(cpu.coreUsage.length.clamp(0, 32), (i) {
+              final u = cpu.coreUsage[i];
+              final color = _coreColors[i % _coreColors.length];
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: color.withOpacity(0.3), width: 0.5),
+                ),
+                child: Text(
+                  'C$i: ${u.toStringAsFixed(0)}%',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+                ),
+              );
+            }),
+          ],
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.memory, size: 16, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 4),
+              Text('${_processes.length}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -271,6 +439,9 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Barra info CPU
+            _buildCpuHeaderBar(),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -334,6 +505,7 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
                           scrollDirection: Axis.horizontal,
                           child: SingleChildScrollView(
                             child: DataTable(
+                              columnSpacing: 12,
                               columns: [
                                 DataColumn(
                                   label: GestureDetector(
@@ -341,7 +513,7 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(l10n.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        Text(l10n.app, style: const TextStyle(fontWeight: FontWeight.bold)),
                                         const SizedBox(width: 4),
                                         _buildSortIcon('name'),
                                       ],
@@ -349,17 +521,7 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
                                   ),
                                 ),
                                 DataColumn(
-                                  label: GestureDetector(
-                                    onTap: () => _sortProcesses('pid'),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(l10n.pid, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        const SizedBox(width: 4),
-                                        _buildSortIcon('pid'),
-                                      ],
-                                    ),
-                                  ),
+                                  label: Text(l10n.processes, style: const TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                                 DataColumn(
                                   label: GestureDetector(
@@ -389,85 +551,76 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
                                   ),
                                   numeric: true,
                                 ),
-                                DataColumn(
-                                  label: GestureDetector(
-                                    onTap: () => _sortProcesses('user'),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(l10n.user, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        const SizedBox(width: 4),
-                                        _buildSortIcon('user'),
-                                      ],
-                                    ),
-                                  ),
-                                ),
                                 const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold))),
                               ],
-                              rows: _filteredProcesses.map((process) {
+                              rows: () {
+                                final groups = _groupProcesses(_filteredProcesses);
+                                // Ordina i gruppi in base alla colonna selezionata
+                                if (_sortColumn == 'cpu') {
+                                  groups.sort((a, b) => _sortAscending
+                                      ? a.totalCpu.compareTo(b.totalCpu)
+                                      : b.totalCpu.compareTo(a.totalCpu));
+                                } else if (_sortColumn == 'memory') {
+                                  groups.sort((a, b) => _sortAscending
+                                      ? a.totalMemory.compareTo(b.totalMemory)
+                                      : b.totalMemory.compareTo(a.totalMemory));
+                                } else if (_sortColumn == 'name') {
+                                  groups.sort((a, b) => _sortAscending
+                                      ? a.baseName.compareTo(b.baseName)
+                                      : b.baseName.compareTo(a.baseName));
+                                } else {
+                                  groups.sort((a, b) => b.totalCpu.compareTo(a.totalCpu));
+                                }
+                                return groups;
+                              }().map((group) {
                                 return DataRow(
                                   cells: [
                                     DataCell(
-                                      Tooltip(
-                                        message: process.command ?? process.name,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              width: 10,
-                                              height: 10,
-                                              decoration: BoxDecoration(
-                                                color: _getCpuColor(process.cpuPercent),
-                                                shape: BoxShape.circle,
-                                              ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                              color: _getCpuColor(group.totalCpu),
+                                              shape: BoxShape.circle,
                                             ),
-                                            const SizedBox(width: 8),
-                                            ConstrainedBox(
-                                              constraints: const BoxConstraints(maxWidth: 180),
-                                              child: Text(
-                                                process.name,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontWeight: FontWeight.w500),
-                                              ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          ConstrainedBox(
+                                            constraints: const BoxConstraints(maxWidth: 160),
+                                            child: Text(
+                                              group.baseName,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontWeight: FontWeight.w500),
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                      onTap: () => _showProcessDetails(process),
                                     ),
-                                    DataCell(Text('${process.pid}')),
+                                    DataCell(Text('${group.processCount}')),
                                     DataCell(
                                       Text(
-                                        '${process.cpuPercent.toStringAsFixed(1)}%',
+                                        '${group.totalCpu.toStringAsFixed(1)}%',
                                         style: TextStyle(
-                                          color: _getCpuColor(process.cpuPercent),
+                                          color: _getCpuColor(group.totalCpu),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
-                                    DataCell(Text(process.memoryFormatted)),
-                                    DataCell(Text(process.user, style: const TextStyle(fontSize: 12))),
+                                    DataCell(Text(_formatBytes(group.totalMemory))),
                                     DataCell(
                                       PopupMenuButton<String>(
                                         icon: const Icon(Icons.more_vert, size: 18),
                                         itemBuilder: (context) => [
-                                          PopupMenuItem(
-                                            value: 'details',
-                                            child: Row(
-                                              children: [
-                                                const Icon(Icons.info_outline, size: 18),
-                                                const SizedBox(width: 8),
-                                                Text(l10n.details),
-                                              ],
-                                            ),
-                                          ),
                                           PopupMenuItem(
                                             value: 'kill',
                                             child: Row(
                                               children: [
                                                 const Icon(Icons.stop, color: Colors.orange, size: 18),
                                                 const SizedBox(width: 8),
-                                                Text(l10n.kill),
+                                                Text(l10n.terminateAll),
                                               ],
                                             ),
                                           ),
@@ -477,18 +630,16 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
                                               children: [
                                                 const Icon(Icons.delete, color: Colors.red, size: 18),
                                                 const SizedBox(width: 8),
-                                                Text(l10n.killForce),
+                                                Text(l10n.terminateAllForce),
                                               ],
                                             ),
                                           ),
                                         ],
                                         onSelected: (value) {
-                                          if (value == 'details') {
-                                            _showProcessDetails(process);
-                                          } else if (value == 'kill') {
-                                            _killProcess(process);
+                                          if (value == 'kill') {
+                                            _killMultipleProcesses(group.processes);
                                           } else if (value == 'kill_force') {
-                                            _killProcess(process, force: true);
+                                            _killMultipleProcesses(group.processes, force: true);
                                           }
                                         },
                                       ),

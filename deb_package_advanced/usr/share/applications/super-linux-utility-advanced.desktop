@@ -8,3 +8,4 @@ Icon=super-linux-utility-advanced
 Terminal=false
 Categories=System;Utility;
 StartupNotify=true
+StartupWMClass=com.superlinux.utility

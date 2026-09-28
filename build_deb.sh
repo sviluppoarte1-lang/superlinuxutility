@@ -6,11 +6,28 @@
 set -e
 
 BINARY_NAME="super_linux_utility"
-APP_VERSION="1.8.6"
+APP_VERSION="2.1.0"
 DEB_BASE="deb_package"
 BUILD_DIR="build/linux/x64/release/bundle"
 
 echo "🔨 Building Super Linux Utility (standard + advanced + personal)..."
+
+# Verifica dipendenze system tray per la compilazione CMake
+# Il plugin system_tray richiede libayatana-appindicator3-0.1 o appindicator3-0.1 pkg-config
+# Queste librerie provengono dal pacchetto libayatana-appindicator3-dev su Ubuntu/Debian
+if ! pkg-config --exists ayatana-appindicator3-0.1 2>/dev/null && ! pkg-config --exists appindicator3-0.1 2>/dev/null; then
+    echo "❌ Errore: librerie system tray non trovate."
+    echo ""
+    echo "Il plugin system_tray richiede libayatana-appindicator3-dev per la compilazione CMake."
+    echo "Su Ubuntu/Debian installa con:"
+    echo "  sudo apt-get install -y libayatana-appindicator3-dev libappindicator3-dev"
+    echo ""
+    echo "Le librerie runtime libayatana-appindicator3-1 potrebbero essere già installate,"
+    echo "ma servono i file di sviluppo (header + pkg-config) per la compilazione."
+    exit 1
+fi
+
+echo "✅ Dipendenze system tray soddisfatte."
 
 # Pulisci build precedenti
 flutter clean
@@ -38,6 +55,11 @@ fi
 echo ""
 echo "📦 Building STANDARD version (free)..."
 flutter build linux --release --dart-define=APP_BUILD=standard
+# Fix permissions after Flutter build (Flutter sets 777, dpkg-deb needs 755-0775)
+chmod 755 "$BUILD_DIR"
+chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
 
 APP_NAME="super-linux-utility"
 DEB_DIR="${DEB_BASE}_standard"
@@ -94,6 +116,7 @@ Icon=$APP_NAME
 Terminal=false
 Categories=System;Utility;
 StartupNotify=true
+StartupWMClass=com.superlinux.utility
 EOF
 chmod 644 $DEB_DIR/usr/share/applications/$APP_NAME.desktop
 
@@ -123,10 +146,34 @@ exit 0
 POSTEOF
 chmod +x $DEB_DIR/DEBIAN/postrm
 
-[ -f "/usr/share/common-licenses/GPL-3" ] && mkdir -p $DEB_DIR/usr/share/doc/$APP_NAME && cp /usr/share/common-licenses/GPL-3 $DEB_DIR/usr/share/doc/$APP_NAME/copyright
+mkdir -p "$DEB_DIR/usr/share/doc/$APP_NAME"
+cp LICENSE "$DEB_DIR/usr/share/doc/$APP_NAME/copyright"
+cp README.md CHANGELOG.md "$DEB_DIR/usr/share/doc/$APP_NAME/"
+if [ -f "/usr/share/common-licenses/GPL-3" ]; then
+  cp /usr/share/common-licenses/GPL-3 "$DEB_DIR/usr/share/doc/$APP_NAME/LICENSE"
+fi
+
+# Ensure correct permissions before dpkg-deb (Flutter builds with 777)
+chmod 755 "$BUILD_DIR"
+chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
+# Fix permissions on build directory - Flutter builds with 777 which dpkg-deb doesn't allow
+chmod 755 "$BUILD_DIR"
+chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
 
 dpkg-deb --build $DEB_DIR ${APP_NAME}_${APP_VERSION}_amd64.deb
 echo "✅ Standard DEB: ${APP_NAME}_${APP_VERSION}_amd64.deb ($(du -h ${APP_NAME}_${APP_VERSION}_amd64.deb | cut -f1))"
+
+# Fix permissions before dpkg-deb (Flutter builds with 777, dpkg-deb needs 755-0775)
+chmod 755 "$BUILD_DIR" 2>/dev/null
+chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
 
 # --- Build e pacchetto ADVANCED (a pagamento) ---
 echo ""
@@ -188,6 +235,7 @@ Icon=$APP_NAME
 Terminal=false
 Categories=System;Utility;
 StartupNotify=true
+StartupWMClass=com.superlinux.utility
 EOF
 chmod 644 $DEB_DIR/usr/share/applications/$APP_NAME.desktop
 
@@ -216,8 +264,24 @@ set -e
 exit 0
 POSTEOF
 chmod +x $DEB_DIR/DEBIAN/postrm
+# Fix permissions after Flutter build (Flutter sets 777, dpkg-deb needs 755-0775)
+chmod 755 "$BUILD_DIR"
+chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
 
-[ -f "/usr/share/common-licenses/GPL-3" ] && mkdir -p $DEB_DIR/usr/share/doc/$APP_NAME && cp /usr/share/common-licenses/GPL-3 $DEB_DIR/usr/share/doc/$APP_NAME/copyright
+mkdir -p "$DEB_DIR/usr/share/doc/$APP_NAME"
+cp LICENSE "$DEB_DIR/usr/share/doc/$APP_NAME/copyright"
+cp README.md CHANGELOG.md "$DEB_DIR/usr/share/doc/$APP_NAME/"
+if [ -f "/usr/share/common-licenses/GPL-3" ]; then
+  cp /usr/share/common-licenses/GPL-3 "$DEB_DIR/usr/share/doc/$APP_NAME/LICENSE"
+fi
+
+# Fix permissions before dpkg-deb (Flutter builds with 777, dpkg-deb needs 755-0775)
+chmod 755 "$BUILD_DIR" 2>/dev/null
+chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
 
 dpkg-deb --build $DEB_DIR ${APP_NAME}_${APP_VERSION}_amd64.deb
 echo "✅ Advanced DEB: ${APP_NAME}_${APP_VERSION}_amd64.deb ($(du -h ${APP_NAME}_${APP_VERSION}_amd64.deb | cut -f1))"
@@ -281,6 +345,7 @@ Icon=$APP_NAME
 Terminal=false
 Categories=System;Utility;
 StartupNotify=true
+StartupWMClass=com.superlinux.utility
 EOF
 chmod 644 $DEB_DIR/usr/share/applications/$APP_NAME.desktop
 
@@ -310,7 +375,18 @@ exit 0
 POSTEOF
 chmod +x $DEB_DIR/DEBIAN/postrm
 
-[ -f "/usr/share/common-licenses/GPL-3" ] && mkdir -p $DEB_DIR/usr/share/doc/$APP_NAME && cp /usr/share/common-licenses/GPL-3 $DEB_DIR/usr/share/doc/$APP_NAME/copyright
+mkdir -p "$DEB_DIR/usr/share/doc/$APP_NAME"
+cp LICENSE "$DEB_DIR/usr/share/doc/$APP_NAME/copyright"
+cp README.md CHANGELOG.md "$DEB_DIR/usr/share/doc/$APP_NAME/"
+if [ -f "/usr/share/common-licenses/GPL-3" ]; then
+  cp /usr/share/common-licenses/GPL-3 "$DEB_DIR/usr/share/doc/$APP_NAME/LICENSE"
+fi
+
+# Fix permissions before dpkg-deb (Flutter builds with 777, dpkg-deb needs 755-0775)
+chmod 755 "$BUILD_DIR" 2>/dev/null
+chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/lib" 2>/dev/null || true
+chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
 
 dpkg-deb --build $DEB_DIR ${APP_NAME}_${APP_VERSION}_amd64.deb
 echo "✅ Personal DEB: ${APP_NAME}_${APP_VERSION}_amd64.deb ($(du -h ${APP_NAME}_${APP_VERSION}_amd64.deb | cut -f1))"

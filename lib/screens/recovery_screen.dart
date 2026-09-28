@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
+import '../config/app_build.dart';
 import '../services/recovery_service.dart';
-import '../utils/update_check_report_formatter.dart';
-import '../utils/update_preview_helper.dart';
-import '../widgets/updates_apply_progress_view.dart';
+import 'operation_history_screen.dart';
+import 'repositories_screen.dart';
 
 class RecoveryScreen extends StatefulWidget {
   const RecoveryScreen({super.key});
@@ -16,8 +16,6 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   Map<String, bool> _operationStatus = {};
   Map<String, String> _operationOutput = {};
   Map<String, bool> _operationLoading = {};
-  int _updateCount = 0;
-  List<String> _pendingUpdates = [];
 
   @override
   void initState() {
@@ -26,7 +24,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   }
 
   static const List<String> _recoveryOperations = [
-    'pipewire', 'network', 'grub', 'flathub', 'repositories',
+    'pipewire', 'network', 'grub', 'flathub', 'repositories', 'wifiautosuspend',
   ];
   static const List<String> _installerOperations = [
     'ffmpeg', 'ytdlp', 'systemlibs', 'codecs', 'rsync',
@@ -38,9 +36,6 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       _operationOutput[op] = '';
       _operationLoading[op] = false;
     }
-    _operationStatus['updates'] = false;
-    _operationOutput['updates'] = '';
-    _operationLoading['updates'] = false;
     for (final op in _installerOperations) {
       _operationStatus[op] = false;
       _operationOutput[op] = '';
@@ -57,7 +52,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
 
     try {
       Map<String, dynamic> result;
-      
+
       switch (operation) {
         case 'pipewire':
           result = await RecoveryService.restartPipewire();
@@ -74,17 +69,8 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
         case 'repositories':
           result = await RecoveryService.restoreRepositories();
           break;
-        case 'updates':
-          result = await RecoveryService.checkForUpdates();
-          if (result['updateCount'] != null) {
-            _updateCount = result['updateCount'] as int;
-          }
-          final upd = result['updates'];
-          if (upd is List) {
-            _pendingUpdates = upd.map((e) => e.toString()).toList();
-          } else {
-            _pendingUpdates = [];
-          }
+        case 'wifiautosuspend':
+          result = await RecoveryService.fixWifiAutoSuspend();
           break;
         case 'ffmpeg':
           result = await RecoveryService.installFfmpeg();
@@ -105,26 +91,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
           result = {'success': false, 'message': 'Operazione sconosciuta'};
       }
 
-      final l10nForOutput = AppLocalizations.of(context)!;
-      String outputText;
-      if (operation == 'updates') {
-        final preview = UpdatePreviewHelper.plainText(
-          l10nForOutput,
-          result,
-          heading: l10nForOutput.updatesCheckPreviewHeading,
-        );
-        final formatted = UpdateCheckReportFormatter.format(
-          l10nForOutput,
-          result['updateReport'] as Map<String, dynamic>?,
-        );
-        final fallback = result['output']?.toString() ?? result['message']?.toString() ?? '';
-        final parts = <String>[];
-        if (preview.isNotEmpty) parts.add(preview);
-        if (formatted.isNotEmpty) parts.add(formatted);
-        outputText = parts.isNotEmpty ? parts.join('\n\n') : fallback;
-      } else {
-        outputText = result['output']?.toString() ?? result['message']?.toString() ?? '';
-      }
+      final outputText = result['output']?.toString() ?? result['message']?.toString() ?? '';
       setState(() {
         _operationLoading[operation] = false;
         _operationStatus[operation] = result['success'] as bool? ?? false;
@@ -135,7 +102,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
         final messageKey = result['message']?.toString() ?? '';
         final l10n = AppLocalizations.of(context)!;
         String message;
-        
+
         // Traduci i messaggi se sono chiavi di traduzione
         if (messageKey == 'recoveryCheckUpdatesComplete') {
           message = l10n.recoveryCheckUpdatesComplete;
@@ -145,9 +112,9 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
         } else {
           message = messageKey;
         }
-        
+
         final color = result['success'] as bool? ?? false ? Colors.green : Colors.red;
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -172,187 +139,6 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
           ),
         );
       }
-    }
-  }
-
-  Future<void> _performUpdates() async {
-    final l10n = AppLocalizations.of(context)!;
-    
-    // Conferma prima di eseguire gli aggiornamenti
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.recoveryPerformUpdates),
-        content: Text(l10n.recoveryPerformUpdatesConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.confirm),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    setState(() {
-      _operationLoading['updates'] = true;
-      _operationOutput['updates'] = ''; // Reset output
-    });
-
-    // Mostra dialog con output in tempo reale, avanzamento e elenco pacchetti
-    final outputNotifier = ValueNotifier<String>('');
-    final progressNotifier = ValueNotifier<double>(0);
-    final statusNotifier = ValueNotifier<String?>(null);
-    BuildContext? dialogContext;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        dialogContext = context;
-        return AnimatedBuilder(
-          animation: Listenable.merge([outputNotifier, progressNotifier, statusNotifier]),
-          builder: (context, _) {
-            final output = outputNotifier.value;
-            return AlertDialog(
-              title: Text(l10n.recoveryPerformUpdates),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 420,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      UpdatesApplyProgressView(
-                        progress: progressNotifier.value,
-                        statusLabel: statusNotifier.value,
-                        pendingPackages: _pendingUpdates,
-                        logText: null,
-                        maxPackagesHeight: 140,
-                        maxLogHeight: 0,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        l10n.updatesCommandOutputTitle,
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      const SizedBox(height: 4),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 220),
-                        child: SingleChildScrollView(
-                          reverse: true,
-                          child: SelectableText(
-                            output.isEmpty ? '…' : output,
-                            style: const TextStyle(fontFamily: 'monospace', fontSize: 11, height: 1.25),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                if (!_operationLoading['updates']!)
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(l10n.close),
-                  ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    final expectedCount = _updateCount > 0 ? _updateCount : _pendingUpdates.length;
-
-    try {
-      final result = await RecoveryService.performUpdates(
-        expectedPackageCount: expectedCount,
-        onOutput: (data) {
-          outputNotifier.value += data;
-          _operationOutput['updates'] = outputNotifier.value;
-        },
-        onProgress: (p, label) {
-          progressNotifier.value = p;
-          statusNotifier.value = label;
-        },
-      );
-
-      setState(() {
-        _operationLoading['updates'] = false;
-        _operationStatus['updates'] = result['success'] as bool? ?? false;
-        _operationOutput['updates'] = result['output']?.toString() ?? result['message']?.toString() ?? '';
-        if (result['success'] == true) {
-          _updateCount = 0; // Reset dopo aggiornamento
-          _pendingUpdates = [];
-        }
-      });
-
-      if (mounted && dialogContext != null) {
-        Navigator.pop(dialogContext!);
-      }
-
-      if (mounted) {
-        final messageKey = result['message']?.toString() ?? '';
-        final l10nSnack = AppLocalizations.of(context)!;
-        String message;
-
-        if (messageKey == 'recoveryCheckUpdatesComplete') {
-          message = l10nSnack.recoveryCheckUpdatesComplete;
-        } else if (messageKey == 'recoveryCheckUpdatesError') {
-          final error = result['error']?.toString() ?? '';
-          message = l10nSnack.recoveryCheckUpdatesError(error);
-        } else {
-          message = messageKey;
-        }
-
-        final color = result['success'] as bool? ?? false ? Colors.green : Colors.red;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: color,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _operationLoading['updates'] = false;
-        _operationStatus['updates'] = false;
-        _operationOutput['updates'] = 'Errore: $e';
-      });
-
-      if (mounted && dialogContext != null) {
-        Navigator.pop(dialogContext!);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore durante l\'esecuzione degli aggiornamenti: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    } finally {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        progressNotifier.dispose();
-        statusNotifier.dispose();
-        outputNotifier.dispose();
-      });
     }
   }
 
@@ -530,19 +316,6 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                     icon: const Icon(Icons.visibility, size: 18),
                     label: Text(AppLocalizations.of(context)!.viewOutput),
                   ),
-                if (operation == 'updates' && _updateCount > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ElevatedButton.icon(
-                      onPressed: isLoading ? null : () => _performUpdates(),
-                      icon: const Icon(Icons.system_update, size: 18),
-                      label: Text(AppLocalizations.of(context)!.recoveryPerformUpdates),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: isLoading ? null : () => _executeOperation(operation),
@@ -567,7 +340,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
 
     return Scaffold(
       body: DefaultTabController(
-        length: 3,
+        length: 4,
         child: Column(
           children: [
             TabBar(
@@ -575,8 +348,9 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
               unselectedLabelColor: Colors.grey,
               tabs: [
                 Tab(text: l10n.recoveryTabRecovery),
-                Tab(text: l10n.recoveryTabCheckUpdates),
+                Tab(text: l10n.tabRepositories),
                 Tab(text: l10n.recoveryTabSoftwareInstaller),
+                Tab(icon: const Icon(Icons.history, size: 20), text: l10n.tabOperationHistory),
               ],
             ),
             Expanded(
@@ -589,8 +363,9 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                 child: TabBarView(
                   children: [
                     _buildRecoveryTab(l10n),
-                    _buildCheckUpdatesTab(l10n),
+                    const RepositoriesScreen(),
                     _buildSoftwareInstallerTab(l10n),
+                    const OperationHistoryScreen(),
                   ],
                 ),
               ),
@@ -647,28 +422,15 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
           icon: Icons.storage,
           color: Colors.teal,
         ),
-      ],
-    );
-  }
-
-  Widget _buildCheckUpdatesTab(AppLocalizations l10n) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            l10n.recoveryCheckUpdatesDesc,
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+        if (isAdvancedBuild) ...[
+          _buildRecoveryCard(
+            operation: 'wifiautosuspend',
+            title: l10n.recoveryFixWifiAutoSuspend,
+            description: l10n.recoveryFixWifiAutoSuspendDesc,
+            icon: Icons.wifi_off,
+            color: Colors.indigo,
           ),
-        ),
-        _buildRecoveryCard(
-          operation: 'updates',
-          title: l10n.recoveryCheckUpdates,
-          description: l10n.recoveryCheckUpdatesDesc,
-          icon: Icons.system_update,
-          color: Colors.indigo,
-        ),
+        ],
       ],
     );
   }

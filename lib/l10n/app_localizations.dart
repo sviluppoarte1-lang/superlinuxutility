@@ -166,6 +166,12 @@ abstract class AppLocalizations {
   /// **'Uso memoria RAM'**
   String get trayMemoryUsage;
 
+  /// No description provided for @traySmartHealth.
+  ///
+  /// In it, this message translates to:
+  /// **'Salute disco (SMART)'**
+  String get traySmartHealth;
+
   /// No description provided for @trayShutdownTimer.
   ///
   /// In it, this message translates to:
@@ -190,6 +196,366 @@ abstract class AppLocalizations {
   /// **'Esci'**
   String get trayExit;
 
+  /// No description provided for @traySettings.
+  ///
+  /// In it, this message translates to:
+  /// **'Impostazioni'**
+  String get traySettings;
+
+  /// No description provided for @traySystem.
+  ///
+  /// In it, this message translates to:
+  /// **'Sistema'**
+  String get traySystem;
+
+  /// No description provided for @trayClipboard.
+  ///
+  /// In it, this message translates to:
+  /// **'Appunti'**
+  String get trayClipboard;
+
+  /// No description provided for @clipboardTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Cronologia appunti'**
+  String get clipboardTitle;
+
+  /// No description provided for @clipboardEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun testo copiato finora. Copia un testo e apparirà qui.'**
+  String get clipboardEmpty;
+
+  /// No description provided for @clipboardEditTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Modifica testo'**
+  String get clipboardEditTitle;
+
+  /// No description provided for @clipboardSave.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva'**
+  String get clipboardSave;
+
+  /// No description provided for @clipboardCancel.
+  ///
+  /// In it, this message translates to:
+  /// **'Annulla'**
+  String get clipboardCancel;
+
+  /// No description provided for @clipboardDelete.
+  ///
+  /// In it, this message translates to:
+  /// **'Elimina'**
+  String get clipboardDelete;
+
+  /// No description provided for @clipboardDeleteTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Eliminare questa voce?'**
+  String get clipboardDeleteTitle;
+
+  /// No description provided for @clipboardDeleteBody.
+  ///
+  /// In it, this message translates to:
+  /// **'La voce verrà rimossa definitivamente dalla cronologia.'**
+  String get clipboardDeleteBody;
+
+  /// No description provided for @clipboardClearAll.
+  ///
+  /// In it, this message translates to:
+  /// **'Svuota tutto'**
+  String get clipboardClearAll;
+
+  /// No description provided for @clipboardClearAllTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Svuotare la cronologia?'**
+  String get clipboardClearAllTitle;
+
+  /// No description provided for @clipboardClearAllBody.
+  ///
+  /// In it, this message translates to:
+  /// **'Tutte le voci salvate verranno eliminate definitivamente.'**
+  String get clipboardClearAllBody;
+
+  /// No description provided for @clipboardSaveEntryTxt.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva in TXT'**
+  String get clipboardSaveEntryTxt;
+
+  /// No description provided for @clipboardExportAll.
+  ///
+  /// In it, this message translates to:
+  /// **'Esporta tutto in TXT'**
+  String get clipboardExportAll;
+
+  /// No description provided for @clipboardSavedTo.
+  ///
+  /// In it, this message translates to:
+  /// **'Salvato in {path}'**
+  String clipboardSavedTo(String path);
+
+  /// No description provided for @clipboardSaveFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Salvataggio non riuscito.'**
+  String get clipboardSaveFailed;
+
+  /// No description provided for @clipboardCopiedBack.
+  ///
+  /// In it, this message translates to:
+  /// **'Testo copiato negli appunti.'**
+  String get clipboardCopiedBack;
+
+  /// No description provided for @clipboardSettingsTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Appunti (clipboard)'**
+  String get clipboardSettingsTitle;
+
+  /// No description provided for @clipboardSettingsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'L\'app memorizza automaticamente i testi che copi. Scegli per quante ore conservarli: allo scadere vengono eliminati da soli.'**
+  String get clipboardSettingsDesc;
+
+  /// No description provided for @clipboardRetentionLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Conserva le copie per'**
+  String get clipboardRetentionLabel;
+
+  /// No description provided for @clipboardRetentionHours.
+  ///
+  /// In it, this message translates to:
+  /// **'{n} h'**
+  String clipboardRetentionHours(int n);
+
+  /// No description provided for @tabBattery.
+  ///
+  /// In it, this message translates to:
+  /// **'Batteria'**
+  String get tabBattery;
+
+  /// No description provided for @trayBattery.
+  ///
+  /// In it, this message translates to:
+  /// **'Batteria'**
+  String get trayBattery;
+
+  /// No description provided for @trayBatteryHealth.
+  ///
+  /// In it, this message translates to:
+  /// **'Salute batteria'**
+  String get trayBatteryHealth;
+
+  /// No description provided for @trayChargeLimit.
+  ///
+  /// In it, this message translates to:
+  /// **'Limite carica'**
+  String get trayChargeLimit;
+
+  /// No description provided for @trayPowerProfile.
+  ///
+  /// In it, this message translates to:
+  /// **'Profilo energia'**
+  String get trayPowerProfile;
+
+  /// No description provided for @batteryNoBattery.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna batteria rilevata'**
+  String get batteryNoBattery;
+
+  /// No description provided for @batteryNoBatteryDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa funzione è disponibile solo sui notebook. Su questo sistema non è stata trovata alcuna batteria.'**
+  String get batteryNoBatteryDesc;
+
+  /// No description provided for @batteryHealthTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Salute batteria'**
+  String get batteryHealthTitle;
+
+  /// No description provided for @batteryCapacityNow.
+  ///
+  /// In it, this message translates to:
+  /// **'Energia attuale'**
+  String get batteryCapacityNow;
+
+  /// No description provided for @batteryCapacityFull.
+  ///
+  /// In it, this message translates to:
+  /// **'Capacità residua'**
+  String get batteryCapacityFull;
+
+  /// No description provided for @batteryCapacityDesign.
+  ///
+  /// In it, this message translates to:
+  /// **'Capacità nominale'**
+  String get batteryCapacityDesign;
+
+  /// No description provided for @batteryHealthPct.
+  ///
+  /// In it, this message translates to:
+  /// **'Salute'**
+  String get batteryHealthPct;
+
+  /// No description provided for @batteryCycles.
+  ///
+  /// In it, this message translates to:
+  /// **'Cicli di carica'**
+  String get batteryCycles;
+
+  /// No description provided for @batteryVoltage.
+  ///
+  /// In it, this message translates to:
+  /// **'Tensione'**
+  String get batteryVoltage;
+
+  /// No description provided for @batteryPower.
+  ///
+  /// In it, this message translates to:
+  /// **'Potenza'**
+  String get batteryPower;
+
+  /// No description provided for @batteryTech.
+  ///
+  /// In it, this message translates to:
+  /// **'Tecnologia'**
+  String get batteryTech;
+
+  /// No description provided for @batteryStatus.
+  ///
+  /// In it, this message translates to:
+  /// **'Batteria'**
+  String get batteryStatus;
+
+  /// No description provided for @batteryAcOnline.
+  ///
+  /// In it, this message translates to:
+  /// **'In carica (rete)'**
+  String get batteryAcOnline;
+
+  /// No description provided for @batteryAcOffline.
+  ///
+  /// In it, this message translates to:
+  /// **'A batteria'**
+  String get batteryAcOffline;
+
+  /// No description provided for @batteryCharging.
+  ///
+  /// In it, this message translates to:
+  /// **'In carica'**
+  String get batteryCharging;
+
+  /// No description provided for @batteryDischarging.
+  ///
+  /// In it, this message translates to:
+  /// **'In scarica'**
+  String get batteryDischarging;
+
+  /// No description provided for @batteryFull.
+  ///
+  /// In it, this message translates to:
+  /// **'Carica completa'**
+  String get batteryFull;
+
+  /// No description provided for @batteryUnknown.
+  ///
+  /// In it, this message translates to:
+  /// **'Stato sconosciuto'**
+  String get batteryUnknown;
+
+  /// No description provided for @batteryThresholdsTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Soglie di carica'**
+  String get batteryThresholdsTitle;
+
+  /// No description provided for @batteryThresholdsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Limita la carica massima (es. 80%) per preservare la batteria. Richiede password amministratore. Supportato su ASUS, ThinkPad, Lenovo e Dell recenti.'**
+  String get batteryThresholdsDesc;
+
+  /// No description provided for @batteryThresholdsUnsupported.
+  ///
+  /// In it, this message translates to:
+  /// **'Soglie di carica non supportate su questo hardware.'**
+  String get batteryThresholdsUnsupported;
+
+  /// No description provided for @batteryEndLimit.
+  ///
+  /// In it, this message translates to:
+  /// **'Limite massimo di carica'**
+  String get batteryEndLimit;
+
+  /// No description provided for @batteryStartLimit.
+  ///
+  /// In it, this message translates to:
+  /// **'Inizio carica'**
+  String get batteryStartLimit;
+
+  /// No description provided for @batteryGovernorTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Governor automatico'**
+  String get batteryGovernorTitle;
+
+  /// No description provided for @batteryGovernorDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Passa a powersave quando scolleghi l\'alimentatore e a performance quando ricarichi. Funziona mentre l\'app è in esecuzione.'**
+  String get batteryGovernorDesc;
+
+  /// No description provided for @batteryGovernorAuto.
+  ///
+  /// In it, this message translates to:
+  /// **'Cambio automatico governor'**
+  String get batteryGovernorAuto;
+
+  /// No description provided for @batteryGovernorOnAc.
+  ///
+  /// In it, this message translates to:
+  /// **'Governor in carica'**
+  String get batteryGovernorOnAc;
+
+  /// No description provided for @batteryGovernorOnBattery.
+  ///
+  /// In it, this message translates to:
+  /// **'Governor a batteria'**
+  String get batteryGovernorOnBattery;
+
+  /// No description provided for @batteryGovernorCurrent.
+  ///
+  /// In it, this message translates to:
+  /// **'Governor attuale'**
+  String get batteryGovernorCurrent;
+
+  /// No description provided for @batteryApplied.
+  ///
+  /// In it, this message translates to:
+  /// **'Impostazione applicata.'**
+  String get batteryApplied;
+
+  /// No description provided for @batteryFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Operazione non riuscita.'**
+  String get batteryFailed;
+
+  /// No description provided for @batteryRefresh.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiorna'**
+  String get batteryRefresh;
+
   /// No description provided for @cleanupLinuxCache.
   ///
   /// In it, this message translates to:
@@ -213,6 +579,114 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Errore durante la pulizia della cache.'**
   String get cleanupLinuxCacheError;
+
+  /// No description provided for @advCleanupTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia avanzata (log e cache sviluppo)'**
+  String get advCleanupTitle;
+
+  /// No description provided for @devPip.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache pip'**
+  String get devPip;
+
+  /// No description provided for @devCargo.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache Cargo (Rust)'**
+  String get devCargo;
+
+  /// No description provided for @devNpm.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache npm'**
+  String get devNpm;
+
+  /// No description provided for @devGo.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache Go'**
+  String get devGo;
+
+  /// No description provided for @devGradle.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache Gradle'**
+  String get devGradle;
+
+  /// No description provided for @devDocker.
+  ///
+  /// In it, this message translates to:
+  /// **'Immagini Docker inutilizzate'**
+  String get devDocker;
+
+  /// No description provided for @devKernelHeaders.
+  ///
+  /// In it, this message translates to:
+  /// **'Vecchi kernel (headers + immagini)'**
+  String get devKernelHeaders;
+
+  /// No description provided for @advEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna cache di sviluppo rilevata.'**
+  String get advEmpty;
+
+  /// No description provided for @journalTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Log di sistema (journald)'**
+  String get journalTitle;
+
+  /// No description provided for @journalCurrentSize.
+  ///
+  /// In it, this message translates to:
+  /// **'Spazio occupato'**
+  String get journalCurrentSize;
+
+  /// No description provided for @journalVacuumTarget.
+  ///
+  /// In it, this message translates to:
+  /// **'Compatta fino a'**
+  String get journalVacuumTarget;
+
+  /// No description provided for @journalVacuumNow.
+  ///
+  /// In it, this message translates to:
+  /// **'Compatta'**
+  String get journalVacuumNow;
+
+  /// No description provided for @journalLimitLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Limite permanente'**
+  String get journalLimitLabel;
+
+  /// No description provided for @journalLimitApply.
+  ///
+  /// In it, this message translates to:
+  /// **'Applica limite'**
+  String get journalLimitApply;
+
+  /// No description provided for @advCleanSelected.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulisci selezionati'**
+  String get advCleanSelected;
+
+  /// No description provided for @advCleaned.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia completata.'**
+  String get advCleaned;
+
+  /// No description provided for @advFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia non riuscita.'**
+  String get advFailed;
 
   /// No description provided for @cleanupVram.
   ///
@@ -243,6 +717,162 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Impossibile ripulire la VRAM (reset GPU fallito).'**
   String get cleanupVramError;
+
+  /// No description provided for @ramCleanupTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia RAM'**
+  String get ramCleanupTitle;
+
+  /// No description provided for @ramCleanup.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulisci RAM'**
+  String get ramCleanup;
+
+  /// No description provided for @ramCleanupConfirmTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma pulizia RAM'**
+  String get ramCleanupConfirmTitle;
+
+  /// No description provided for @ramCleanupConfirmMessage.
+  ///
+  /// In it, this message translates to:
+  /// **'La pulizia profonda della RAM svuoterà le cache del kernel (drop_caches) e riciclerà lo swap per liberare la memoria usata da dati inattivi. Non ferma servizi di sistema e non elimina file temporanei. Richiede la password amministratore. Continuare?'**
+  String get ramCleanupConfirmMessage;
+
+  /// No description provided for @ramCleanupSuccess.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia RAM completata con successo.'**
+  String get ramCleanupSuccess;
+
+  /// No description provided for @ramCleanupError.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore durante la pulizia della RAM.'**
+  String get ramCleanupError;
+
+  /// No description provided for @ramUsed.
+  ///
+  /// In it, this message translates to:
+  /// **'Usata'**
+  String get ramUsed;
+
+  /// No description provided for @ramAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Disponibile'**
+  String get ramAvailable;
+
+  /// No description provided for @ramCache.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache'**
+  String get ramCache;
+
+  /// No description provided for @ramSwap.
+  ///
+  /// In it, this message translates to:
+  /// **'Swap'**
+  String get ramSwap;
+
+  /// No description provided for @ramSwapNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuno swap'**
+  String get ramSwapNone;
+
+  /// No description provided for @ramFreed.
+  ///
+  /// In it, this message translates to:
+  /// **'Memoria liberata'**
+  String get ramFreed;
+
+  /// No description provided for @ramBefore.
+  ///
+  /// In it, this message translates to:
+  /// **'Prima'**
+  String get ramBefore;
+
+  /// No description provided for @ramAfter.
+  ///
+  /// In it, this message translates to:
+  /// **'Dopo'**
+  String get ramAfter;
+
+  /// No description provided for @ramStepsFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Passaggi non riusciti'**
+  String get ramStepsFailed;
+
+  /// No description provided for @ramCleanupSettingsTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia automatica RAM'**
+  String get ramCleanupSettingsTitle;
+
+  /// No description provided for @ramCleanupSettingsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Esegue automaticamente la pulizia profonda della RAM a intervalli regolari.'**
+  String get ramCleanupSettingsDesc;
+
+  /// No description provided for @ramCleanupSettingsInterval.
+  ///
+  /// In it, this message translates to:
+  /// **'Frequenza pulizia RAM'**
+  String get ramCleanupSettingsInterval;
+
+  /// No description provided for @ramCleanupNever.
+  ///
+  /// In it, this message translates to:
+  /// **'Mai'**
+  String get ramCleanupNever;
+
+  /// No description provided for @ramCleanupEvery5Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 5 minuti'**
+  String get ramCleanupEvery5Min;
+
+  /// No description provided for @ramCleanupEvery10Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 10 minuti'**
+  String get ramCleanupEvery10Min;
+
+  /// No description provided for @ramCleanupEvery15Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 15 minuti'**
+  String get ramCleanupEvery15Min;
+
+  /// No description provided for @ramCleanupEvery30Min.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni 30 minuti'**
+  String get ramCleanupEvery30Min;
+
+  /// No description provided for @ramCleanupAutoEnabled.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia automatica RAM attivata (ogni {minutes} minuti).'**
+  String ramCleanupAutoEnabled(int minutes);
+
+  /// No description provided for @ramCleanupAutoDisabled.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia automatica RAM disattivata.'**
+  String get ramCleanupAutoDisabled;
+
+  /// No description provided for @ramCleanupAutoDone.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulizia automatica RAM completata'**
+  String get ramCleanupAutoDone;
 
   /// No description provided for @tabServices.
   ///
@@ -1303,7 +1933,7 @@ abstract class AppLocalizations {
   /// No description provided for @appDescription.
   ///
   /// In it, this message translates to:
-  /// **'Super Linux Utility è un\'applicazione completa per la gestione avanzata del sistema Linux. Offre strumenti potenti per ottimizzare le prestazioni, gestire servizi, applicazioni e personalizzare l\'aspetto del sistema.'**
+  /// **'Super Linux Utility è un\'applicazione desktop per la gestione del sistema Linux: servizi, applicazioni di avvio, pulizia, pacchetti installati, monitoraggio delle risorse e impostazioni d\'aspetto.'**
   String get appDescription;
 
   /// No description provided for @features.
@@ -1323,6 +1953,18 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Sito web del progetto'**
   String get infoProjectWebsite;
+
+  /// No description provided for @infoChangelog.
+  ///
+  /// In it, this message translates to:
+  /// **'Registro delle modifiche'**
+  String get infoChangelog;
+
+  /// No description provided for @infoChangelogShowAll.
+  ///
+  /// In it, this message translates to:
+  /// **'Vedi registro completo'**
+  String get infoChangelogShowAll;
 
   /// No description provided for @applicationIdLabel.
   ///
@@ -1447,7 +2089,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageRestartMessage.
   ///
   /// In it, this message translates to:
-  /// **'La lingua verrà applicata al riavvio dell\'applicazione'**
+  /// **'Lingua aggiornata'**
   String get languageRestartMessage;
 
   /// No description provided for @servicesSlow.
@@ -3004,18 +3646,6 @@ abstract class AppLocalizations {
   /// **'Aggiorna e ripristina i repository del package manager (APT, DNF, Pacman) per risolvere problemi di aggiornamento.'**
   String get recoveryRestoreReposDesc;
 
-  /// No description provided for @recoveryCheckUpdates.
-  ///
-  /// In it, this message translates to:
-  /// **'Ricerca Aggiornamenti'**
-  String get recoveryCheckUpdates;
-
-  /// No description provided for @recoveryCheckUpdatesDesc.
-  ///
-  /// In it, this message translates to:
-  /// **'Verifica la disponibilità di aggiornamenti per tutti i package manager installati (APT, DNF, Pacman, Snap, Flatpak).'**
-  String get recoveryCheckUpdatesDesc;
-
   /// No description provided for @recoveryPerformUpdates.
   ///
   /// In it, this message translates to:
@@ -3033,12 +3663,6 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Recovery'**
   String get recoveryTabRecovery;
-
-  /// No description provided for @recoveryTabCheckUpdates.
-  ///
-  /// In it, this message translates to:
-  /// **'Verifica Aggiornamenti'**
-  String get recoveryTabCheckUpdates;
 
   /// No description provided for @recoveryTabSoftwareInstaller.
   ///
@@ -3111,6 +3735,18 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Strumento efficiente per sincronizzazione e trasferimento file.'**
   String get recoveryInstallRsyncDesc;
+
+  /// No description provided for @recoveryFixWifiAutoSuspend.
+  ///
+  /// In it, this message translates to:
+  /// **'Fix Auto-Suspend WiFi'**
+  String get recoveryFixWifiAutoSuspend;
+
+  /// No description provided for @recoveryFixWifiAutoSuspendDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Disabilita l\'auto-suspend USB per gli adattatori WiFi e i ricevitori wireless interni per prevenire disconnessioni casuali.'**
+  String get recoveryFixWifiAutoSuspendDesc;
 
   /// No description provided for @install.
   ///
@@ -3586,6 +4222,12 @@ abstract class AppLocalizations {
   /// **'Directory Principali'**
   String get diskAnalyzerMainDirectories;
 
+  /// No description provided for @diskIndexingNotice.
+  ///
+  /// In it, this message translates to:
+  /// **'Indicizzazione del disco in corso: la prima analisi può richiedere tempo. I dati verranno salvati nella cache per le sessioni successive.'**
+  String get diskIndexingNotice;
+
   /// No description provided for @hardwareSuggestionsTitle.
   ///
   /// In it, this message translates to:
@@ -3754,11 +4396,41 @@ abstract class AppLocalizations {
   /// **'Riduci lo swappiness quando il sistema ha RAM sufficiente'**
   String get grubSuggestionPerfVmSwappiness;
 
+  /// No description provided for @grubSuggestionGpuNvidiaWaylandPageTable.
+  ///
+  /// In it, this message translates to:
+  /// **'NVIDIA: UsePageAttributeTable migliora le prestazioni di rendering su Wayland'**
+  String get grubSuggestionGpuNvidiaWaylandPageTable;
+
+  /// No description provided for @grubSuggestionGpuNvidiaWaylandResizableBar.
+  ///
+  /// In it, this message translates to:
+  /// **'NVIDIA: EnableResizableBar aumenta le prestazioni GPU del 10-15% (PCIe ReBAR)'**
+  String get grubSuggestionGpuNvidiaWaylandResizableBar;
+
+  /// No description provided for @grubSuggestionGpuNvidiaWaylandGpuFirmware.
+  ///
+  /// In it, this message translates to:
+  /// **'NVIDIA: EnableGpuFirmware=0 migliora stabilità e compatibilità su Wayland'**
+  String get grubSuggestionGpuNvidiaWaylandGpuFirmware;
+
+  /// No description provided for @grubSuggestionGpuNvidiaWaylandFbdev.
+  ///
+  /// In it, this message translates to:
+  /// **'NVIDIA: fbdev=1 abilita la console framebuffer su Wayland'**
+  String get grubSuggestionGpuNvidiaWaylandFbdev;
+
   /// No description provided for @settingsPasswordSecurityMessage.
   ///
   /// In it, this message translates to:
   /// **'La password viene salvata in modo sicuro utilizzando il keyring del sistema.'**
   String get settingsPasswordSecurityMessage;
+
+  /// No description provided for @tabSmart.
+  ///
+  /// In it, this message translates to:
+  /// **'SMART'**
+  String get tabSmart;
 
   /// No description provided for @tabShutdownScheduler.
   ///
@@ -4041,6 +4713,1392 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery. Senza un pagamento valido l\'app non può essere attivata.'**
   String get licenseActivateCardDesc;
+
+  /// No description provided for @noSmartDisksFound.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun disco con supporto SMART trovato.'**
+  String get noSmartDisksFound;
+
+  /// No description provided for @smartctlNotFound.
+  ///
+  /// In it, this message translates to:
+  /// **'smartctl non trovato'**
+  String get smartctlNotFound;
+
+  /// No description provided for @smartctlInstallPrompt.
+  ///
+  /// In it, this message translates to:
+  /// **'smartmontools è necessario per monitorare la salute del disco. Vuoi installarlo?'**
+  String get smartctlInstallPrompt;
+
+  /// No description provided for @installing.
+  ///
+  /// In it, this message translates to:
+  /// **'Installazione in corso...'**
+  String get installing;
+
+  /// No description provided for @installSmartctl.
+  ///
+  /// In it, this message translates to:
+  /// **'Installa smartmontools'**
+  String get installSmartctl;
+
+  /// No description provided for @selectDisk.
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona Disco'**
+  String get selectDisk;
+
+  /// No description provided for @smartHealthPassed.
+  ///
+  /// In it, this message translates to:
+  /// **'Salute: SUPERATA'**
+  String get smartHealthPassed;
+
+  /// No description provided for @smartHealthFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Salute: FALLITA'**
+  String get smartHealthFailed;
+
+  /// No description provided for @powerOnHours.
+  ///
+  /// In it, this message translates to:
+  /// **'Ore di Accensione'**
+  String get powerOnHours;
+
+  /// No description provided for @powerCycleCount.
+  ///
+  /// In it, this message translates to:
+  /// **'Conteggio Cicli di Accensione'**
+  String get powerCycleCount;
+
+  /// No description provided for @diskInformation.
+  ///
+  /// In it, this message translates to:
+  /// **'Informazioni Disco'**
+  String get diskInformation;
+
+  /// No description provided for @serialNumber.
+  ///
+  /// In it, this message translates to:
+  /// **'Numero Seriale'**
+  String get serialNumber;
+
+  /// No description provided for @firmware.
+  ///
+  /// In it, this message translates to:
+  /// **'Firmware'**
+  String get firmware;
+
+  /// No description provided for @interface.
+  ///
+  /// In it, this message translates to:
+  /// **'Interfaccia'**
+  String get interface;
+
+  /// No description provided for @smartAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'SMART Disponibile'**
+  String get smartAvailable;
+
+  /// No description provided for @smartEnabled.
+  ///
+  /// In it, this message translates to:
+  /// **'SMART Abilitato'**
+  String get smartEnabled;
+
+  /// No description provided for @smartAttributes.
+  ///
+  /// In it, this message translates to:
+  /// **'Attributi SMART'**
+  String get smartAttributes;
+
+  /// No description provided for @attributes.
+  ///
+  /// In it, this message translates to:
+  /// **'attributi'**
+  String get attributes;
+
+  /// No description provided for @failedAttributes.
+  ///
+  /// In it, this message translates to:
+  /// **'Attributi Falliti'**
+  String get failedAttributes;
+
+  /// No description provided for @attributeId.
+  ///
+  /// In it, this message translates to:
+  /// **'ID'**
+  String get attributeId;
+
+  /// No description provided for @attributeName.
+  ///
+  /// In it, this message translates to:
+  /// **'Attributo'**
+  String get attributeName;
+
+  /// No description provided for @attributeValue.
+  ///
+  /// In it, this message translates to:
+  /// **'Valore'**
+  String get attributeValue;
+
+  /// No description provided for @attributeWorst.
+  ///
+  /// In it, this message translates to:
+  /// **'Peggiore'**
+  String get attributeWorst;
+
+  /// No description provided for @attributeThreshold.
+  ///
+  /// In it, this message translates to:
+  /// **'Soglia'**
+  String get attributeThreshold;
+
+  /// No description provided for @attributeRaw.
+  ///
+  /// In it, this message translates to:
+  /// **'Valore Grezzo'**
+  String get attributeRaw;
+
+  /// No description provided for @selfTest.
+  ///
+  /// In it, this message translates to:
+  /// **'Self-Test'**
+  String get selfTest;
+
+  /// No description provided for @shortTest.
+  ///
+  /// In it, this message translates to:
+  /// **'Test Breve'**
+  String get shortTest;
+
+  /// No description provided for @longTest.
+  ///
+  /// In it, this message translates to:
+  /// **'Test Esteso'**
+  String get longTest;
+
+  /// No description provided for @selfTestHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Un self-test verrà accodato sul disco. Controlla i risultati in seguito nella tabella degli attributi.'**
+  String get selfTestHint;
+
+  /// No description provided for @selfTestStarted.
+  ///
+  /// In it, this message translates to:
+  /// **'Self-test avviato con successo. Controlla i risultati in seguito.'**
+  String get selfTestStarted;
+
+  /// No description provided for @selfTestFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile avviare il self-test'**
+  String get selfTestFailed;
+
+  /// No description provided for @attributeFailedWarning.
+  ///
+  /// In it, this message translates to:
+  /// **'Questo attributo ha FALLITO! Il disco potrebbe necessitare di sostituzione.'**
+  String get attributeFailedWarning;
+
+  /// No description provided for @smartDataNotAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Dati SMART non disponibili per questo disco.'**
+  String get smartDataNotAvailable;
+
+  /// No description provided for @smartUsbInfoTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Unità USB'**
+  String get smartUsbInfoTitle;
+
+  /// No description provided for @smartUsbInfoBody.
+  ///
+  /// In it, this message translates to:
+  /// **'I bridge USB-SATA spesso limitano i dati SMART allo stato di salute e temperatura. La tabella completa degli attributi potrebbe non essere disponibile. Se possibile, prova una connessione SATA diretta.'**
+  String get smartUsbInfoBody;
+
+  /// No description provided for @smartSudoPasswordRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva prima la tua password sudo nelle Impostazioni.'**
+  String get smartSudoPasswordRequired;
+
+  /// No description provided for @smartInstallFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Installazione fallita.'**
+  String get smartInstallFailed;
+
+  /// No description provided for @smartInstallError.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore di installazione: {error}'**
+  String smartInstallError(String error);
+
+  /// No description provided for @smartErrNoPassword.
+  ///
+  /// In it, this message translates to:
+  /// **'Password non salvata. Salva la password nelle impostazioni.'**
+  String get smartErrNoPassword;
+
+  /// No description provided for @smartErrWrongPassword.
+  ///
+  /// In it, this message translates to:
+  /// **'Password non corretta.'**
+  String get smartErrWrongPassword;
+
+  /// No description provided for @smartErrPasswordRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Password richiesta ma non fornita.'**
+  String get smartErrPasswordRequired;
+
+  /// No description provided for @smartErrPasswordTimeout.
+  ///
+  /// In it, this message translates to:
+  /// **'Timeout durante validazione password.'**
+  String get smartErrPasswordTimeout;
+
+  /// No description provided for @smartErrPasswordGeneric.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore durante validazione: {error}'**
+  String smartErrPasswordGeneric(String error);
+
+  /// No description provided for @smartErrSudo.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore sudo: {error}'**
+  String smartErrSudo(String error);
+
+  /// No description provided for @smartErrUnsupportedPm.
+  ///
+  /// In it, this message translates to:
+  /// **'Package manager non supportato.'**
+  String get smartErrUnsupportedPm;
+
+  /// No description provided for @smartErrUnexpected.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore imprevisto: {error}'**
+  String smartErrUnexpected(String error);
+
+  /// No description provided for @smartErrAptLock.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile aggiornare: un altro processo sta usando apt. Riprova tra qualche secondo.'**
+  String get smartErrAptLock;
+
+  /// No description provided for @smartErrAptNoRepos.
+  ///
+  /// In it, this message translates to:
+  /// **'Repository non trovati. Controlla la configurazione dei repository.'**
+  String get smartErrAptNoRepos;
+
+  /// No description provided for @smartErrAptUpdateFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento cache fallito: {error}'**
+  String smartErrAptUpdateFailed(String error);
+
+  /// No description provided for @smartErrDpkgInterrupted.
+  ///
+  /// In it, this message translates to:
+  /// **'dpkg interrotto. Esegui \"sudo dpkg --configure -a\" e riprova.'**
+  String get smartErrDpkgInterrupted;
+
+  /// No description provided for @smartErrGpgUnauthenticated.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacchetti non autenticati. Aggiorna le chiavi GPG: \"sudo apt-get update\".'**
+  String get smartErrGpgUnauthenticated;
+
+  /// No description provided for @smartErrInstallFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Installazione fallita: {error}'**
+  String smartErrInstallFailed(String error);
+
+  /// No description provided for @smartErrNotFoundAfterInstall.
+  ///
+  /// In it, this message translates to:
+  /// **'Installazione completata ma smartctl non trovato. Riavvia l\'app e riprova.'**
+  String get smartErrNotFoundAfterInstall;
+
+  /// No description provided for @servicesGuideTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Guida ai Servizi Linux'**
+  String get servicesGuideTitle;
+
+  /// No description provided for @servicesGuideWhatAre.
+  ///
+  /// In it, this message translates to:
+  /// **'Cosa sono i servizi Linux?'**
+  String get servicesGuideWhatAre;
+
+  /// No description provided for @servicesGuideWhatAreBody.
+  ///
+  /// In it, this message translates to:
+  /// **'I servizi (chiamati anche demoni o daemon) sono programmi in background che si avviano automaticamente all\'accensione del sistema. Forniscono funzioni essenziali come la gestione della rete (NetworkManager), la stampa (CUPS), la schedulazione (cron), database server (MySQL, PostgreSQL), server web (Apache, Nginx) e molti altri.\n\nAlcuni servizi sono indispensabili per il corretto funzionamento del sistema, mentre altri sono opzionali e dipendono dall\'uso specifico che si fa della macchina.'**
+  String get servicesGuideWhatAreBody;
+
+  /// No description provided for @servicesGuideHowToManage.
+  ///
+  /// In it, this message translates to:
+  /// **'Come vengono gestiti i servizi'**
+  String get servicesGuideHowToManage;
+
+  /// No description provided for @servicesGuideHowToManageBody.
+  ///
+  /// In it, this message translates to:
+  /// **'Sulle moderne distribuzioni Linux, i servizi sono gestiti da systemd, il sistema di init. Ogni servizio ha un file unit (.service) che definisce come si avvia, si ferma e si comporta.\n\nIn questa applicazione puoi:\n• Avviare e fermare un servizio immediatamente\n• Abilitare un servizio perché parta automaticamente all\'avvio\n• Disabilitare un servizio perché NON parta all\'avvio\n• Visualizzare lo stato corrente e i log di un servizio\n• Modificare le opzioni del servizio dal menu contestuale'**
+  String get servicesGuideHowToManageBody;
+
+  /// No description provided for @servicesGuideHowToDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Come disabilitare un servizio con questo software'**
+  String get servicesGuideHowToDisable;
+
+  /// No description provided for @servicesGuideHowToDisableBody.
+  ///
+  /// In it, this message translates to:
+  /// **'Dalla scheda \"Servizi\", individua il servizio che intendi disabilitare. Premi \"Stop\" per fermarlo immediatamente, oppure \"Disabilita\" per impedirne l\'avvio automatico al prossimo riavvio.\n\nPuoi anche combinare le due azioni: premi \"Stop\" e poi \"Disabilita\" per disattivare completamente un servizio finché non lo riabiliti manualmente.'**
+  String get servicesGuideHowToDisableBody;
+
+  /// No description provided for @servicesGuidePrecautions.
+  ///
+  /// In it, this message translates to:
+  /// **'Precauzioni e cautele'**
+  String get servicesGuidePrecautions;
+
+  /// No description provided for @servicesGuidePrecautionsBody.
+  ///
+  /// In it, this message translates to:
+  /// **'• NON disabilitare servizi che non conosci: alcuni sono essenziali per il sistema (es. NetworkManager, accounts-daemon, systemd-logind)\n• Disabilitare servizi di rete (NetworkManager, systemd-networkd) interromperà la connessione Internet\n• Disabilitare il display manager (gdm, sddm, lightdm) impedirà l\'avvio dell\'interfaccia grafica\n• Verifica sempre di non aver bisogno di un servizio prima di disabilitarlo\n• Le modifiche sono a livello di sistema: riguardano tutti gli utenti, non solo il tuo account\n• Se commetti un errore, puoi riabilitare il servizio dalla stessa schermata usando \"Abilita\"'**
+  String get servicesGuidePrecautionsBody;
+
+  /// No description provided for @servicesGuideDontShowAgain.
+  ///
+  /// In it, this message translates to:
+  /// **'Non mostrare più questa guida'**
+  String get servicesGuideDontShowAgain;
+
+  /// No description provided for @servicesGuideGotIt.
+  ///
+  /// In it, this message translates to:
+  /// **'Ho capito!'**
+  String get servicesGuideGotIt;
+
+  /// No description provided for @tabRepositories.
+  ///
+  /// In it, this message translates to:
+  /// **'Repository'**
+  String get tabRepositories;
+
+  /// No description provided for @repoTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Repository'**
+  String get repoTitle;
+
+  /// No description provided for @repoCount.
+  ///
+  /// In it, this message translates to:
+  /// **'repo'**
+  String get repoCount;
+
+  /// No description provided for @repoEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna repository trovata'**
+  String get repoEmpty;
+
+  /// No description provided for @repoEnabled.
+  ///
+  /// In it, this message translates to:
+  /// **'{name} abilitata'**
+  String repoEnabled(Object name);
+
+  /// No description provided for @repoDisabled.
+  ///
+  /// In it, this message translates to:
+  /// **'{name} disabilitata'**
+  String repoDisabled(Object name);
+
+  /// No description provided for @repoRemoved.
+  ///
+  /// In it, this message translates to:
+  /// **'{name} rimossa'**
+  String repoRemoved(Object name);
+
+  /// No description provided for @repoError.
+  ///
+  /// In it, this message translates to:
+  /// **'Operazione fallita. Controlla la password sudo.'**
+  String get repoError;
+
+  /// No description provided for @repoRemoveTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuovi Repository'**
+  String get repoRemoveTitle;
+
+  /// No description provided for @repoRemoveConfirm.
+  ///
+  /// In it, this message translates to:
+  /// **'Sei sicuro di voler rimuovere \"{name}\"?'**
+  String repoRemoveConfirm(Object name);
+
+  /// No description provided for @repoEditTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Modifica Repository'**
+  String get repoEditTitle;
+
+  /// No description provided for @repoFilePathLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'File:'**
+  String get repoFilePathLabel;
+
+  /// No description provided for @repoContentLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Contenuto'**
+  String get repoContentLabel;
+
+  /// No description provided for @repoUpdated.
+  ///
+  /// In it, this message translates to:
+  /// **'Repository aggiornata'**
+  String get repoUpdated;
+
+  /// No description provided for @edit.
+  ///
+  /// In it, this message translates to:
+  /// **'Modifica'**
+  String get edit;
+
+  /// No description provided for @tabTweaks.
+  ///
+  /// In it, this message translates to:
+  /// **'Tweaks'**
+  String get tabTweaks;
+
+  /// No description provided for @tweaksSwap.
+  ///
+  /// In it, this message translates to:
+  /// **'Swap'**
+  String get tweaksSwap;
+
+  /// No description provided for @tweaksSwapRecommendations.
+  ///
+  /// In it, this message translates to:
+  /// **'Raccomandazioni Swap'**
+  String get tweaksSwapRecommendations;
+
+  /// No description provided for @appCheckForUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'Cerca aggiornamenti'**
+  String get appCheckForUpdates;
+
+  /// No description provided for @kernelUpdateDetectedLiquorix.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento kernel Liquorix disponibile'**
+  String get kernelUpdateDetectedLiquorix;
+
+  /// No description provided for @kernelUpdateDetectedXanmod.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento kernel Xanmod disponibile'**
+  String get kernelUpdateDetectedXanmod;
+
+  /// No description provided for @tabSystemStatus.
+  ///
+  /// In it, this message translates to:
+  /// **'Stato Sistema'**
+  String get tabSystemStatus;
+
+  /// No description provided for @tabSecurity.
+  ///
+  /// In it, this message translates to:
+  /// **'Sicurezza'**
+  String get tabSecurity;
+
+  /// No description provided for @tabKernelTweaks.
+  ///
+  /// In it, this message translates to:
+  /// **'Tweaks Kernel'**
+  String get tabKernelTweaks;
+
+  /// No description provided for @tabOperationHistory.
+  ///
+  /// In it, this message translates to:
+  /// **'Cronologia'**
+  String get tabOperationHistory;
+
+  /// No description provided for @statusRefresh.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiorna'**
+  String get statusRefresh;
+
+  /// No description provided for @statusReadOnlyNote.
+  ///
+  /// In it, this message translates to:
+  /// **'Informazioni di sistema di sola lettura. Non viene modificato nulla.'**
+  String get statusReadOnlyNote;
+
+  /// No description provided for @statusTabKernel.
+  ///
+  /// In it, this message translates to:
+  /// **'Kernel'**
+  String get statusTabKernel;
+
+  /// No description provided for @statusTabSecurity.
+  ///
+  /// In it, this message translates to:
+  /// **'Sicurezza'**
+  String get statusTabSecurity;
+
+  /// No description provided for @statusTabVirtualization.
+  ///
+  /// In it, this message translates to:
+  /// **'Virtualizzazione'**
+  String get statusTabVirtualization;
+
+  /// No description provided for @statusTabPrinters.
+  ///
+  /// In it, this message translates to:
+  /// **'Stampanti'**
+  String get statusTabPrinters;
+
+  /// No description provided for @statusEnabled.
+  ///
+  /// In it, this message translates to:
+  /// **'Attivo'**
+  String get statusEnabled;
+
+  /// No description provided for @statusDisabled.
+  ///
+  /// In it, this message translates to:
+  /// **'Disattivo'**
+  String get statusDisabled;
+
+  /// No description provided for @statusNotAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Non disponibile'**
+  String get statusNotAvailable;
+
+  /// No description provided for @statusNotInstalled.
+  ///
+  /// In it, this message translates to:
+  /// **'Non installato'**
+  String get statusNotInstalled;
+
+  /// No description provided for @statusUnknown.
+  ///
+  /// In it, this message translates to:
+  /// **'Sconosciuto'**
+  String get statusUnknown;
+
+  /// No description provided for @statusNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuno'**
+  String get statusNone;
+
+  /// No description provided for @statusEnforcing.
+  ///
+  /// In it, this message translates to:
+  /// **'Enforcing'**
+  String get statusEnforcing;
+
+  /// No description provided for @statusPermissive.
+  ///
+  /// In it, this message translates to:
+  /// **'Permissivo'**
+  String get statusPermissive;
+
+  /// No description provided for @statusKernelInfo.
+  ///
+  /// In it, this message translates to:
+  /// **'Informazioni kernel'**
+  String get statusKernelInfo;
+
+  /// No description provided for @statusKernelVersion.
+  ///
+  /// In it, this message translates to:
+  /// **'Versione'**
+  String get statusKernelVersion;
+
+  /// No description provided for @statusKernelBuild.
+  ///
+  /// In it, this message translates to:
+  /// **'Build'**
+  String get statusKernelBuild;
+
+  /// No description provided for @statusCpuCount.
+  ///
+  /// In it, this message translates to:
+  /// **'Numero di CPU'**
+  String get statusCpuCount;
+
+  /// No description provided for @statusKernelTuning.
+  ///
+  /// In it, this message translates to:
+  /// **'Ottimizzazione kernel'**
+  String get statusKernelTuning;
+
+  /// No description provided for @statusThpMode.
+  ///
+  /// In it, this message translates to:
+  /// **'Transparent Huge Pages'**
+  String get statusThpMode;
+
+  /// No description provided for @statusZswap.
+  ///
+  /// In it, this message translates to:
+  /// **'Zswap'**
+  String get statusZswap;
+
+  /// No description provided for @statusGovernor.
+  ///
+  /// In it, this message translates to:
+  /// **'Governor CPU'**
+  String get statusGovernor;
+
+  /// No description provided for @statusIoScheduler.
+  ///
+  /// In it, this message translates to:
+  /// **'Scheduler I/O'**
+  String get statusIoScheduler;
+
+  /// No description provided for @statusMandatoryAccess.
+  ///
+  /// In it, this message translates to:
+  /// **'Controllo accessi obbligatorio'**
+  String get statusMandatoryAccess;
+
+  /// No description provided for @statusAppArmor.
+  ///
+  /// In it, this message translates to:
+  /// **'AppArmor'**
+  String get statusAppArmor;
+
+  /// No description provided for @statusSelinux.
+  ///
+  /// In it, this message translates to:
+  /// **'SELinux'**
+  String get statusSelinux;
+
+  /// No description provided for @statusSecureBoot.
+  ///
+  /// In it, this message translates to:
+  /// **'Secure Boot'**
+  String get statusSecureBoot;
+
+  /// No description provided for @statusNetworkSecurity.
+  ///
+  /// In it, this message translates to:
+  /// **'Sicurezza di rete'**
+  String get statusNetworkSecurity;
+
+  /// No description provided for @statusFirewall.
+  ///
+  /// In it, this message translates to:
+  /// **'Firewall'**
+  String get statusFirewall;
+
+  /// No description provided for @statusFirewallBackend.
+  ///
+  /// In it, this message translates to:
+  /// **'Backend firewall'**
+  String get statusFirewallBackend;
+
+  /// No description provided for @statusSshService.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio SSH'**
+  String get statusSshService;
+
+  /// No description provided for @statusRootSsh.
+  ///
+  /// In it, this message translates to:
+  /// **'Login root SSH'**
+  String get statusRootSsh;
+
+  /// No description provided for @statusAutoUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti automatici'**
+  String get statusAutoUpdates;
+
+  /// No description provided for @statusVirtHost.
+  ///
+  /// In it, this message translates to:
+  /// **'Host di virtualizzazione'**
+  String get statusVirtHost;
+
+  /// No description provided for @statusCpuVirt.
+  ///
+  /// In it, this message translates to:
+  /// **'Virtualizzazione CPU'**
+  String get statusCpuVirt;
+
+  /// No description provided for @statusKvmModule.
+  ///
+  /// In it, this message translates to:
+  /// **'Modulo KVM'**
+  String get statusKvmModule;
+
+  /// No description provided for @statusIommu.
+  ///
+  /// In it, this message translates to:
+  /// **'IOMMU'**
+  String get statusIommu;
+
+  /// No description provided for @statusVirtAux.
+  ///
+  /// In it, this message translates to:
+  /// **'Supporto virtualizzazione'**
+  String get statusVirtAux;
+
+  /// No description provided for @statusVfio.
+  ///
+  /// In it, this message translates to:
+  /// **'VFIO'**
+  String get statusVfio;
+
+  /// No description provided for @statusKsm.
+  ///
+  /// In it, this message translates to:
+  /// **'KSM'**
+  String get statusKsm;
+
+  /// No description provided for @statusDocker.
+  ///
+  /// In it, this message translates to:
+  /// **'Docker'**
+  String get statusDocker;
+
+  /// No description provided for @statusLibvirt.
+  ///
+  /// In it, this message translates to:
+  /// **'Libvirt'**
+  String get statusLibvirt;
+
+  /// No description provided for @statusCups.
+  ///
+  /// In it, this message translates to:
+  /// **'CUPS'**
+  String get statusCups;
+
+  /// No description provided for @statusCupsService.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio CUPS'**
+  String get statusCupsService;
+
+  /// No description provided for @statusPrinters.
+  ///
+  /// In it, this message translates to:
+  /// **'Stampanti'**
+  String get statusPrinters;
+
+  /// No description provided for @statusPrinterDrivers.
+  ///
+  /// In it, this message translates to:
+  /// **'Driver stampanti'**
+  String get statusPrinterDrivers;
+
+  /// No description provided for @securitySubtitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Gestisci i servizi di sicurezza del sistema. Ogni azione viene registrata nella cronologia operazioni e può essere annullata.'**
+  String get securitySubtitle;
+
+  /// No description provided for @securityFirewall.
+  ///
+  /// In it, this message translates to:
+  /// **'Firewall'**
+  String get securityFirewall;
+
+  /// No description provided for @securityFirewallDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Blocca le connessioni in entrata non richieste usando UFW o firewalld.'**
+  String get securityFirewallDesc;
+
+  /// No description provided for @securityFirewallBackend.
+  ///
+  /// In it, this message translates to:
+  /// **'Attivo ({backend})'**
+  String securityFirewallBackend(Object backend);
+
+  /// No description provided for @securitySsh.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio SSH'**
+  String get securitySsh;
+
+  /// No description provided for @securitySshDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Accesso remoto a shell sulla rete.'**
+  String get securitySshDesc;
+
+  /// No description provided for @securityRootSsh.
+  ///
+  /// In it, this message translates to:
+  /// **'Login root SSH'**
+  String get securityRootSsh;
+
+  /// No description provided for @securityRootSshDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Consenti o nega il login root diretto via SSH.'**
+  String get securityRootSshDesc;
+
+  /// No description provided for @securityRootAllowed.
+  ///
+  /// In it, this message translates to:
+  /// **'Login root consentito'**
+  String get securityRootAllowed;
+
+  /// No description provided for @securityAutoUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti automatici'**
+  String get securityAutoUpdates;
+
+  /// No description provided for @securityAutoUpdatesDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Installa automaticamente in background gli aggiornamenti di sicurezza.'**
+  String get securityAutoUpdatesDesc;
+
+  /// No description provided for @kernelTweaksSubtitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Applica le impostazioni del kernel in modo permanente: vengono riapplicate a ogni avvio.'**
+  String get kernelTweaksSubtitle;
+
+  /// No description provided for @kernelTweaksPersistNote.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun tweak persistente attivo. Le impostazioni applicate vengono salvate in un servizio systemd e riapplicate a ogni avvio.'**
+  String get kernelTweaksPersistNote;
+
+  /// No description provided for @kernelTweaksPersistActive.
+  ///
+  /// In it, this message translates to:
+  /// **'I tweaks del kernel persistenti sono attivi e riapplicati a ogni avvio.'**
+  String get kernelTweaksPersistActive;
+
+  /// No description provided for @kernelTweaksApply.
+  ///
+  /// In it, this message translates to:
+  /// **'Applica'**
+  String get kernelTweaksApply;
+
+  /// No description provided for @kernelTweaksReset.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina'**
+  String get kernelTweaksReset;
+
+  /// No description provided for @kernelTweaksResetTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina tweaks del kernel'**
+  String get kernelTweaksResetTitle;
+
+  /// No description provided for @kernelTweaksResetConfirm.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa operazione rimuove i tweaks persistenti del kernel e ripristina i valori predefiniti. Continuare?'**
+  String get kernelTweaksResetConfirm;
+
+  /// No description provided for @kernelTweaksThp.
+  ///
+  /// In it, this message translates to:
+  /// **'Transparent Huge Pages'**
+  String get kernelTweaksThp;
+
+  /// No description provided for @kernelTweaksThpDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Modalità usata per l\'allocazione delle huge page trasparenti.'**
+  String get kernelTweaksThpDesc;
+
+  /// No description provided for @kernelTweaksGovernor.
+  ///
+  /// In it, this message translates to:
+  /// **'Governor CPU'**
+  String get kernelTweaksGovernor;
+
+  /// No description provided for @kernelTweaksGovernorDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Politica di scaling delle frequenze CPU applicata a tutti i core.'**
+  String get kernelTweaksGovernorDesc;
+
+  /// No description provided for @kernelTweaksScheduler.
+  ///
+  /// In it, this message translates to:
+  /// **'Scheduler CPU'**
+  String get kernelTweaksScheduler;
+
+  /// No description provided for @kernelTweaksSchedulerDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Esegue i processi figli appena creati prima del processo padre per una maggiore reattività.'**
+  String get kernelTweaksSchedulerDesc;
+
+  /// No description provided for @kernelTweaksPerf.
+  ///
+  /// In it, this message translates to:
+  /// **'Performance'**
+  String get kernelTweaksPerf;
+
+  /// No description provided for @kernelTweaksOndemand.
+  ///
+  /// In it, this message translates to:
+  /// **'On-demand'**
+  String get kernelTweaksOndemand;
+
+  /// No description provided for @kernelTweaksSchedutil.
+  ///
+  /// In it, this message translates to:
+  /// **'Schedutil'**
+  String get kernelTweaksSchedutil;
+
+  /// No description provided for @kernelTweaksPowersave.
+  ///
+  /// In it, this message translates to:
+  /// **'Powersave'**
+  String get kernelTweaksPowersave;
+
+  /// No description provided for @kernelTweaksAlways.
+  ///
+  /// In it, this message translates to:
+  /// **'Sempre'**
+  String get kernelTweaksAlways;
+
+  /// No description provided for @kernelTweaksMadvise.
+  ///
+  /// In it, this message translates to:
+  /// **'Madvise'**
+  String get kernelTweaksMadvise;
+
+  /// No description provided for @kernelTweaksNever.
+  ///
+  /// In it, this message translates to:
+  /// **'Mai'**
+  String get kernelTweaksNever;
+
+  /// No description provided for @kernelTweaksSchedOn.
+  ///
+  /// In it, this message translates to:
+  /// **'Figli per primi'**
+  String get kernelTweaksSchedOn;
+
+  /// No description provided for @kernelTweaksSchedOff.
+  ///
+  /// In it, this message translates to:
+  /// **'Predefinito'**
+  String get kernelTweaksSchedOff;
+
+  /// No description provided for @historySubtitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Registro delle operazioni eseguite. Ripristina per annullare un\'azione.'**
+  String get historySubtitle;
+
+  /// No description provided for @historyEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna operazione registrata.'**
+  String get historyEmpty;
+
+  /// No description provided for @historyRestore.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina'**
+  String get historyRestore;
+
+  /// No description provided for @historyRestoreTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina operazione'**
+  String get historyRestoreTitle;
+
+  /// No description provided for @historyRestoreConfirm.
+  ///
+  /// In it, this message translates to:
+  /// **'Verranno annullate le modifiche di questa operazione. Continuare?'**
+  String get historyRestoreConfirm;
+
+  /// No description provided for @historyRestored.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristinata'**
+  String get historyRestored;
+
+  /// No description provided for @historyClearAll.
+  ///
+  /// In it, this message translates to:
+  /// **'Svuota cronologia'**
+  String get historyClearAll;
+
+  /// No description provided for @historyClearTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Svuota cronologia'**
+  String get historyClearTitle;
+
+  /// No description provided for @historyClearConfirm.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuove tutte le operazioni registrate dalla cronologia. Non annulla nulla. Continuare?'**
+  String get historyClearConfirm;
+
+  /// No description provided for @historyFirewallEnable.
+  ///
+  /// In it, this message translates to:
+  /// **'Firewall attivato'**
+  String get historyFirewallEnable;
+
+  /// No description provided for @historyFirewallDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Firewall disattivato'**
+  String get historyFirewallDisable;
+
+  /// No description provided for @historySshEnable.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio SSH attivato'**
+  String get historySshEnable;
+
+  /// No description provided for @historySshDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio SSH disattivato'**
+  String get historySshDisable;
+
+  /// No description provided for @historyRootAllow.
+  ///
+  /// In it, this message translates to:
+  /// **'Login root SSH consentito'**
+  String get historyRootAllow;
+
+  /// No description provided for @historyRootDeny.
+  ///
+  /// In it, this message translates to:
+  /// **'Login root SSH negato'**
+  String get historyRootDeny;
+
+  /// No description provided for @historyAutoUpdateEnable.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti automatici attivati'**
+  String get historyAutoUpdateEnable;
+
+  /// No description provided for @historyAutoUpdateDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti automatici disattivati'**
+  String get historyAutoUpdateDisable;
+
+  /// No description provided for @historyKernelApply.
+  ///
+  /// In it, this message translates to:
+  /// **'Tweaks del kernel applicati'**
+  String get historyKernelApply;
+
+  /// No description provided for @historyKernelReset.
+  ///
+  /// In it, this message translates to:
+  /// **'Tweaks del kernel ripristinati'**
+  String get historyKernelReset;
+
+  /// No description provided for @kernelTweaksCurrent.
+  ///
+  /// In it, this message translates to:
+  /// **'Attuale'**
+  String get kernelTweaksCurrent;
+
+  /// No description provided for @kernelTweaksSavedForBoot.
+  ///
+  /// In it, this message translates to:
+  /// **'Salvato per l\'avvio'**
+  String get kernelTweaksSavedForBoot;
+
+  /// No description provided for @tabDeviceManager.
+  ///
+  /// In it, this message translates to:
+  /// **'Gestione Periferiche'**
+  String get tabDeviceManager;
+
+  /// No description provided for @deviceManagerTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Gestione Periferiche'**
+  String get deviceManagerTitle;
+
+  /// No description provided for @deviceManagerLoading.
+  ///
+  /// In it, this message translates to:
+  /// **'Rilevamento periferiche in corso...'**
+  String get deviceManagerLoading;
+
+  /// No description provided for @deviceManagerEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna periferica trovata'**
+  String get deviceManagerEmpty;
+
+  /// No description provided for @deviceManagerRefresh.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiorna'**
+  String get deviceManagerRefresh;
+
+  /// No description provided for @deviceManagerEnable.
+  ///
+  /// In it, this message translates to:
+  /// **'Abilita'**
+  String get deviceManagerEnable;
+
+  /// No description provided for @deviceManagerDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Disabilita'**
+  String get deviceManagerDisable;
+
+  /// No description provided for @deviceManagerEnabled.
+  ///
+  /// In it, this message translates to:
+  /// **'Abilitato'**
+  String get deviceManagerEnabled;
+
+  /// No description provided for @deviceManagerDisabled.
+  ///
+  /// In it, this message translates to:
+  /// **'Disabilitato'**
+  String get deviceManagerDisabled;
+
+  /// No description provided for @deviceManagerToggleSuccess.
+  ///
+  /// In it, this message translates to:
+  /// **'Periferica {action} con successo'**
+  String deviceManagerToggleSuccess(Object action);
+
+  /// No description provided for @deviceManagerToggleError.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile {action} la periferica'**
+  String deviceManagerToggleError(Object action);
+
+  /// No description provided for @deviceManagerCannotDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa periferica non può essere disabilitata'**
+  String get deviceManagerCannotDisable;
+
+  /// No description provided for @deviceManagerDetails.
+  ///
+  /// In it, this message translates to:
+  /// **'Dettagli'**
+  String get deviceManagerDetails;
+
+  /// No description provided for @deviceManagerDriver.
+  ///
+  /// In it, this message translates to:
+  /// **'Driver'**
+  String get deviceManagerDriver;
+
+  /// No description provided for @deviceManagerBus.
+  ///
+  /// In it, this message translates to:
+  /// **'Bus'**
+  String get deviceManagerBus;
+
+  /// No description provided for @deviceManagerVendor.
+  ///
+  /// In it, this message translates to:
+  /// **'Produttore'**
+  String get deviceManagerVendor;
+
+  /// No description provided for @deviceManagerProduct.
+  ///
+  /// In it, this message translates to:
+  /// **'Prodotto'**
+  String get deviceManagerProduct;
+
+  /// No description provided for @deviceManagerConfirmTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma azione'**
+  String get deviceManagerConfirmTitle;
+
+  /// No description provided for @deviceManagerConfirmDisable.
+  ///
+  /// In it, this message translates to:
+  /// **'Disabilitare questa periferica potrebbe causare instabilità del sistema. La modifica persiste al riavvio. Continuare?'**
+  String get deviceManagerConfirmDisable;
+
+  /// No description provided for @deviceManagerConfirmEnable.
+  ///
+  /// In it, this message translates to:
+  /// **'Abilitare questa periferica? La modifica persiste al riavvio. Continuare?'**
+  String get deviceManagerConfirmEnable;
+
+  /// No description provided for @deviceManagerAllDevices.
+  ///
+  /// In it, this message translates to:
+  /// **'Tutte le periferiche'**
+  String get deviceManagerAllDevices;
+
+  /// No description provided for @deviceManagerShowDisabled.
+  ///
+  /// In it, this message translates to:
+  /// **'Mostra disabilitate'**
+  String get deviceManagerShowDisabled;
+
+  /// No description provided for @deviceManagerStatus.
+  ///
+  /// In it, this message translates to:
+  /// **'Stato'**
+  String get deviceManagerStatus;
+
+  /// No description provided for @deviceManagerProperties.
+  ///
+  /// In it, this message translates to:
+  /// **'Proprietà'**
+  String get deviceManagerProperties;
+
+  /// No description provided for @deviceManagerClose.
+  ///
+  /// In it, this message translates to:
+  /// **'Chiudi'**
+  String get deviceManagerClose;
+
+  /// No description provided for @deviceManagerNoSudo.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva prima la password amministratore nelle Impostazioni'**
+  String get deviceManagerNoSudo;
+
+  /// No description provided for @deviceManagerPersistent.
+  ///
+  /// In it, this message translates to:
+  /// **'Persiste al riavvio'**
+  String get deviceManagerPersistent;
+
+  /// No description provided for @tabDriverManager.
+  ///
+  /// In it, this message translates to:
+  /// **'Driver'**
+  String get tabDriverManager;
+
+  /// No description provided for @driverManagerTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Gestione Driver e Firmware'**
+  String get driverManagerTitle;
+
+  /// No description provided for @driverManagerScan.
+  ///
+  /// In it, this message translates to:
+  /// **'Scansiona hardware'**
+  String get driverManagerScan;
+
+  /// No description provided for @driverManagerFirmwareUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti Firmware'**
+  String get driverManagerFirmwareUpdates;
+
+  /// No description provided for @driverManagerAvailableDrivers.
+  ///
+  /// In it, this message translates to:
+  /// **'Driver disponibili'**
+  String get driverManagerAvailableDrivers;
+
+  /// No description provided for @driverManagerInstalledDrivers.
+  ///
+  /// In it, this message translates to:
+  /// **'Driver installati'**
+  String get driverManagerInstalledDrivers;
+
+  /// No description provided for @driverManagerAllDriversInstalled.
+  ///
+  /// In it, this message translates to:
+  /// **'Tutti i driver noti sono installati'**
+  String get driverManagerAllDriversInstalled;
+
+  /// No description provided for @driverManagerNoDriversInstalled.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun driver gestito installato'**
+  String get driverManagerNoDriversInstalled;
+
+  /// No description provided for @driverManagerCurrentDriver.
+  ///
+  /// In it, this message translates to:
+  /// **'Driver attuale'**
+  String get driverManagerCurrentDriver;
+
+  /// No description provided for @driverManagerPackage.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacchetto'**
+  String get driverManagerPackage;
+
+  /// No description provided for @driverManagerInstall.
+  ///
+  /// In it, this message translates to:
+  /// **'Installa'**
+  String get driverManagerInstall;
+
+  /// No description provided for @driverManagerUpdate.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiorna'**
+  String get driverManagerUpdate;
+
+  /// No description provided for @driverManagerRebootRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Riavvio necessario dopo l\'aggiornamento'**
+  String get driverManagerRebootRequired;
+
+  /// No description provided for @driverManagerLinuxFirmware.
+  ///
+  /// In it, this message translates to:
+  /// **'Firmware Linux (linux-firmware)'**
+  String get driverManagerLinuxFirmware;
+
+  /// No description provided for @driverManagerLinuxFirmwareDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacchetto firmware completo per GPU, Wi-Fi, Bluetooth e altri dispositivi'**
+  String get driverManagerLinuxFirmwareDesc;
 }
 
 class _AppLocalizationsDelegate
