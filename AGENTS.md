@@ -162,13 +162,20 @@ flutter build linux
 - `HomeScreen._startRamCleanupTimer()` avvia un tick ogni minuto; `_onRamCleanupTick()` esegue `cleanupRam()` solo se è passato l'intervallo configurato (`prefKeyLastRunTs`).
 - SettingsScreen passa `onRamCleanupPolicyChanged: _startRamCleanupTimer` per riavviare il timer al cambio impostazione.
 
+# Sessione 2026-10-18: documentazione aggiornata + benchmark rimosso dai documenti
+- **Manuali utente (6 file in `manual/`)**: allineati a v2.1.0 — versione (v2.0.6→v2.1.0), "12 schede"→"14 schede", elenco edizione Standard con Gestore Driver+Batteria, elenco edizione Avanzata SENZA "Benchmark suite" (tab rimossa), TOC con 5.13/5.14 e senza 6.2, sezione "Controllo Aggiornamenti" sostituita da nota (aggiornamenti dal tray o controllo automatico), nuovo bullet "Riduci a icona nel vassoio/opzionale" in Impostazioni→Barra, sezioni 6.2 Benchmark ELIMINATE, cap. 6 = solo Editor GRUB. I 6 manuali hanno la STESSA struttura (stessi numeri riga): le modifiche si fanno per TUTTI e 6 insieme; contenuti per lingua nel diff del commit.
+- `README.md`: sezione Appearance STALE rimossa (accent color + wallpaper non esistono più); aggiunte Disk Analyzer (nascosti, streaming, cache), Global search Ctrl+K + Undo banner, Interface (onboarding, tema/font/lingua, scrollbar, tab batteria nascosta), Security (keyring). Technical Details "Password storage" aggiornato al keyring.
+- `CHANGELOG.md`: aggiunta sezione "## Unreleased" (fix tray Fedora, fix build scripts secret, Disk Analyzer, UX, keyring/licenza, rimozione dead code, l10n 55+ stringhe). Il changelog riflette ora lo stato post-2.1.0 non ancora rilasciato.
+- Copie tracciate in `deb_package_{standard,advanced}/` (doc/ + flutter_assets/CHANGELOG.md) sincronizzate con README/CHANGELOG root.
+- ⚠️ Non usare la parola "Benchmark" nei documenti/per l10n: il tab NON esiste più; keyword 'benchmark' resta solo nelle `_TabSpec.keywords` di Tweaks (porta lì).
+
 ## Tray menu
 - `TrayMenuLabels`/`TrayCallbacks` hanno il campo `settings`/`onShowSettings`: la voce "Impostazioni" apre il tab Settings (`HomeScreen._goToSettingsTab()` usa `tabCount - 2`).
 - Etichetta traySettings aggiunta in tutti gli `.arb`; rigenerare con `flutter gen-l10n` (template = `app_it.arb`). Attenzione: `gen-l10n` rigenera anche getter precedentemente presenti solo nei `.dart` committati; le stringhe nuove vanno aggiunte a TUTTI i 6 `.arb`.
 
 ## Struttura tab HomeScreen (recovery sempre disponibile)
 - Tab standard (14, con batteria): Services, StartupApps, Cleanup, InstalledApps, Monitor, DiskAnalyzer, Smart, DeviceManager, DriverManager, Recovery, Battery, Tweaks, Settings, Info → 13 se la batteria è assente (`BatteryService.hasBatteryDevice()` su sysfs è fatta in `_initializeController`, default true in caso di errore di lettura).
-- Tab solo advanced: Grub, Benchmark → `_advancedTabCount = 15`.
+- Tab solo advanced: Grub → `_advancedTabCount` = tab standard + 1 (15 con batteria, 14 senza). Il Benchmark è STATO RIMOSSO (le schermate di benchmark non esistono più; la keyword 'benchmark' nella ricerca porta a Tweaks).
 - **Indici NON più fonte di verità**: sidebar e viste sono costruite da `_allTabSpecs` (chiave stabile per tab: 'services','startup','cleanup','installed','monitor','diskAnalyzer','smart','deviceManager','driverManager','recovery','grub'(advancedOnly),'battery'(needsBattery),'tweaks','settings','info') in home_screen; `_goToTabKey(key)` naviga per chiave (fallback 'battery'→'monitor' se assente); callback tray usano chiavi; `_goToSettingsTab` non fa più aritmetica `tabCount-2` (FIX: "Batteria" nel tray andava su Recovery!). `_TabSpec.keywords` (EN) alimenta la ricerca globale.
 - `SecurityScreen` e `RepositoriesScreen` NON hanno più tab propri nella sidebar: sono sub-tab dentro `RecoveryScreen`.
 

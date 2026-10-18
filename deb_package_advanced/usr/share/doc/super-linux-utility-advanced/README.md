@@ -40,9 +40,14 @@
 - Kernel updates detected separately with explicit confirmation required
 
 ### Disk Analyzer
-- Root filesystem analysis using `du`
-- Real-time streaming with progress updates
-- Per-directory size visualization with color-coded bars
+- Root filesystem analysis using `du` (single-pass scan with streaming partial results)
+- Hidden folders (dotfiles) visible and measurable by default; preference persisted across restarts
+- Covers system directories (`/var/cache`, `docker`/`container` storage, `/var/tmp`) plus virtual mounts excluded
+- Per-directory size visualization with color-coded bars; first full scan indexes the disk for faster reloads
+
+### Global Search & Undo
+- Search every screen from `Ctrl+K` — jumps to any tab in one keystroke
+- Reversible operations show an Undo banner after completion (e.g. kernel tweaks), backed by an operation history
 
 ### SMART Monitoring
 - Full S.M.A.R.T. data for ATA, NVMe, and USB drives
@@ -111,17 +116,15 @@
 - Schedule system shutdown, reboot, or suspend
 - Configurable delay with countdown
 
-### Appearance
-- Theme switching (Light/Dark/System)
-- Accent color selection
-- Font size adjustment
-- Wallpaper management
-- Window behavior settings
+### Interface
+- Onboarding: unified first-run flow (language, risk notice with detected system card, sudo password)
+- Theme switching (Light/Dark/System), font and size selection, language switching in Settings
+- Always-visible scrollbars on long lists (high contrast)
+- Battery tab hidden automatically on machines without a battery
 
 ### Security
-- Admin password management (sudo)
-- Warning screen on first launch
-- Safe mode options
+- Admin password (sudo) stored in the system keyring; legacy Preference-stored copies are migrated automatically
+- First-run warning about system-modifying operations
 
 ### Multi-language Support
 - English, Italian, French, Spanish, German, Portuguese
@@ -182,7 +185,7 @@ The app can check for updates automatically via GitHub releases. When a new vers
 
 ## Technical Details
 
-- **Password storage**: Base64-encoded in SharedPreferences (used for sudo operations)
+- **Password storage**: system keyring (libsecret / Secret Service) with automatic fallback to Preferences; on first read, old Preference-stored passwords migrate to the keyring and the plaintext copy is deleted
 - **SMART USB probing**: Progressive discovery — one vendor variant per tray refresh cycle (5s), or all at once in the SMART screen
 - **CPU monitoring**: Reads `/proc/stat` directly (no external dependencies required for basic stats; `mpstat` used if available for per-core data)
 - **Memory monitoring**: Reads `/proc/meminfo` directly

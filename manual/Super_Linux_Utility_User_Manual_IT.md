@@ -1,4 +1,4 @@
-# Super Linux Utility v2.0.6
+# Super Linux Utility v2.1.0
 # Manuale Utente Completo — Italiano
 
 ---
@@ -22,9 +22,10 @@
    - 5.10 Ottimizzazioni
    - 5.11 Impostazioni
    - 5.12 Info
+   - 5.13 Gestore Driver
+   - 5.14 Batteria
 6. [Modalità Avanzata — Funzionalità Aggiuntive](#6-modalità-avanzata)
    - 6.1 Editor GRUB
-   - 6.2 Benchmark
 7. [Barra di Sistema](#7-barra-di-sistema)
 8. [Aggiornamenti Automatici](#8-aggiornamenti-automatici)
 9. [Risoluzione Problemi](#9-risoluzione-problemi)
@@ -39,8 +40,8 @@
 
 L'app è disponibile in due edizioni:
 
-- **Standard (Gratuita):** Tutti gli strumenti essenziali di gestione del sistema — servizi, app di avvio, pulizia, app installate, monitor, analizzatore dischi, salute SMART, gestore dispositivi, ripristino, ottimizzazioni e impostazioni.
-- **Avanzata (A pagamento):** Tutto ciò che è incluso nella Standard, più l'editor GRUB e la suite Benchmark.
+- **Standard (Gratuita):** Tutti gli strumenti essenziali di gestione del sistema — servizi, app di avvio, pulizia, app installate, monitor, analizzatore dischi, salute SMART, gestore dispositivi, gestore driver, batteria, ripristino, ottimizzazioni e impostazioni.
+- **Avanzata (A pagamento):** Tutto ciò che è incluso nella Standard, più l'editor GRUB.
 
 **Distribuzioni supportate:** Ubuntu, Debian, Linux Mint, LMDE, Pop!_OS, Zorin, elementary, MX Linux, Fedora, RHEL, CentOS, Arch Linux, Manjaro, EndeavourOS, CachyOS, KDE neon.
 
@@ -100,7 +101,7 @@ Per utilizzare le funzionalità che modificano il sistema (pulizia, gestione ser
 
 ## 5. Modalità Standard — Tutte le Funzionalità
 
-La modalità standard fornisce 12 schede accessibili dalla barra laterale sinistra. Ogni scheda contiene strumenti specifici.
+La modalità standard fornisce 14 schede accessibili dalla barra laterale sinistra. Ogni scheda contiene strumenti specifici.
 
 ---
 
@@ -328,76 +329,9 @@ Pannello di stato del sistema in sola lettura con quattro sezioni:
 
 Ogni operazione mostra un pulsante "Visualizza Output" per ispezionare l'output del comando.
 
-#### Scheda Controllo Aggiornamenti
-- **Controlla Aggiornamenti:** Esegue il comando appropriato di aggiornamento del gestore di pacchetti (`apt update`, `dnf check-update`, `pacman -Sy`).
-- I risultati mostrano gli aggiornamenti disponibili per gestore di pacchetti (APT, DNF, Pacman, Snap, Flatpak).
-- **Applica Aggiornamenti:** Scarica e installa tutti gli aggiornamenti disponibili con progresso in tempo reale.
+> **Nota:** Il controllo degli aggiornamenti non è più una scheda dedicata: usa la voce *Verifica aggiornamenti* del menu Barra di Sistema oppure attiva il controllo automatico programmato in Impostazioni.
 
-#### Scheda Installatore Software
-Installer a click per software essenziale:
-- **FFmpeg:** Framework multimediale per la codifica/decodifica di audio e video.
-- **yt-dlp:** Scaricatore video che supporta molti siti web.
-- **Librerie di Sistema:** Librerie di sistema essenziali che potrebbero mancare.
-- **Codec:** Codec audio e video per formati comuni.
-- **rsync:** Strumento efficiente di sincronizzazione e trasferimento file.
-
-**Richiede password:** Sì
-
----
-
-### 5.10 Ottimizzazioni
-
-**Scopo:** Ottimizzazione delle prestazioni del sistema per swap e DaVinci Resolve.
-
-#### Scheda Swap
-- Mostra le informazioni attuali dello swap: dimensione RAM, swap totale/usato, valore di swappiness, dispositivo swap.
-- Fornisce raccomandazioni basate sulla tua configurazione:
-  - Crea un file di swap se non ne esiste uno.
-  - Regola il valore di swappiness.
-  - Abilita o disabilita zram.
-- Ogni raccomandazione ha un pulsante "Esegui" che applica la modifica suggerita.
-
-#### Scheda DaVinci Resolve
-- Applica le correzioni comuni Linux per Blackmagic DaVinci Resolve:
-  - Correggi i percorsi delle librerie CUDA.
-  - Imposta i permessi corretti della GPU.
-  - Installa le dipendenze mancanti.
-- Ogni correzione mostra se richiede un riavvio e se è stata applicata.
-
-> **Suggerimento per i principianti:** Se usi DaVinci Resolve su Linux e riscontri problemi con la GPU, vai a questa scheda e applica tutte le correzioni.
-
-> **Suggerimento per gli esperti:** Le raccomandazioni sul swap analizzano il tuo `/proc/meminfo` e la configurazione dello swap per fornire i suggerimenti più appropriati.
-
-**Richiede password:** Sì
-
----
-
-### 5.11 Impostazioni
-
-Configura le preferenze dell'app:
-
-#### Password
-- Salva, aggiorna o elimina la password di amministratore.
-- La password viene archiviata utilizzando il portachiavi del sistema (codificata in base64 nelle SharedPreferences).
-
-#### Lingua
-- Seleziona tra 6 lingue: Italiano, Inglese, Francese, Spagnolo, Tedesco, Portoghese.
-- Le modifiche hanno effetto dopo il riavvio dell'app.
-
-#### Tema
-- **Chiaro / Scuro / Sistema:** Scegli lo schema colori dell'app.
-- "Sistema" segue l'impostazione del tema dell'ambiente desktop.
-
-#### Font
-- **Famiglia Font:** Seleziona tra i font di sistema disponibili.
-- **Dimensione Font:** Scorrimento da 10sp a 24sp.
-
-#### Barra di Sistema (solo Linux)
-- **Abilita Barra di Sistema:** Mostra/nascondi l'icona dell'app nella barra di sistema.
-- **Chiudi nella Barra:** Mantieni l'app in esecuzione nella barra quando chiudi la finestra.
-- **Avvia Minimizzato:** Avvia l'app minimizzato nella barra.
-- **Avvia all'Accesso:** Avvio automatico dell'app all'accesso (usa l'avvio automatico XDG).
-- **Installa Dipendenze:** Installa `libayatana-appindicator` se mancante.
+- **Riduci a icona nel vassoio (opzionale):** Disattivo per impostazione predefinita; se attivo, la finestra minimizzata viene nascosta nel vassoio invece che nella barra delle applicazioni.
 
 #### Controllo Aggiornamento Automatico
 - Imposta la frequenza con cui l'app controlla gli aggiornamenti di sistema (Mai, 15 min, 30 min, 1 ora, 6 ore, 12 ore, giornaliero).
@@ -425,9 +359,41 @@ Configura le preferenze dell'app:
 
 ---
 
+### 5.13 Gestore Driver
+
+**Scopo:** Identificare l'hardware del sistema e installare i driver/firmware corretti con un clic.
+
+**Funzionalità:**
+- **Rilevamento hardware:** Elenco dei dispositivi rilevati tramite `lspci`/`lsusb`, con identificazione dei chipset noti.
+- **Archivio chipset multi-distribuzione:** NVIDIA (fallback 535+), AMDGPU, Wi-Fi Realtek (RTL8812AU/8821CE/8822BE), Broadcom, Wi-Fi Intel (AX200/AX211) — per ciascuno i pacchetti candidati per APT, DNF, Pacman e Zypper, con fallback automatici.
+- **Verifica compatibilità kernel:** Legge il kernel in esecuzione (`uname -r`) e controlla i pacchetti header prima di installare moduli DKMS (kernel standard, XanMod, Liquorix, LTS, Zen).
+- **Stato `linux-firmware`:** Indica se il pacchetto firmware è assente/installato/aggiornabile, con installazione o aggiornamento in un clic.
+- **Firmware via `fwupdmgr`:** Controlla e applica gli aggiornamenti firmware (UEFI, SSD, ecc.), con indicatore quando serve un riavvio.
+- **Realtek RTL8168 integrato:** Gestito dal driver `r8169` presente nel kernel: nessuna compilazione DKMS necessaria.
+
+**Richiede password:** Sì
+
+---
+
+### 5.14 Batteria
+
+Questa scheda è visibile solo sui sistemi dotati di batteria (notebook); sui desktop viene nascosta automaticamente.
+
+**Scopo:** Monitorare e ottimizzare la salute della batteria.
+
+**Funzionalità:**
+- **Salute della batteria:** Capacità attuale rispetto a quella di progetto, numero di cicli e usura stimata.
+- **Soglia di carica:** Imposta una soglia di ricarica (20-100%) per prolungare la vita della batteria.
+- **Governor automatico:** Cambia automaticamente il governor della CPU (risparmio energetico / prestazioni) in base all'alimentazione (rete o batteria).
+- **Percentuale nel vassoio:** Percentuale di carica mostrata nel menu della barra di sistema.
+
+**Richiede password:** Sì (per applicare soglie e governor)
+
+---
+
 ## 6. Modalità Avanzata — Funzionalità Aggiuntive
 
-La modalità avanzata sblocca 2 schede aggiuntive ed estende la schermata Ottimizzazioni esistente. Richiede una chiave di licenza acquistata (o build Personale/Test).
+La modalità avanzata sblocca la scheda Editor GRUB (ed estende la schermata Ottimizzazioni esistente). Richiede una chiave di licenza acquistata (o build Personale/Test).
 
 Per passare tra la modalità Standard e Avanzata, usa i pulsanti di modalità nell'area in alto a destra della barra laterale.
 
@@ -455,30 +421,6 @@ Per passare tra la modalità Standard e Avanzata, usa i pulsanti di modalità ne
 > **Avviso:** Modifiche GRUB errate possono impedire l'avvio del sistema. Mantieni sempre un backup. Se il sistema non si avvia, usa una USB live per ripristinare `/etc/default/grub` dal backup.
 
 **Richiede password:** Sì
-
----
-
-### 6.2 Benchmark
-
-**Scopo:** Misurare le prestazioni hardware del tuo sistema.
-
-Quattro categorie di benchmark:
-
-| Benchmark | Cosa misura |
-|-----------|-------------|
-| **CPU** | Potenza di elaborazione multi-core e single-core. Risultati confrontati con chip di riferimento Intel, AMD e Apple. |
-| **GPU** | Prestazioni grafiche usando `glmark2`. Risultati confrontati con GPU di riferimento NVIDIA e AMD. |
-| **Disco** | Velocità di lettura/scrittura sequenziale. Risultati confrontati con riferimenti NVMe, SSD e HDD. |
-| **Rete** | Test della velocità di Internet. Risultati confrontati con velocità di rete di riferimento. |
-
-Ogni benchmark mostra:
-- Il tuo punteggio.
-- L'hardware di riferimento più vicino.
-- Una valutazione (Eccellente, Buono, Medio, Sotto la media, Scarso).
-
-> **Suggerimento:** Esegui i benchmark dopo le modifiche del sistema (nuovo kernel, nuovi driver) per vedere se le prestazioni sono migliorate.
-
-**Richiede password:** No
 
 ---
 
@@ -586,6 +528,6 @@ R: Il Gestore Dispositivi protegge i dispositivi di sistema critici (CPU, bridge
 
 ---
 
-*Super Linux Utility v2.0.6 — Manuale Utente*
+*Super Linux Utility v2.1.0 — Manuale Utente*
 *Creato da Marco Di Giangiacomo*
 *Licenza: GPL v3*

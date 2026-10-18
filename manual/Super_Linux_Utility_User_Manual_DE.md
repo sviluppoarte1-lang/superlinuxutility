@@ -1,4 +1,4 @@
-# Super Linux Utility v2.0.6
+# Super Linux Utility v2.1.0
 # Vollständiges Benutzerhandbuch — Deutsch
 
 ---
@@ -22,9 +22,10 @@
    - 5.10 Optimierungen
    - 5.11 Einstellungen
    - 5.12 Info
+   - 5.13 Treiberverwaltung
+   - 5.14 Akku
 6. [Erweiterter Modus — Zusätzliche Funktionen](#6-erweiterter-modus)
    - 6.1 GRUB-Editor
-   - 6.2 Benchmark
 7. [Systemabschlussleiste](#7-systemabschlussleiste)
 8. [Automatische Updates](#8-automatische-updates)
 9. [Fehlerbehebung](#9-fehlerbehebung)
@@ -39,8 +40,8 @@
 
 Die Anwendung ist in zwei Versionen verfügbar:
 
-- **Standard (Kostenlos):** Alle grundlegenden Systemverwaltungswerkzeuge — Dienste, Autostart-Apps, Bereinigung, installierte Apps, Überwachung, Festplattenanalysator, SMART-Gesundheit, Geräteverwaltung, Wiederherstellung, Optimierungen und Einstellungen.
-- **Erweitert (Kostenpflichtig):** Alles aus der Standard-Version, plus GRUB-Editor und Benchmark-Suite.
+- **Standard (Kostenlos):** Alle grundlegenden Systemverwaltungswerkzeuge — Dienste, Autostart-Apps, Bereinigung, installierte Apps, Überwachung, Festplattenanalysator, SMART-Gesundheit, Geräteverwaltung, Treiberverwaltung, Akku, Wiederherstellung, Optimierungen und Einstellungen.
+- **Erweitert (Kostenpflichtig):** Alles aus der Standard-Version, plus den GRUB-Editor.
 
 **Unterstützte Distributionen:** Ubuntu, Debian, Linux Mint, LMDE, Pop!_OS, Zorin, elementary, MX Linux, Fedora, RHEL, CentOS, Arch Linux, Manjaro, EndeavourOS, CachyOS, KDE neon.
 
@@ -100,7 +101,7 @@ Um Funktionen zu verwenden, die das System ändern (Bereinigung, Dienstverwaltun
 
 ## 5. Standardmodus — Alle Funktionen
 
-Der Standardmodus bietet 12 Registerkarten, die über die linke Seitenleiste zugänglich sind. Jede Registerkarte enthält spezifische Werkzeuge.
+Der Standardmodus bietet 14 Registerkarten, die über die linke Seitenleiste zugänglich sind. Jede Registerkarte enthält spezifische Werkzeuge.
 
 ---
 
@@ -328,76 +329,9 @@ Schreibgeschütztes Systemstatus-Dashboard mit vier Bereichen:
 
 Jeder Vorgang zeigt eine Schaltfläche „Ausgabe ansehen" an, um die Befehlsausgabe zu überprüfen.
 
-#### Updates prüfen-Registerkarte
-- **Nach Updates suchen:** Führt den entsprechenden Paketmanager-Update-Befehl aus (`apt update`, `dnf check-update`, `pacman -Sy`).
-- Die Ergebnisse zeigen verfügbare Updates pro Paketmanager (APT, DNF, Pacman, Snap, Flatpak).
-- **Updates anwenden:** Lädt alle verfügbaren Updates herunter und installiert sie mit Echtzeitfortschritt.
+> **Hinweis:** Die Update-Prüfung ist keine eigene Registerkarte mehr: Nutzen Sie den Eintrag *Updates prüfen* im Menü der Systemabschlussleiste oder aktivieren Sie die geplante automatische Prüfung in den Einstellungen.
 
-#### Software-Installer-Registerkarte
-Ein-Klick-Installer für wichtige Software:
-- **FFmpeg:** Multimedia-Framework zum Kodieren/Dekodieren von Audio und Video.
-- **yt-dlp:** Video-Downloader, der viele Websites unterstützt.
-- **Systembibliotheken:** Wichtige Systembibliotheken, die möglicherweise fehlen.
-- **Codecs:** Video- und Audio-Codecs für gängige Formate.
-- **rsync:** Effizientes Dateisynchronisations- und Übertragungswerkzeug.
-
-**Erfordert Passwort:** Ja
-
----
-
-### 5.10 Optimierungen
-
-**Zweck:** Systemleistungs-Optimierung für Swap und DaVinci Resolve.
-
-#### Swap-Registerkarte
-- Zeigt aktuelle Swap-Informationen: RAM-Größe, Swap Gesamt/Belegt, Swappiness-Wert, Swap-Gerät.
-- Bietet Empfehlungen basierend auf Ihrer Konfiguration:
-  - Eine Swap-Datei erstellen, falls keine vorhanden ist.
-  - Swappiness-Wert anpassen.
-  - zram aktivieren oder deaktivieren.
-- Jede Empfehlung hat eine „Ausführen"-Schaltfläche, die die vorgeschlagene Änderung anwendet.
-
-#### DaVinci Resolve-Registerkarte
-- Wendet gängige Linux-Korrekturen für Blackmagic DaVinci Resolve an:
-  - CUDA-Bibliothekspfade korrigieren.
-  - Korrekte GPU-Berechtigungen setzen.
-  - Fehlende Abhängigkeiten installieren.
-- Jede Korrektur zeigt an, ob ein Neustart erforderlich ist und ob sie bereits angewendet wurde.
-
-> **Tipp für Einsteiger:** Wenn Sie DaVinci Resolve unter Linux verwenden und GPU-Probleme haben, gehen Sie zu dieser Registerkarte und wenden Sie alle Korrekturen an.
-
-> **Tipp für Experten:** Die Swap-Empfehlungen analysieren Ihre `/proc/meminfo`- und Swap-Konfiguration, um die am besten geeigneten Vorschläge zu bieten.
-
-**Erfordert Passwort:** Ja
-
----
-
-### 5.11 Einstellungen
-
-Konfigurieren Sie anwendungsweite Einstellungen:
-
-#### Passwort
-- Speichern, aktualisieren oder löschen Sie Ihr Administrator-Passwort.
-- Das Passwort wird mit dem Systemschlüsselbund gespeichert (base64-kodiert in SharedPreferences).
-
-#### Sprache
-- Wählen Sie aus 6 Sprachen: Italienisch, Englisch, Französisch, Spanisch, Deutsch, Portugiesisch.
-- Änderungen werden wirksam, nachdem Sie die Anwendung neu gestartet haben.
-
-#### Design
-- **Hell / Dunkel / System:** Wählen Sie das Farbschema der Anwendung.
-- „System" folgt der Design-Einstellung Ihrer Desktop-Umgebung.
-
-#### Schriftart
-- **Schriftfamilie:** Wählen Sie aus verfügbaren Systemschriften.
-- **Schriftgröße:** Schieberegler von 10sp bis 24sp.
-
-#### Systemabschlussleiste (nur Linux)
-- **Systemabschlussleiste aktivieren:** App-Symbol in der Systemabschlussleiste anzeigen/ausblenden.
-- **Beim Schließen in Abschlussleiste:** Hält die Anwendung am Laufen, wenn Sie das Fenster schließen.
-- **Minimiert starten:** Startet die Anwendung minimiert in der Abschlussleiste.
-- **Beim Anmelden starten:** Startet die Anwendung automatisch beim Anmelden (verwendet XDG-Autostart).
-- **Abhängigkeiten installieren:** Installiert `libayatana-appindicator`, falls fehlend.
+- **In die Leiste minimieren (optional):** Standardmäßig deaktiviert; wenn aktiviert, wird das minimierte Fenster in der Leiste versteckt statt in der Aufgabenleiste.
 
 #### Automatische Update-Prüfung
 - Legen Sie fest, wie oft die Anwendung nach Systemupdates sucht (Nie, 15 Min., 30 Min., 1 Std., 6 Std., 12 Std., täglich).
@@ -425,9 +359,41 @@ Konfigurieren Sie anwendungsweite Einstellungen:
 
 ---
 
+### 5.13 Treiberverwaltung
+
+**Ziel:** Die Systemhardware identifizieren und die passenden Treiber/Firmware mit einem Klick installieren.
+
+**Funktionen:**
+- **Hardware-Erkennung:** Listet die über `lspci`/`lsusb` erkannten Geräte auf und identifiziert bekannte Chipsätze.
+- **Multi-Distro-Chipsatz-Datenbank:** NVIDIA (Fallback 535+), AMDGPU, Realtek-WLAN (RTL8812AU/8821CE/8822BE), Broadcom, Intel-WLAN (AX200/AX211) — jeweils mit Kandidatenpaketen für APT, DNF, Pacman und Zypper, inklusive automatischen Fallbacks.
+- **Kernel-Kompatibilitätsprüfung:** Liest den laufenden Kernel (`uname -r`) und prüft Header-Pakete, bevor DKMS-Module installiert werden (Standard-, XanMod-, Liquorix-, LTS- und Zen-Kernel).
+- **Status von `linux-firmware`:** Zeigt an, ob das Firmware-Paket fehlt/installiert/aktualisierbar ist, mit Installation oder Update per Klick.
+- **Firmware über `fwupdmgr`:** Prüft und wendet Firmware-Updates an (UEFI, SSD usw.), mit Hinweis, wenn ein Neustart erforderlich ist.
+- **Integriertes Realtek RTL8168:** Wird vom im Kernel enthaltenen Treiber `r8169` verwaltet — keine DKMS-Kompilierung nötig.
+
+**Erfordert Passwort:** Ja
+
+---
+
+### 5.14 Akku
+
+Diese Registerkarte ist nur auf Systemen mit Akku (Notebooks) sichtbar; auf Desktop-Systemen wird sie automatisch ausgeblendet.
+
+**Ziel:** Den Akkuzustand überwachen und optimieren.
+
+**Funktionen:**
+- **Akkuzustand:** Aktuelle Kapazität im Vergleich zur nominellen Kapazität, Anzahl der Ladezyklen und geschätzter Verschleiß.
+- **Ladeschwelle:** Legt eine Ladeschwelle fest (20-100 %), um die Lebensdauer des Akkus zu verlängern.
+- **Automatischer Governor:** Wechselt den CPU-Governor automatisch (Energiesparen / Leistung) je nach Stromversorgung (Netzteil oder Akku).
+- **Prozentanzeige in der Leiste:** Ladestand-Prozentsatz im Menü der Systemabschlussleiste.
+
+**Erfordert Passwort:** Ja (zum Anwenden von Schwellenwerten und Governor)
+
+---
+
 ## 6. Erweiterter Modus — Zusätzliche Funktionen
 
-Der erweiterte Modus schaltet 2 zusätzliche Registerkarten frei und erweitert den vorhandenen Optimierungs-Bildschirm. Erfordert einen gekauften Lizenzschlüssel (oder eine Persönliche/Test-Version).
+Der erweiterte Modus schaltet die Registerkarte GRUB-Editor frei (und erweitert den vorhandenen Optimierungs-Bildschirm). Erfordert einen gekauften Lizenzschlüssel (oder eine Persönliche/Test-Version).
 
 Zum Wechseln zwischen Standard- und Erweitertem Modus verwenden Sie die Modus-Schaltflächen im oberen rechten Bereich der Seitenleiste.
 
@@ -455,30 +421,6 @@ Zum Wechseln zwischen Standard- und Erweitertem Modus verwenden Sie die Modus-Sc
 > **Warnung:** Falsche GRUB-Änderungen können verhindern, dass Ihr System startet. Erstellen Sie immer ein Backup. Wenn Ihr System nicht startet, verwenden Sie einen Live-USB, um `/etc/default/grub` aus dem Backup wiederherzustellen.
 
 **Erfordert Passwort:** Ja
-
----
-
-### 6.2 Benchmark
-
-**Zweck:** Die Hardwareleistung Ihres Systems messen.
-
-Vier Benchmark-Kategorien:
-
-| Benchmark | Was es misst |
-|-----------|-------------|
-| **CPU** | Mehrkern- und Einzelkern-Verarbeitungsleistung. Ergebnisse verglichen mit Referenz-Intel-, AMD- und Apple-Chips. |
-| **GPU** | Grafikleistung mit `glmark2`. Ergebnisse verglichen mit Referenz-NVIDIA- und AMD-GPUs. |
-| **Festplatte** | Sequentielle Schreib-/Lesegeschwindigkeit. Ergebnisse verglichen mit NVMe-, SSD- und HDD-Referenzen. |
-| **Netzwerk** | Internetgeschwindigkeitstest. Ergebnisse verglichen mit Referenz-Netzwerkgeschwindigkeiten. |
-
-Jeder Benchmark zeigt:
-- Ihren Wert.
-- Die am nächsten passende Referenzhardware.
-- Eine Bewertung (Ausgezeichnet, Gut, Durchschnitt, Unterdurchschnitt, Schlecht).
-
-> **Tipp:** Führen Sie Benchmarks nach Systemänderungen durch (neuer Kernel, neue Treiber), um zu sehen, ob sich die Leistung verbessert hat.
-
-**Erfordert Passwort:** Nein
 
 ---
 
@@ -586,6 +528,6 @@ A: Die Geräteverwaltung schützt kritische Systemgeräte (CPU, Bridges, IOMMU) 
 
 ---
 
-*Super Linux Utility v2.0.6 — Benutzerhandbuch*
+*Super Linux Utility v2.1.0 — Benutzerhandbuch*
 *Erstellt von Marco Di Giangiacomo*
 *Lizenz: GPL v3*

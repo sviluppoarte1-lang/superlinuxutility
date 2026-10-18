@@ -1,4 +1,4 @@
-# Super Linux Utility v2.0.6
+# Super Linux Utility v2.1.0
 # Manuel Utilisateur Complet — Français
 
 ---
@@ -22,9 +22,10 @@
    - 5.10 Optimisations
    - 5.11 Paramètres
    - 5.12 Informations
+   - 5.13 Gestionnaire de pilotes
+   - 5.14 Batterie
 6. [Mode Avancé — Fonctionnalités supplémentaires](#6-mode-avancé)
    - 6.1 Éditeur GRUB
-   - 6.2 Benchmark
 7. [Zone de notification système](#7-zone-de-notification-système)
 8. [Mises à jour automatiques](#8-mises-a-jour-automatiques)
 9. [Dépannage](#9-dépannage)
@@ -39,8 +40,8 @@
 
 L'application est disponible en deux éditions :
 
-- **Standard (Gratuit) :** Tous les outils essentiels de gestion système — services, applications au démarrage, nettoyage, applications installées, moniteur, analyseur de disque, santé SMART, gestionnaire de périphériques, récupération, optimisations et paramètres.
-- **Avancé (Payant) :** Tout ce qui est inclus dans Standard, plus l'éditeur GRUB et la suite Benchmark.
+- **Standard (Gratuit) :** Tous les outils essentiels de gestion système — services, applications au démarrage, nettoyage, applications installées, moniteur, analyseur de disque, santé SMART, gestionnaire de périphériques, gestionnaire de pilotes, batterie, récupération, optimisations et paramètres.
+- **Avancé (Payant) :** Tout ce qui est inclus dans Standard, plus l'éditeur GRUB.
 
 **Distributions prises en charge :** Ubuntu, Debian, Linux Mint, LMDE, Pop!_OS, Zorin, elementary, MX Linux, Fedora, RHEL, CentOS, Arch Linux, Manjaro, EndeavourOS, CachyOS, KDE neon.
 
@@ -100,7 +101,7 @@ Pour utiliser les fonctionnalités qui modifient le système (nettoyage, gestion
 
 ## 5. Mode Standard — Toutes les fonctionnalités
 
-Le mode standard offre 12 onglets accessibles depuis la barre latérale gauche. Chaque onglet contient des outils spécifiques.
+Le mode standard offre 14 onglets accessibles depuis la barre latérale gauche. Chaque onglet contient des outils spécifiques.
 
 ---
 
@@ -328,76 +329,9 @@ Tableau de bord en lecture seule de l'état du système avec quatre sections :
 
 Chaque opération affiche un bouton « Voir la sortie » pour inspecter la sortie de la commande.
 
-#### Onglet Vérification des mises à jour
-- **Vérifier les mises à jour :** Exécute la commande de mise à jour appropriée du gestionnaire de paquets (`apt update`, `dnf check-update`, `pacman -Sy`).
-- Les résultats affichent les mises à jour disponibles par gestionnaire de paquets (APT, DNF, Pacman, Snap, Flatpak).
-- **Appliquer les mises à jour :** Télécharge et installe toutes les mises à jour disponibles avec progression en temps réel.
+> **Remarque :** La vérification des mises à jour n'est plus un onglet dédié : utilisez l'entrée *Vérifier les mises à jour* du menu de la Zone de notification système ou activez la vérification automatique programmée dans Paramètres.
 
-#### Onglet Installateur de logiciels
-Installateurs en un clic pour les logiciels essentiels :
-- **FFmpeg :** Framework multimédia pour l'encodage/décodage audio et vidéo.
-- **yt-dlp :** Téléchargeur de vidéos prenant en charge de nombreux sites web.
-- **Bibliothèques système :** Bibliothèques système essentielles qui peuvent être manquantes.
-- **Codecs :** Codecs vidéo et audio pour les formats courants.
-- **rsync :** Outil efficace de synchronisation et de transfert de fichiers.
-
-**Nécessite un mot de passe :** Oui
-
----
-
-### 5.10 Optimisations
-
-**Objectif :** Réglage des performances système pour le swap et DaVinci Resolve.
-
-#### Onglet Swap
-- Affiche les informations actuelles sur le swap : taille de la RAM, swap total/utilisé, valeur de swappiness, périphérique de swap.
-- Fournit des recommandations basées sur votre configuration :
-  - Créer un fichier swap s'il n'en existe aucun.
-  - Ajuster la valeur de swappiness.
-  - Activer ou désactiver zram.
-- Chaque recommandation possède un bouton « Exécuter » qui applique la modification suggérée.
-
-#### Onglet DaVinci Resolve
-- Applique les correctifs Linux courants pour Blackmagic DaVinci Resolve :
-  - Corriger les chemins des bibliothèques CUDA.
-  - Définir les permissions GPU correctes.
-  - Installer les dépendances manquantes.
-- Chaque correctif indique s'il nécessite un redémarrage et s'il a été appliqué.
-
-> **Conseil pour les débutants :** Si vous utilisez DaVinci Resolve sur Linux et rencontrez des problèmes de GPU, allez dans cet onglet et appliquez tous les correctifs.
-
-> **Conseil pour les experts :** Les recommandations de swap analysent votre `/proc/meminfo` et votre configuration de swap pour fournir les suggestions les plus appropriées.
-
-**Nécessite un mot de passe :** Oui
-
----
-
-### 5.11 Paramètres
-
-Configurez les préférences de l'application :
-
-#### Mot de passe
-- Enregistrez, mettez à jour ou supprimez votre mot de passe administrateur.
-- Le mot de passe est stocké à l'aide du trousseau de clés du système (encodé en base64 dans SharedPreferences).
-
-#### Langue
-- Choisissez parmi 6 langues : italien, anglais, français, espagnol, allemand, portugais.
-- Les modifications prennent effet après le redémarrage de l'application.
-
-#### Thème
-- **Clair / Système :** Choisissez le schéma de couleurs de l'application.
-- « Système » suit le paramètre de thème de votre environnement de bureau.
-
-#### Police
-- **Famille de polices :** Choisissez parmi les polices système disponibles.
-- **Taille de police :** Curseur de 10sp à 24sp.
-
-#### Zone de notification système (uniquement Linux)
-- **Activer la zone de notification système :** Affichez/masquez l'icône de l'application dans la zone de notification.
-- **Fermer vers la zone de notification :** Gardez l'application en cours d'exécution dans la zone de notification lorsque vous fermez la fenêtre.
-- **Démarrer minimisé :** Lancez l'application minimisée dans la zone de notification.
-- **Démarrer à la connexion :** Démarrez automatiquement l'application lorsque vous vous connectez (utilise le démarrage automatique XDG).
-- **Installer les dépendances :** Installe `libayatana-appindicator` s'il est manquant.
+- **Réduire dans la zone de notification (optionnel) :** Désactivé par défaut ; si activé, la fenêtre réduite est masquée dans la zone de notification au lieu de la barre des tâches.
 
 #### Vérification automatique des mises à jour
 - Définissez la fréquence de vérification des mises à jour système par l'application (Jamais, 15 min, 30 min, 1 h, 6 h, 12 h, quotidien).
@@ -425,9 +359,41 @@ Configurez les préférences de l'application :
 
 ---
 
+### 5.13 Gestionnaire de pilotes
+
+**Objectif :** Identifier le matériel du système et installer les bons pilotes/micrologiciels en un clic.
+
+**Fonctionnalités :**
+- **Détection du matériel :** Liste les périphériques détectés via `lspci`/`lsusb` et identifie les chipsets connus.
+- **Base de chipsets multi-distributions :** NVIDIA (repli 535+), AMDGPU, Wi-Fi Realtek (RTL8812AU/8821CE/8822BE), Broadcom, Wi-Fi Intel (AX200/AX211) — chacun avec les paquets candidats pour APT, DNF, Pacman et Zypper, avec replis automatiques.
+- **Vérifications de compatibilité du noyau :** Lit le noyau en cours d'exécution (`uname -r`) et vérifie les paquets d'en-têtes avant d'installer des modules DKMS (noyaux standard, XanMod, Liquorix, LTS, Zen).
+- **État de `linux-firmware` :** Indique si le paquet du micrologiciel est absent/installé/avec mise à jour disponible, avec installation ou mise à jour en un clic.
+- **Micrologiciels via `fwupdmgr` :** Recherche et applique les mises à jour du micrologiciel (UEFI, SSD, etc.), avec un indicateur lorsqu'un redémarrage est nécessaire.
+- **Realtek RTL8168 intégré :** Géré par le pilote `r8169` présent dans le noyau : aucune compilation DKMS nécessaire.
+
+**Nécessite un mot de passe :** Oui
+
+---
+
+### 5.14 Batterie
+
+Cet onglet n'est visible que sur les systèmes équipés d'une batterie (ordinateurs portables) ; sur les ordinateurs de bureau, il est masqué automatiquement.
+
+**Objectif :** Suivre et optimiser la santé de la batterie.
+
+**Fonctionnalités :**
+- **Santé de la batterie :** Capacité actuelle par rapport à la capacité de conception, nombre de cycles et usure estimée.
+- **Seuil de charge :** Définit un seuil de recharge (20-100 %) pour prolonger la durée de vie de la batterie.
+- **Gouverneur automatique :** Change automatiquement le gouverneur du CPU (économie d'énergie / performances) selon l'alimentation (secteur ou batterie).
+- **Pourcentage dans la zone de notification :** Pourcentage de charge affiché dans le menu de la zone de notification système.
+
+**Nécessite un mot de passe :** Oui (pour appliquer les seuils et le gouverneur)
+
+---
+
 ## 6. Mode Avancé — Fonctionnalités supplémentaires
 
-Le mode avancé débloque 2 onglets supplémentaires et étend l'écran Optimisations existant. Nécessite une clé de licence achetée (ou version Personnelle/Test).
+Le mode avancé débloque l'onglet Éditeur GRUB (et étend l'écran Optimisations existant). Nécessite une clé de licence achetée (ou version Personnelle/Test).
 
 Pour basculer entre le mode Standard et le mode Avancé, utilisez les boutons de mode dans la zone supérieure droite de la barre latérale.
 
@@ -455,30 +421,6 @@ Pour basculer entre le mode Standard et le mode Avancé, utilisez les boutons de
 > **Avertissement :** Des modifications GRUB incorrectes peuvent empêcher votre système de démarrer. Conservez toujours une sauvegarde. Si votre système ne parvient pas à démarrer, utilisez une clé USB live pour restaurer `/etc/default/grub` à partir de la sauvegarde.
 
 **Nécessite un mot de passe :** Oui
-
----
-
-### 6.2 Benchmark
-
-**Objectif :** Mesurer les performances matérielles de votre système.
-
-Quatre catégories de benchmark :
-
-| Benchmark | Ce qu'il mesure |
-|-----------|-----------------|
-| **CPU** | Puissance de traitement multi-cœurs et mono-cœur. Résultats comparés aux références Intel, AMD et Apple. |
-| **GPU** | Performances graphiques avec `glmark2`. Résultats comparés aux GPU de référence NVIDIA et AMD. |
-| **Disque** | Vitesse de lecture/écriture séquentielle. Résultats comparés aux références NVMe, SSD et HDD. |
-| **Réseau** | Test de vitesse Internet. Résultats comparés aux vitesses réseau de référence. |
-
-Chaque benchmark affiche :
-- Votre score.
-- Le matériel de référence le plus proche correspondant.
-- Une évaluation (Excellent, Bon, Moyen, Inférieur à la moyenne, Faible).
-
-> **Conseil :** Exécutez les benchmarks après des modifications système (nouveau noyau, nouveaux pilotes) pour voir si les performances se sont améliorées.
-
-**Nécessite un mot de passe :** Non
 
 ---
 
@@ -586,6 +528,6 @@ R : Le Gestionnaire de périphériques protège les périphériques système cri
 
 ---
 
-*Super Linux Utility v2.0.6 — Manuel Utilisateur*
+*Super Linux Utility v2.1.0 — Manuel Utilisateur*
 *Créé par Marco Di Giangiacomo*
 *Licence : GPL v3*

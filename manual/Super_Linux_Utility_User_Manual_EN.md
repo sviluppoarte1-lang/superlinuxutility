@@ -1,4 +1,4 @@
-# Super Linux Utility v2.0.6
+# Super Linux Utility v2.1.0
 # Complete User Manual — English
 
 ---
@@ -22,9 +22,10 @@
    - 5.10 Tweaks
    - 5.11 Settings
    - 5.12 Info
+   - 5.13 Driver Manager
+   - 5.14 Battery
 6. [Advanced Mode — Additional Features](#6-advanced-mode)
    - 6.1 GRUB Editor
-   - 6.2 Benchmark
 7. [System Tray](#7-system-tray)
 8. [Automatic Updates](#8-automatic-updates)
 9. [Troubleshooting](#9-troubleshooting)
@@ -39,8 +40,8 @@
 
 The app comes in two editions:
 
-- **Standard (Free):** All essential system management tools — services, startup apps, cleanup, installed apps, monitor, disk analyzer, SMART health, device manager, recovery, tweaks, and settings.
-- **Advanced (Paid):** Everything in Standard, plus GRUB editor and Benchmark suite.
+- **Standard (Free):** All essential system management tools — services, startup apps, cleanup, installed apps, monitor, disk analyzer, SMART health, device manager, driver manager, battery, recovery, tweaks, and settings.
+- **Advanced (Paid):** Everything in Standard, plus the GRUB editor.
 
 **Supported distributions:** Ubuntu, Debian, Linux Mint, LMDE, Pop!_OS, Zorin, elementary, MX Linux, Fedora, RHEL, CentOS, Arch Linux, Manjaro, EndeavourOS, CachyOS, KDE neon.
 
@@ -100,7 +101,7 @@ To use features that modify the system (cleanup, service management, GRUB editin
 
 ## 5. Standard Mode — All Features
 
-Standard mode provides 12 tabs accessible from the left sidebar. Each tab contains specific tools.
+Standard mode provides 14 tabs accessible from the left sidebar. Each tab contains specific tools.
 
 ---
 
@@ -328,76 +329,9 @@ Read-only system status dashboard with four sections:
 
 Each operation shows a "View Output" button to inspect the command output.
 
-#### Check Updates Tab
-- **Check for Updates:** Runs the appropriate package manager update command (`apt update`, `dnf check-update`, `pacman -Sy`).
-- Results show available updates per package manager (APT, DNF, Pacman, Snap, Flatpak).
-- **Apply Updates:** Downloads and installs all available updates with real-time progress.
+> **Note:** Update checking is no longer a dedicated tab: use the *Check updates* item in the System Tray menu or enable scheduled automatic checks in Settings.
 
-#### Software Installer Tab
-One-click installers for essential software:
-- **FFmpeg:** Multimedia framework for encoding/decoding audio and video.
-- **yt-dlp:** Video downloader supporting many websites.
-- **System Libraries:** Essential system libraries that may be missing.
-- **Codecs:** Video and audio codecs for common formats.
-- **rsync:** Efficient file synchronization and transfer tool.
-
-**Requires password:** Yes
-
----
-
-### 5.10 Tweaks
-
-**Purpose:** System performance tuning for swap and DaVinci Resolve.
-
-#### Swap Tab
-- Shows current swap information: RAM size, swap total/used, swappiness value, swap device.
-- Provides recommendations based on your configuration:
-  - Create a swap file if none exists.
-  - Adjust swappiness value.
-  - Enable or disable zram.
-- Each recommendation has an "Execute" button that applies the suggested change.
-
-#### DaVinci Resolve Tab
-- Applies common Linux fixes for Blackmagic DaVinci Resolve:
-  - Fix CUDA library paths.
-  - Set correct GPU permissions.
-  - Install missing dependencies.
-- Each fix shows whether it requires a restart and whether it has been applied.
-
-> **Tip for beginners:** If you use DaVinci Resolve on Linux and experience GPU issues, go to this tab and apply all fixes.
-
-> **Tip for experts:** The swap recommendations analyze your `/proc/meminfo` and swap configuration to provide the most appropriate suggestions.
-
-**Requires password:** Yes
-
----
-
-### 5.11 Settings
-
-Configure app-wide preferences:
-
-#### Password
-- Save, update, or delete your administrator password.
-- The password is stored using the system keyring (base64-encoded in SharedPreferences).
-
-#### Language
-- Select from 6 languages: Italian, English, French, Spanish, German, Portuguese.
-- Changes take effect after restarting the app.
-
-#### Theme
-- **Light / Dark / System:** Choose the app's color scheme.
-- "System" follows your desktop environment's theme setting.
-
-#### Font
-- **Font Family:** Select from available system fonts.
-- **Font Size:** Slider from 10sp to 24sp.
-
-#### System Tray (Linux only)
-- **Enable System Tray:** Show/hide the app icon in the system tray.
-- **Close to Tray:** Keep the app running in the tray when you close the window.
-- **Start Minimized:** Launch the app minimized to the tray.
-- **Start at Login:** Auto-start the app when you log in (uses XDG autostart).
-- **Install Dependencies:** Installs `libayatana-appindicator` if missing.
+- **Minimize to tray (optional):** Off by default; when enabled, minimizing the window hides it in the tray instead of the taskbar.
 
 #### Automatic Update Check
 - Set how often the app checks for system updates (Never, 15 min, 30 min, 1 hr, 6 hr, 12 hr, daily).
@@ -425,9 +359,41 @@ Configure app-wide preferences:
 
 ---
 
+### 5.13 Driver Manager
+
+"Purpose:** Identify system hardware and install the right drivers/firmware with one click.
+
+**Features:**
+- **Hardware detection:** Lists devices found via `lspci`/`lsusb` and identifies known chipsets.
+- **Multi-distro chipset database:** NVIDIA (535+ fallback), AMDGPU, Realtek Wi-Fi (RTL8812AU/8821CE/8822BE), Broadcom, Intel Wi-Fi (AX200/AX211) — each with candidate packages for APT, DNF, Pacman and Zypper, with automatic fallbacks.
+- **Kernel compatibility checks:** Reads the running kernel (`uname -r`) and verifies header packages before installing DKMS modules (standard, XanMod, Liquorix, LTS, Zen kernels).
+- **`linux-firmware` status:** Shows whether the firmware package is missing/installed/updateable, with one-click install or update.
+- **Firmware updates via `fwupdmgr`:** Checks for and applies firmware updates (UEFI, SSD, etc.), with an indicator when a reboot is required.
+- **In-kernel Realtek RTL8168:** Managed by the built-in `r8169` driver — no DKMS build required.
+
+**Requires password:** Yes
+
+---
+
+### 5.14 Battery
+
+This tab is only visible on systems with a battery (laptops); on desktop systems it is hidden automatically.
+
+**Purpose:** Monitor and optimize battery health.
+
+**Features:**
+- **Battery health:** Current capacity versus design capacity, cycle count and estimated wear.
+- **Charge threshold:** Sets a charging threshold (20-100%) to extend battery life.
+- **Automatic governor:** Switches the CPU governor (power saving / performance) automatically based on power source (AC or battery).
+- **Tray percentage:** Charge percentage shown in the System Tray menu.
+
+**Requires password:** Yes (to apply thresholds and governor)
+
+---
+
 ## 6. Advanced Mode — Additional Features
 
-Advanced mode unlocks 2 additional tabs and extends the existing Tweaks screen. Requires a purchased license key (or Personal/Test build).
+Advanced mode unlocks the GRUB Editor tab (and extends the existing Tweaks screen). Requires a purchased license key (or Personal/Test build).
 
 To switch between Standard and Advanced mode, use the mode buttons in the top-right area of the sidebar.
 
@@ -455,30 +421,6 @@ To switch between Standard and Advanced mode, use the mode buttons in the top-ri
 > **Warning:** Incorrect GRUB modifications can prevent your system from booting. Always keep a backup. If your system fails to boot, use a live USB to restore `/etc/default/grub` from the backup.
 
 **Requires password:** Yes
-
----
-
-### 6.2 Benchmark
-
-**Purpose:** Measure your system's hardware performance.
-
-Four benchmark categories:
-
-| Benchmark | What it measures |
-|-----------|-----------------|
-| **CPU** | Multi-core and single-core processing power. Results compared against reference Intel, AMD, and Apple chips. |
-| **GPU** | Graphics performance using `glmark2`. Results compared against reference NVIDIA and AMD GPUs. |
-| **Disk** | Sequential read/write speed. Results compared against NVMe, SSD, and HDD references. |
-| **Network** | Internet speed test. Results compared against reference network speeds. |
-
-Each benchmark shows:
-- Your score.
-- The closest matching reference hardware.
-- A rating (Excellent, Good, Average, Below Average, Poor).
-
-> **Tip:** Run benchmarks after system changes (new kernel, new drivers) to see if performance improved.
-
-**Requires password:** No
 
 ---
 
@@ -586,6 +528,6 @@ A: The Device Manager protects critical system devices (CPU, bridges, IOMMU) fro
 
 ---
 
-*Super Linux Utility v2.0.6 — User Manual*
+*Super Linux Utility v2.1.0 — User Manual*
 *Created by Marco Di Giangiacomo*
 *License: GPL v3*

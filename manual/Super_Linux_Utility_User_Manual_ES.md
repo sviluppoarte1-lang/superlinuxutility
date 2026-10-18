@@ -1,4 +1,4 @@
-# Super Linux Utility v2.0.6
+# Super Linux Utility v2.1.0
 # Manual Completo del Usuario — Español
 
 ---
@@ -22,9 +22,10 @@
    - 5.10 Ajustes
    - 5.11 Configuración
    - 5.12 Información
+   - 5.13 Gestor de Controladores
+   - 5.14 Batería
 6. [Modo Avanzado — Funciones Adicionales](#6-modo-avanzado)
    - 6.1 Editor GRUB
-   - 6.2 Benchmark
 7. [Bandeja del Sistema](#7-bandeja-del-sistema)
 8. [Actualizaciones Automáticas](#8-actualizaciones-automáticas)
 9. [Solución de Problemas](#9-solución-de-problemas)
@@ -39,8 +40,8 @@
 
 La aplicación viene en dos ediciones:
 
-- **Estándar (Gratis):** Todas las herramientas esenciales de gestión del sistema — servicios, aplicaciones de inicio, limpieza, aplicaciones instaladas, monitor, analizador de discos, salud SMART, gestor de dispositivos, recuperación, ajustes y configuración.
-- **Avanzado (De pago):** Todo lo del Estándar, más el editor GRUB y la suite de Benchmark.
+- **Estándar (Gratis):** Todas las herramientas esenciales de gestión del sistema — servicios, aplicaciones de inicio, limpieza, aplicaciones instaladas, monitor, analizador de discos, salud SMART, gestor de dispositivos, gestor de controladores, batería, recuperación, ajustes y configuración.
+- **Avanzado (De pago):** Todo lo del Estándar, más el editor GRUB.
 
 **Distribuciones compatibles:** Ubuntu, Debian, Linux Mint, LMDE, Pop!_OS, Zorin, elementary, MX Linux, Fedora, RHEL, CentOS, Arch Linux, Manjaro, EndeavourOS, CachyOS, KDE neon.
 
@@ -100,7 +101,7 @@ Para usar funciones que modifican el sistema (limpieza, gestión de servicios, e
 
 ## 5. Modo Estándar — Todas las Funciones
 
-El modo estándar proporciona 12 pestañas accesibles desde la barra lateral izquierda. Cada pestaña contiene herramientas específicas.
+El modo estándar proporciona 14 pestañas accesibles desde la barra lateral izquierda. Cada pestaña contiene herramientas específicas.
 
 ---
 
@@ -328,76 +329,9 @@ Panel de estado del sistema de solo lectura con cuatro secciones:
 
 Cada operación muestra un botón "Ver Salida" para inspeccionar la salida del comando.
 
-#### Pestaña de Verificar Actualizaciones
-- **Buscar Actualizaciones:** Ejecuta el comando de actualización del gestor de paquetes correspondiente (`apt update`, `dnf check-update`, `pacman -Sy`).
-- Los resultados muestran las actualizaciones disponibles por gestor de paquetes (APT, DNF, Pacman, Snap, Flatpak).
-- **Aplicar Actualizaciones:** Descarga e instala todas las actualizaciones disponibles con progreso en tiempo real.
+> **Nota:** La comprobación de actualizaciones ya no es una pestaña dedicada: usa la opción *Verificar actualizaciones* del menú de la Bandeja del Sistema o activa la comprobación automática programada en Ajustes.
 
-#### Pestaña de Instalador de Software
-Instaladores con un clic para software esencial:
-- **FFmpeg:** Framework multimedia para codificar/decodificar audio y video.
-- **yt-dlp:** Descargador de videos compatible con muchos sitios web.
-- **Bibliotecas del Sistema:** Bibliotecas esenciales del sistema que pueden faltar.
-- **Códecs:** Códecs de video y audio para formatos comunes.
-- **rsync:** Herramienta eficiente de sincronización y transferencia de archivos.
-
-**Requiere contraseña:** Sí
-
----
-
-### 5.10 Ajustes
-
-**Propósito:** Ajuste del rendimiento del sistema para swap y DaVinci Resolve.
-
-#### Pestaña de Swap
-- Muestra la información actual del swap: tamaño de RAM, swap total/usado, valor de swappiness, dispositivo de swap.
-- Proporciona recomendaciones basadas en tu configuración:
-  - Crear un archivo de swap si no existe ninguno.
-  - Ajustar el valor de swappiness.
-  - Habilitar o deshabilitar zram.
-- Cada recomendación tiene un botón "Ejecutar" que aplica el cambio sugerido.
-
-#### Pestaña de DaVinci Resolve
-- Aplica correcciones comunes de Linux para Blackmagic DaVinci Resolve:
-  - Corregir rutas de bibliotecas CUDA.
-  - Establecer permisos correctos de GPU.
-  - Instalar dependencias faltantes.
-- Cada corrección muestra si requiere reinicio y si ya ha sido aplicada.
-
-> **Consejo para principiantes:** Si usas DaVinci Resolve en Linux y experimentas problemas con la GPU, ve a esta pestaña y aplica todas las correcciones.
-
-> **Consejo para expertos:** Las recomendaciones de swap analizan tu `/proc/meminfo` y configuración de swap para proporcionar las sugerencias más adecuadas.
-
-**Requiere contraseña:** Sí
-
----
-
-### 5.11 Configuración
-
-Configura las preferencias de toda la aplicación:
-
-#### Contraseña
-- Guarda, actualiza o elimina tu contraseña de administrador.
-- La contraseña se almacena usando el llavero del sistema (codificada en base64 en SharedPreferences).
-
-#### Idioma
-- Selecciona de 6 idiomas: Italiano, Inglés, Francés, Español, Alemán, Portugués.
-- Los cambios surten efecto después de reiniciar la aplicación.
-
-#### Tema
-- **Claro / Oscuro / Sistema:** Elige el esquema de colores de la aplicación.
-- "Sistema" sigue la configuración de tema de tu entorno de escritorio.
-
-#### Fuente
-- **Familia de Fuente:** Selecciona de las fuentes del sistema disponibles.
-- **Tamaño de Fuente:** Deslizador de 10sp a 24sp.
-
-#### Bandeja del Sistema (solo Linux)
-- **Habilitar Bandeja del Sistema:** Muestra/oculta el ícono de la aplicación en la bandeja del sistema.
-- **Cerrar a la Bandeja:** Mantiene la aplicación ejecutándose en la bandeja cuando cierras la ventana.
-- **Iniciar Minimizado:** Lanza la aplicación minimizada en la bandeja.
-- **Iniciar al Iniciar Sesión:** Inicia automáticamente la aplicación cuando inicias sesión (usa el inicio automático XDG).
-- **Instalar Dependencias:** Instala `libayatana-appindicator` si falta.
+- **Minimizar a la bandeja (opcional):** Desactivado por defecto; si se activa, la ventana minimizada se oculta en la bandeja en lugar de la barra de tareas.
 
 #### Verificación Automática de Actualizaciones
 - Configura con qué frecuencia la aplicación busca actualizaciones del sistema (Nunca, 15 min, 30 min, 1 hr, 6 hr, 12 hr, diario).
@@ -425,9 +359,41 @@ Configura las preferencias de toda la aplicación:
 
 ---
 
+### 5.13 Gestor de Controladores
+
+**Objetivo:** Identificar el hardware del sistema e instalar los controladores/firmware correctos con un clic.
+
+**Características:**
+- **Detección de hardware:** Lista los dispositivos detectados mediante `lspci`/`lsusb` e identifica los chipsets conocidos.
+- **Base de datos de chipsets multi-distribución:** NVIDIA (fallback 535+), AMDGPU, Wi-Fi Realtek (RTL8812AU/8821CE/8822BE), Broadcom, Wi-Fi Intel (AX200/AX211) — cada uno con los paquetes candidatos para APT, DNF, Pacman y Zypper, con fallbacks automáticos.
+- **Comprobaciones de compatibilidad del kernel:** Lee el kernel en ejecución (`uname -r`) y verifica los paquetes de cabeceras antes de instalar módulos DKMS (kernels estándar, XanMod, Liquorix, LTS y Zen).
+- **Estado de `linux-firmware`:** Indica si el paquete de firmware está ausente/instalado/actualizable, con instalación o actualización en un clic.
+- **Firmware mediante `fwupdmgr`:** Comprueba y aplica actualizaciones de firmware (UEFI, SSD, etc.), con un indicador cuando se requiere reiniciar.
+- **Realtek RTL8168 integrado:** Gestionado por el driver `r8169` incluido en el kernel: no requiere compilación DKMS.
+
+**Requiere contraseña:** Sí
+
+---
+
+### 5.14 Batería
+
+Esta pestaña solo es visible en sistemas con batería (portátiles); en los equipos de sobremesa se oculta automáticamente.
+
+**Objetivo:** Monitorizar y optimizar la salud de la batería.
+
+**Características:**
+- **Salud de la batería:** Capacidad actual frente a la de diseño, número de ciclos y desgaste estimado.
+- **Umbral de carga:** Establece un umbral de carga (20-100%) para prolongar la vida de la batería.
+- **Governor automático:** Cambia automáticamente el governor de la CPU (ahorro de energía / rendimiento) según la alimentación (red eléctrica o batería).
+- **Porcentaje en la bandeja:** Porcentaje de carga mostrado en el menú de la bandeja del sistema.
+
+**Requiere contraseña:** Sí (para aplicar umbrales y governor)
+
+---
+
 ## 6. Modo Avanzado — Funciones Adicionales
 
-El modo avanzado desbloquea 2 pestañas adicionales y extiende la pantalla existente de Ajustes. Requiere una clave de licencia comprada (o versión Personal/De prueba).
+El modo avanzado desbloquea la pestaña del Editor GRUB (y extiende la pantalla existente de Ajustes). Requiere una clave de licencia comprada (o versión Personal/De prueba).
 
 Para cambiar entre el modo Estándar y Avanzado, usa los botones de modo en el área superior derecha de la barra lateral.
 
@@ -455,30 +421,6 @@ Para cambiar entre el modo Estándar y Avanzado, usa los botones de modo en el �
 > **Advertencia:** Las modificaciones incorrectas de GRUB pueden evitar que tu sistema se inicie. Siempre mantén una copia de seguridad. Si tu sistema no logra arrancar, usa un USB booteable para restaurar `/etc/default/grub` desde la copia de seguridad.
 
 **Requiere contraseña:** Sí
-
----
-
-### 6.2 Benchmark
-
-**Propósito:** Medir el rendimiento del hardware de tu sistema.
-
-Cuatro categorías de benchmark:
-
-| Benchmark | Qué mida |
-|-----------|---------|
-| **CPU** | Poder de procesamiento multinúcleo y de un solo núcleo. Los resultados se comparan con chips de referencia de Intel, AMD y Apple. |
-| **GPU** | Rendimiento gráfico usando `glmark2`. Los resultados se comparan con GPUs de referencia de NVIDIA y AMD. |
-| **Disco** | Velocidad de lectura/escritura secuencial. Los resultados se comparan con referencias de NVMe, SSD y HDD. |
-| **Red** | Prueba de velocidad de internet. Los resultados se comparan con velocidades de red de referencia. |
-
-Cada benchmark muestra:
-- Tu puntuación.
-- El hardware de referencia más cercano.
-- Una calificación (Excelente, Bueno, Promedio, Por debajo del Promedio, Pobre).
-
-> **Consejo:** Ejecuta benchmarks después de cambios en el sistema (nuevo kernel, nuevos controladores) para ver si el rendimiento mejoró.
-
-**Requiere contraseña:** No
 
 ---
 
@@ -586,6 +528,6 @@ R: El Gestor de Dispositivos protege los dispositivos críticos del sistema (CPU
 
 ---
 
-*Super Linux Utility v2.0.6 — Manual del Usuario*
+*Super Linux Utility v2.1.0 — Manual del Usuario*
 *Creado por Marco Di Giangiacomo*
 *Licencia: GPL v3*

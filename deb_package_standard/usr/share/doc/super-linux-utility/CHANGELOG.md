@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- System tray no longer crashes the app on Fedora 44 / KDE Plasma (Wayland): the tray plugin now links the bundled ayatana stack first, so a duplicate host `libappindicator` library can never be loaded into the process (patch applied automatically at build time).
+- Build scripts: the license-secret helper had been accidentally embedded inside generated script blocks (`build_deb.sh` died at startup with `set -e`, `build_rpm.sh` silently produced packages without license activation). The helper now lives once at script level in `build_deb.sh`, `build_arch.sh` and `build_rpm.sh`, and the RPM call was restored.
+
+### Improved
+- Disk Analyzer: hidden folders (dotfiles) are shown by default (preference persisted), their sizes are preserved across restarts, system directories like `/var/cache` and container storage are included in scans, sizes stream in incrementally during a single-pass `du` scan, and the scan starts directly with sudo when the password is already saved.
+- UX: global search with `Ctrl+K` (plus a toolbar button), Undo banner for reversible operations, unified onboarding flow (language → warning with detected-system card) replacing the two separate first-run screens, save-on-tap for the language choice, battery tab auto-hides on machines without a battery, minimizing to the tray is now a separate opt-in preference (normal minimize by default), sidebar highlights the active tab immediately.
+- Security: sudo operations across all services run with timeouts that kill hung processes; the sudo password is protected by the system keyring via `flutter_secure_storage` (legacy Preference-stored copies migrate automatically); the license secret is no longer committed to the repository and is injected at build time from a git-ignored local file.
+- Tray dependency detection hardened (Fedora / AppImage): library presence check reads actual scan output and covers the AppImage bundle; AppImages rebuilt with patched plugin RUNPATH and compatibility symlinks.
+- Removed unused screens and services; 55+ new UI strings localized across all 6 supported languages.
+
 ## 2.1.0 — 2026-09-19
 
 ### New features
