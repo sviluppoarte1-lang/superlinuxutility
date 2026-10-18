@@ -5,6 +5,22 @@
 
 set -e
 
+# ---- Secret licenza (git-ignored, fuori dal repo) ----
+# Legge $SLU_LICENSE_SECRET_FILE (default: $HOME/.config/slu/license_secret).
+# Il valore viene passato via --dart-define al build: le licenze già vendute
+# restano valide finché il file non cambia. Se manca, il build va avanti SENZA
+# il secret (attivazione impossibile in Advanced) con un warning.
+read_license_secret() {
+    local f="${SLU_LICENSE_SECRET_FILE:-$HOME/.config/slu/license_secret}"
+    if [ -n "${SLU_LICENSE_SECRET:-}" ]; then
+        echo "${SLU_LICENSE_SECRET}"
+    elif [ -f "$f" ]; then
+        tr -d "[:space:]" < "$f"
+    else
+        echo ""
+    fi
+}
+
 BINARY_NAME="super_linux_utility"
 APP_VERSION="2.1.0"
 DEB_BASE="deb_package"
@@ -381,22 +397,6 @@ chmod +x $DEB_DIR/DEBIAN/postinst
 cat > $DEB_DIR/DEBIAN/postrm << 'POSTEOF'
 #!/bin/bash
 set -e
-
-# ---- Secret licenza (git-ignored, fuori dal repo) ----
-# Legge $SLU_LICENSE_SECRET_FILE (default: $HOME/.config/slu/license_secret).
-# Il valore viene passato via --dart-define al build: le licenze già vendute
-# restano valide finché il file non cambia. Se manca, il build va avanti SENZA
-# il secret (attivazione impossibile in Advanced) con un warning.
-read_license_secret() {
-    local f="${SLU_LICENSE_SECRET_FILE:-$HOME/.config/slu/license_secret}"
-    if [ -n "${SLU_LICENSE_SECRET:-}" ]; then
-        echo "${SLU_LICENSE_SECRET}"
-    elif [ -f "$f" ]; then
-        tr -d "[:space:]" < "$f"
-    else
-        echo ""
-    fi
-}
 
 [ -x /usr/bin/update-desktop-database ] && update-desktop-database -q /usr/share/applications 2>/dev/null || true
 exit 0
