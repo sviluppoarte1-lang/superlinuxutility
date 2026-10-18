@@ -4,6 +4,8 @@ import 'package:super_linux_utility/l10n/app_localizations.dart';
 import '../services/tweaks_service.dart';
 import '../services/password_storage.dart';
 import '../services/kernel_tweaks_service.dart';
+import '../services/operation_history_service.dart';
+import '../widgets/undo_snackbar.dart';
 
 class TweaksScreen extends StatefulWidget {
   final bool isAdvanced;
@@ -67,7 +69,13 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
       final info = await TweaksService.getSwapInfo();
       final zramActive = await TweaksService.isZramActive();
       final zramInstalled = await TweaksService.isZramInstalled();
-      final recs = TweaksService.getSwapRecommendations(info, zramActive: zramActive, zramInstalled: zramInstalled);
+      final zramEnabledAtBoot = zramActive
+          ? await TweaksService.isZramEnabledAtBoot()
+          : true;
+      final recs = TweaksService.getSwapRecommendations(info,
+          zramActive: zramActive,
+          zramInstalled: zramInstalled,
+          zramEnabledAtBoot: zramEnabledAtBoot);
       if (mounted) {
         setState(() {
           _swapInfo = info;
@@ -124,12 +132,14 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
       final result = await KernelTweaksService.applyKernelTweaks(_kernelSelected);
       if (!mounted) return;
       final ok = result['success'] as bool? ?? false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message']?.toString() ?? (ok ? 'OK' : 'Failed')),
-          backgroundColor: ok ? Colors.green : Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
+      // Banner "operazione annullabile": il servizio registra l'operazione
+      // con undoCommand → SnackBar con azione Undo che ri-esegue il restore.
+      await showUndoSnackBarForLatest(
+        context,
+        result['message']?.toString() ?? (ok ? 'OK' : 'Failed'),
+        ok: ok,
+        category: OperationHistoryService.categoryKernel,
+        action: 'kernel_tweaks_apply',
       );
       await _loadKernelTweaks();
     } catch (e) {
@@ -536,6 +546,7 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
   }
 
   Widget _buildSwapInfoCard(SwapInfo info, ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -552,16 +563,16 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
                 Icon(Icons.memory, color: colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'System Memory',
+                  l10n.tweaksSystemMemory,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             _buildInfoRow('RAM', '${info.ramGb.toStringAsFixed(1)} GB', colorScheme),
-            _buildInfoRow('Swap Total', info.hasSwap ? '${info.totalGb.toStringAsFixed(1)} GB' : 'None', colorScheme),
+            _buildInfoRow(l10n.tweaksSwapTotalLabel, info.hasSwap ? '${info.totalGb.toStringAsFixed(1)} GB' : l10n.tweaksSwapNone, colorScheme),
             if (info.hasSwap) ...[
-              _buildInfoRow('Swap Used', '${info.usedGb.toStringAsFixed(1)} GB', colorScheme),
+              _buildInfoRow(l10n.tweaksSwapUsedLabel, '${info.usedGb.toStringAsFixed(1)} GB', colorScheme),
               const SizedBox(height: 8),
               LinearProgressIndicator(
                 value: info.totalKb > 0 ? info.usedKb / info.totalKb : 0,
@@ -572,15 +583,14 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
             const SizedBox(height: 8),
             _buildInfoRow('Swappiness', '${info.swapinness}', colorScheme),
             if (info.swapDevice != null)
-              _buildInfoRow('Swap Device', info.swapDevice!, colorScheme),
+              _buildInfoRow(l10n.tweaksSwapDeviceLabel, info.swapDevice!, colorScheme),
             const SizedBox(height: 8),
-            _buildInfoRow(
-              'Zswap',
+            _buildInfoRow(l10n.tweaksZswapLabel,
               info.zswapStatus == 'enabled'
-                  ? 'Attivo'
+                  ? l10n.tweaksStatusActive
                   : info.zswapStatus == 'disabled'
-                      ? 'Disattivo'
-                      : 'Non disponibile',
+                      ? l10n.tweaksStatusInactive
+                      : l10n.tweaksStatusUnavailable,
               colorScheme,
             ),
           ],
@@ -602,7 +612,56 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
     );
   }
 
+  /// Localizza titolo/descrizione della raccomandazione via `code`;
+  /// fallback: stringe inglesi originali del servizio.
+  String _swapRecTitle(SwapRecommendation rec, AppLocalizations l10n) {
+    switch (rec.code) {
+      case 'swapAdjustLow':
+      case 'swapAdjustMid':
+      case 'swapAdjustHigh':
+        return l10n.swapAdjustLowTitle(rec.params[0], rec.params[1]);
+      case 'swapOptimal':
+        return l10n.swapOptimalTitle(rec.params[0]);
+      case 'swapCreate':
+        return l10n.swapCreateTitle(rec.params[0]);
+      case 'zramBoot':
+        return l10n.zramBootTitle;
+      case 'zramActive':
+        return l10n.zramActiveTitle;
+      case 'zramStart':
+        return l10n.zramStartTitle;
+      case 'zramInstall':
+        return l10n.zramInstallTitle;
+    }
+    return rec.title;
+  }
+
+  String _swapRecDescription(SwapRecommendation rec, AppLocalizations l10n) {
+    switch (rec.code) {
+      case 'swapAdjustLow':
+        return l10n.swapAdjustLowDesc(rec.params[2]);
+      case 'swapAdjustMid':
+        return l10n.swapAdjustMidDesc(rec.params[2]);
+      case 'swapAdjustHigh':
+        return l10n.swapAdjustHighDesc(rec.params[2]);
+      case 'swapOptimal':
+        return l10n.swapOptimalDesc(rec.params[1]);
+      case 'swapCreate':
+        return l10n.swapCreateDesc;
+      case 'zramBoot':
+        return l10n.zramBootDesc;
+      case 'zramActive':
+        return l10n.zramActiveDesc;
+      case 'zramStart':
+        return l10n.zramStartDesc;
+      case 'zramInstall':
+        return l10n.zramInstallDesc;
+    }
+    return rec.description;
+  }
+
   Widget _buildSwapRecCard(SwapRecommendation rec, ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     final cmdKey = rec.command;
     final isRunning = _runningCommands.contains(cmdKey);
     final isCompleted = _completedCommands.contains(cmdKey);
@@ -633,7 +692,7 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    rec.title,
+                    _swapRecTitle(rec, l10n),
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 13,
@@ -645,7 +704,7 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 6),
             Text(
-              rec.description,
+              _swapRecDescription(rec, l10n),
               style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
             ),
             if (rec.command.isNotEmpty && !rec.isCurrentlyApplied) ...[
@@ -723,6 +782,7 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
   }
 
   Widget _buildDavinciFixCard(DavinciFix fix, ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     final isApplied = fix.isCurrentlyApplied;
     final cmdKey = 'davinci_${fix.id}';
     final isRunning = _runningCommands.contains(cmdKey);
@@ -769,7 +829,7 @@ class _TweaksScreenState extends State<TweaksScreen> with SingleTickerProviderSt
                       color: Colors.orange.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text('Restart required', style: TextStyle(fontSize: 10, color: Colors.orange)),
+                    child: Text(l10n.tweaksRestartRequired, style: const TextStyle(fontSize: 10, color: Colors.orange)),
                   ),
               ],
             ),

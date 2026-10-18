@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'operation_history_service.dart';
 import 'password_storage.dart';
 
@@ -33,7 +34,7 @@ class KernelTweaksService {
 
   static Future<String> _runBash(String command) async {
     try {
-      final result = await Process.run('bash', ['-c', command], runInShell: true);
+      final result = await runProcess('bash', ['-c', command], runInShell: true, timeout: const Duration(seconds: 60));
       return ((result.stdout as String?) ?? '').trim();
     } catch (_) {
       return '';
@@ -55,7 +56,7 @@ class KernelTweaksService {
         .replaceAll("'", "\\'");
     final fullCommand =
         'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(command)} 2>&1';
-    return Process.run('bash', ['-c', fullCommand], runInShell: true);
+    return runProcess('bash', ['-c', fullCommand], runInShell: true, timeout: const Duration(seconds: 300));
   }
 
   static String shellQuote(String s) {

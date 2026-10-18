@@ -48,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _selectedFontSize = 14.0;
   bool _systemTrayEnabled = true;
   bool _closeToTray = true;
+  bool _minimizeToTray = false;
   bool _startMinimized = false;
   bool _startAtLogin = false;
   bool? _trayDepsOk;
@@ -161,6 +162,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _closeToTray = prefs.getBool(TrayService.prefKeyCloseToTray) ?? true;
+      // Ridurre a icona nel tray: disattivato di default (comportamento
+      // normale del minimize, resta nella barra delle applicazioni).
+      _minimizeToTray = prefs.getBool(TrayService.prefKeyMinimizeToTray) ?? false;
     });
   }
 
@@ -208,6 +212,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _setMinimizeToTray(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(TrayService.prefKeyMinimizeToTray, value);
+    setState(() => _minimizeToTray = value);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(value ? AppLocalizations.of(context)!.settingsMinimizeToTrayOn : AppLocalizations.of(context)!.settingsMinimizeToTrayOff)),
+      );
+    }
+  }
+
   Future<void> _setCloseToTray(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(TrayService.prefKeyCloseToTray, value);
@@ -222,25 +237,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _setSystemTrayEnabled(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(TrayService.prefKeySystemTrayEnabled, value);
-    setState(() => _systemTrayEnabled = value);
-    if (Platform.isLinux) {
-      if (value) {
-        final ok = await DependencyCheckService.isSystemTraySupported();
-        if (!ok) await DependencyCheckService.installSystemTrayDependencies();
-        await TrayService.init();
-      } else {
-        await TrayService.destroy();
+    if (Platform.isLinux && value) {
+      // Attivazione: prima verifica REALE delle librerie, poi init. In passato
+      // il pref veniva salvato subito e ogni errore ignorato mostrando
+      // "attivato": su Fedora il tray non partiva restando però segnalato come
+      // attivo. Ora: librerie mancanti → installazione (con esito mostrato);
+      // init fallito → pref resta spento + SnackBar d'errore con il motivo.
+      var ok = await DependencyCheckService.isSystemTraySupported();
+      if (!ok) {
+        final res = await DependencyCheckService.installSystemTrayDependencies();
+        if (res['success'] != true) {
+          await prefs.setBool(TrayService.prefKeySystemTrayEnabled, false);
+          if (mounted) {
+            setState(() => _systemTrayEnabled = false);
+            _showTraySnack(
+              _trayInstallMessage(AppLocalizations.of(context)!, res),
+              error: true,
+            );
+          }
+          return;
+        }
+        ok = await DependencyCheckService.isSystemTraySupported();
       }
+      final initOk = ok && await TrayService.init();
+      if (initOk) {
+        await prefs.setBool(TrayService.prefKeySystemTrayEnabled, true);
+        if (mounted) {
+          setState(() => _systemTrayEnabled = true);
+          _showTraySnack(
+            AppLocalizations.of(context)!.settingsTrayEnabled,
+          );
+        }
+        return;
+      }
+      await prefs.setBool(TrayService.prefKeySystemTrayEnabled, false);
+      if (mounted) {
+        setState(() => _systemTrayEnabled = false);
+        _showTraySnack(
+          AppLocalizations.of(context)!.settingsTrayInitFailed(
+              TrayService.lastError ?? 'librerie appindicator non disponibili'),
+          error: true,
+        );
+      }
+      return;
     }
+    // Disattivazione (o piattaforme non-Linux).
+    await prefs.setBool(TrayService.prefKeySystemTrayEnabled, value);
+    if (Platform.isLinux && !value) await TrayService.destroy();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(value
-              ? AppLocalizations.of(context)!.settingsTrayEnabled
-              : AppLocalizations.of(context)!.settingsTrayDisabled),
-        ),
+      setState(() => _systemTrayEnabled = value);
+      _showTraySnack(
+        value
+            ? AppLocalizations.of(context)!.settingsTrayEnabled
+            : AppLocalizations.of(context)!.settingsTrayDisabled,
       );
+    }
+  }
+
+  void _showTraySnack(String text, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: error ? Colors.red : null,
+      ),
+    );
+  }
+
+  /// Messaggio localizzato per l'esito di installSystemTrayDependencies
+  /// (il servizio ritorna un `code` macchina; il `message` è solo dettaglio).
+  String _trayInstallMessage(AppLocalizations l10n, Map<String, dynamic> res) {
+    switch (res['code']) {
+      case 'ok':
+        return l10n.settingsTrayInstallOk;
+      case 'unsupported':
+        return l10n.settingsTrayInstallUnsupported;
+      case 'no-password':
+        return l10n.settingsTrayInstallNoPassword;
+      case 'wrong-password':
+        return l10n.settingsTrayInstallWrongPassword;
+      case 'locked':
+        return l10n.settingsTrayInstallLocked;
+      default:
+        return l10n.settingsTrayInstallFailed(
+            ((res['message'] as String?) ?? '').trim());
     }
   }
 
@@ -255,13 +335,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       setState(() => _trayInstalling = false);
       _checkTrayDeps();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['success'] == true ? (result['message'] as String) : (result['message'] as String)),
-          backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-        ),
+      final ok = result['success'] == true;
+      _showTraySnack(
+        _trayInstallMessage(AppLocalizations.of(context)!, result),
+        error: !ok,
       );
-      if (result['success'] == true && _systemTrayEnabled) {
+      if (ok && _systemTrayEnabled) {
         await TrayService.init(force: true);
       }
     }
@@ -955,6 +1034,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Text(
                         AppLocalizations.of(context)!.settingsCloseToTrayDesc,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              AppLocalizations.of(context)!.settingsMinimizeToTray,
+                              style: const TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                          Switch(
+                            value: _minimizeToTray,
+                            onChanged: (value) => _setMinimizeToTray(value),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        AppLocalizations.of(context)!.settingsMinimizeToTrayDesc,
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),

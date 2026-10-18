@@ -7,6 +7,23 @@
 
 set -euo pipefail
 
+# ---- Secret licenza (git-ignored, fuori dal repo) ----
+# Legge $SLU_LICENSE_SECRET_FILE (default: $HOME/.config/slu/license_secret).
+# Il valore viene passato via --dart-define al build: le licenze già vendute
+# restano valide finché il file non cambia. Se manca, il build va avanti SENZA
+# il secret (attivazione impossibile in Advanced) con un warning.
+read_license_secret() {
+    local f="${SLU_LICENSE_SECRET_FILE:-$HOME/.config/slu/license_secret}"
+    if [ -n "${SLU_LICENSE_SECRET:-}" ]; then
+        echo "${SLU_LICENSE_SECRET}"
+    elif [ -f "$f" ]; then
+        tr -d "[:space:]" < "$f"
+    else
+        echo ""
+    fi
+}
+
+
 # ─── Configuration ───────────────────────────────────────────────────────────
 
 BINARY_NAME="super_linux_utility"
@@ -201,6 +218,68 @@ else
     success "appimagetool already present"
 fi
 
+# ─── Patch system_tray plugin (ayatana-first dlopen) ────────────────────────
+# FIX Fedora: il plugin fa dlopen("libappindicator3.so.1") dopo essere stato
+# compilato linkato a libayatana-appindicator3 (NEEDED). Su host RedHat-family
+# (Fedora) esiste il VERO libappindicator3.so.1 (12.10.x) → il dlopen lo carica
+# nel processo ACCANTO a quello ayatana già caricato → due stack appindicator
+# su GLib diversi → SIGSEGV dentro InitSystemTray. Su Debian-family l'host
+# libappindicator3.so.1 è un symlink verso ayatana (stesso inode) → dedup →
+# un solo oggetto → nessun crash. Richiedere subito il soname ayatana rende il
+# dlopen un no-op (dedup col NEEDED già caricato). Vedi AGENTS.md.
+patch_system_tray_plugin() {
+    local pub_cache_dir
+    pub_cache_dir="$HOME/.pub-cache"
+    # rispetta PUB_CACHE se impostato
+    [ -n "${PUB_CACHE:-}" ] && pub_cache_dir="$PUB_CACHE"
+    local f="$pub_cache_dir/hosted/pub.dev/system_tray-2.0.3/linux/tray.cc"
+    if [ ! -f "$f" ]; then
+        warn "system_tray tray.cc non trovato in $f: patch saltata"
+        return 0
+    fi
+    if grep -q 'SLU-AYATANA-FIRST-PATCH' "$f"; then
+        success "system_tray: patch ayatana-first già applicata"
+        return 0
+    fi
+    if ! command -v python3 >/dev/null 2>&1; then
+        error "python3 assente: non posso applicare la patch a system_tray"
+        return 1
+    fi
+    python3 - "$f" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = '''    void* handle = dlopen("libappindicator3.so.1", RTLD_LAZY);
+    if (!handle) {
+      break;
+    }
+'''
+new = '''    // SLU-AYATANA-FIRST-PATCH: vedasi build_appimage.sh. Il primo dlopen con
+    // il soname ayatana dedup con il NEEDED gia' caricato dal loader; su host
+    // senza ayatana (fallback) si usa il vecchio nome libappindicator3.so.1.
+    void* handle = dlopen("libayatana-appindicator3.so.1", RTLD_LAZY);
+    if (!handle) {
+      handle = dlopen("libappindicator3.so.1", RTLD_LAZY);
+    }
+    if (!handle) {
+      break;
+    }
+'''
+if old not in s:
+    sys.exit(2)
+open(p, "w").write(s.replace(old, new, 1))
+PYEOF
+    local rc=$?
+    if [ "$rc" -eq 0 ]; then
+        success "system_tray: patch ayatana-first applicata (dlopen posizione ayatana prima)"
+    else
+        error "system_tray: patch NON applicata (pattern non trovato in tray.cc, rc=$rc)"
+        return 1
+    fi
+}
+
+patch_system_tray_plugin || exit 1
+
 # ─── Build function ─────────────────────────────────────────────────────────
 
 build_variant() {
@@ -217,7 +296,14 @@ build_variant() {
 
     # Flutter build with variant-specific dart-define
     info "Running: flutter build linux --${BUILD_MODE} --dart-define=APP_BUILD=${dart_define}"
-    flutter build linux --"${BUILD_MODE}" --dart-define=APP_BUILD="${dart_define}"
+    LICENSE_SECRET="$(read_license_secret)"
+    if [ -n "$LICENSE_SECRET" ]; then
+        flutter build linux --"${BUILD_MODE}" --dart-define=APP_BUILD="${dart_define}" \
+            --dart-define=SLU_LICENSE_SECRET="${LICENSE_SECRET}"
+    else
+        warn "License secret mancante ($HOME/.config/slu/license_secret): build senza attivazione licenze."
+        flutter build linux --"${BUILD_MODE}" --dart-define=APP_BUILD="${dart_define}"
+    fi
 
     if [ ! -d "$BUILD_DIR" ]; then
         error "Flutter build failed for ${variant}"
@@ -280,6 +366,18 @@ DESKTOP_EOF
         "libpcre2-8.so" "libbz2.so" "libuuid.so" "libdeflate.so"
         "libfribidi.so" "libthai.so" "libdatrie.so" "libgraphite2.so"
         "libXau.so" "libXdmcp.so" "libbsd.so" "libcrypto.so" "libssl.so"
+        # Nella blacklist di linuxdeploy ("ogni distro ce l'ha") ma sono NEEDED
+        # di librerie BUNDLED: zlib per cairo/freetype/png/xml2, expat per
+        # fontconfig, gmp per gnutls, com_err per krb5/gssapi, xcb per X11,
+        # gpg-error per gcrypt. Senza bundle l'AppImage si appoggiava alle lib
+        # HOST → stack ibrido (instabilità) e fallimento su distro minimali.
+        "libz.so" "libxcb.so" "libexpat.so" "libgmp.so" "libcom_err.so" "libgpg-error.so"
+        # libstdc++: il motore Flutter richiede GLIBCXX > di quello di alcune
+        # distro "vecchie" (es. Debian 12 stock ha 3.4.30, serve 3.4.31).
+        # Bundle sempre la lib della build machine: copia sempre >= di ciò che
+        # servono engine/plugin (stessa macchina). I processi figli (rpm, apt…)
+        # non ne risentono: non c'è LD_LIBRARY_PATH ereditato.
+        "libstdc++.so.6"
     )
 
     for lib_name in "${LIBS_TO_CHECK[@]}"; do
@@ -303,42 +401,133 @@ DESKTOP_EOF
     done
     success "Copied $copied library files"
 
-    # Run linuxdeploy
+    # ── Nomi SONAME + compat dlopen (system tray Fedora/AppImage) ───────────
+    # 1) `cp -L` copia col nome del file REALE (es. libstdc++.so.6.0.33), ma
+    #    le NEEDED del linker cercano il nome SONAME esatto (libstdc++.so.6).
+    #    linuxdeploy crea i link mancanti tranne per le librerie "blacklisted"
+    #    (tra cui libstdc++) → assicuriamo noi il nome SONAME per ogni ELF
+    #    copiato (readelf -d SONAME), se non esiste già.
+    if command -v readelf >/dev/null 2>&1; then
+        local so_real so_name
+        for so_real in "$lib_dir"/*.so.*.*; do
+            [ -f "$so_real" ] || continue
+            so_name=$(readelf -d "$so_real" 2>/dev/null | sed -n 's/.*SONAME.*\[\(.*\)\].*/\1/p' | head -1)
+            if [ -n "$so_name" ] && [ "$so_name" != "$(basename "$so_real")" ] && [ ! -e "$lib_dir/$so_name" ]; then
+                ln -sf "$(basename "$so_real")" "$lib_dir/$so_name" 2>/dev/null || true
+            fi
+        done
+    fi
+
+    # 2) Il plugin system_tray fa dlopen("libappindicator3.so.1") a runtime.
+    #    Su Debian/Ubuntu quel file è un symlink verso ayatana (pacchetto
+    #    libayatana-appindicator3-1); su Fedora NON esiste → dlopen falliva e
+    #    la tray non partiva. Creiamo la catena SONAME + compat qui dentro:
+    #    il dlopen usa SEMPRE la lib ayatana bundled (stack coerente, nessuna
+    #    ibridazione con librerie host = causa storica di segfault su Fedora/KDE).
+    if [ ! -e "$lib_dir/libayatana-appindicator3.so.1" ] && [ -e "$lib_dir/libayatana-appindicator3.so.1.0.0" ]; then
+        ln -sf libayatana-appindicator3.so.1.0.0 "$lib_dir/libayatana-appindicator3.so.1"
+    fi
+    if [ -e "$lib_dir/libayatana-appindicator3.so.1" ] && [ ! -e "$lib_dir/libappindicator3.so.1" ]; then
+        ln -sf libayatana-appindicator3.so.1 "$lib_dir/libappindicator3.so.1"
+        success "Created libappindicator3.so.1 compat symlink (-> ayatana)"
+    fi
+
+    # 2) RUNPATH dei plugin Flutter (usr/bin/lib): linuxdeploy processa solo
+    #    l'eseguibile e le sue dipendenze, NON i plugin (caricati a runtime dal
+    #    motore). Il loro RUNPATH punta ancora alla build machine → su distro
+    #    senza libayatana nei repo (Fedora) le NEEDED non si risolvono e il
+    #    plugin system_tray non si carica (niente tray, eccezione plugin).
+    #    $ORIGIN = usr/bin/lib, ../../lib = usr/lib (librerie bundled).
+    if command -v patchelf >/dev/null 2>&1; then
+        local patched=0
+        local so_file magic
+        for so_file in "$variant_appdir"/usr/bin/lib/*.so*; do
+            [ -f "$so_file" ] || continue
+            magic=$(head -c 4 "$so_file" 2>/dev/null || true)
+            if [ "$magic" = $'\x7fELF' ]; then
+                if patchelf --set-rpath '$ORIGIN:$ORIGIN/../../lib' "$so_file" 2>/dev/null; then
+                    patched=$((patched + 1))
+                fi
+            fi
+        done
+        if [ "$patched" -gt 0 ]; then
+            success "Patched RUNPATH on $patched file(s) in usr/bin/lib"
+        else
+            warn "No ELF files patched in usr/bin/lib (check patchelf)"
+        fi
+    else
+        warn "patchelf not found: plugin RUNPATH NOT fixed — system tray will not load on distros without libayatana (e.g. Fedora)"
+    fi
+
+    # Run linuxdeploy. gtk-plugin cannot auto-detect the GTK version on systems
+    # where it isn't resolvable (notably Fedora), so we detect it from the bundled
+    # Flutter GTK libs ourselves and always pass --appstream, otherwise the plugin
+    # exits non-zero and no AppImage is produced (the build then prints Success but
+    # ships nothing). APPIMAGE_EXTRACT_AND_RUN forces self-extract-and-run at launch,
+    # which requires FUSE auto-mount; on Fedora (no fuse3) that path fails silently.
     info "Running linuxdeploy..."
-    export APPIMAGE_EXTRACT_AND_RUN=1
-    export LINUXDEPLOY_PLUGIN_GTK="$LINUXDEPLOY_GTK"
+
+    # Detect GTK major version from the bundled Flutter GTK libraries in the AppDir.
+    local gtk_version="" glib_lib
+    for glib_lib in "$variant_appdir"/usr/lib/libgtk-*.so*; do
+        [ -e "$glib_lib" ] || continue
+        glib_lib=$(basename "$glib_lib")
+        # strip libgtk-(3|4)-<so> / libgtk-x11-2.0-<...>; keep the version digits
+        gtk_version=$(echo "$glib_lib" | grep -oE '[0-9]{1,2}\.' | head -1 | cut -d. -f1)
+        [ -n "$gtk_version" ] && break
+    done
+    case "${gtk_version:-}" in
+        2|3|4) ;;              # use detected major version (gtk-plugin wants {2,3,4})
+        *)     gtk_version=3;  # safe default: never leave unset (previously caused the bug)
+    esac
+    export DEPLOY_GTK_VERSION="$gtk_version"
+
+    # Generate a minimal AppStream metainfo so the gtk plugin can run without error.
+    local meta_path="${variant_appdir}/usr/share/metainfo/${BINARY_NAME}.metainfo.xml"
+    mkdir -p "$(dirname "$meta_path")"
+    cat > "$meta_path" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+  <id>${pkg_name}.AppImage</id>
+  <name>${BINARY_NAME}</name>
+  <summary>Slim Linux Utility - universal desktop toolkit</summary>
+  <release version="${APP_VERSION}" date="$(date +%Y-%m-%d)"/>
+</component>
+EOF
+
+    # Do NOT self-extract: a normal AppImage just needs the user to run it once.
+    unset APPIMAGE_EXTRACT_AND_RUN
 
     "$LINUXDEPLOY" \
         --appdir "$variant_appdir" \
         --desktop-file "$variant_appdir/$BINARY_NAME.desktop" \
         --icon-file "$variant_appdir/$BINARY_NAME.png" \
         --plugin gtk \
-        --output appimage \
-        2>&1 | tee "${APPDIR_ROOT}/${variant}_linuxdeploy.log" || true
+        --output appimage 2>&1 | tee "${APPDIR_ROOT}/${variant}_linuxdeploy.log"
+    local dep_rc=$?
 
-    # Check if linuxdeploy produced the AppImage
+    # Check if linuxdeploy produced the AppImage (only on success, not via masking).
     local appimage_file
     appimage_file=$(find "${APPDIR_ROOT}" -maxdepth 1 -name "*.AppImage" -type f | head -1)
 
-    if [ -n "$appimage_file" ]; then
+    if [ "$dep_rc" -eq 0 ] && [ -n "$appimage_file" ]; then
         local final_name="${pkg_name}-${APP_VERSION}-x86_64.AppImage"
         mv "$appimage_file" "$final_name"
         success "AppImage created: $final_name ($(du -h "$final_name" | cut -f1))"
         return 0
     fi
 
-    # Fallback: appimagetool
+    # Fallback: appimagetool (also sets GTK version + appstream, so it never silently fails).
     warn "linuxdeploy failed for ${variant}, using appimagetool..."
     sed -i 's/%F//g' "$variant_appdir/$BINARY_NAME.desktop"
     chmod +x "$variant_appdir/usr/bin/$BINARY_NAME"
 
     local final_name="${pkg_name}-${APP_VERSION}-x86_64.AppImage"
-    ARCH=x86_64 "$APPIMAGETOOL" \
+    ARCH=x86_64 DEPLOY_GTK_VERSION="$gtk_version" "$APPIMAGETOOL" \
         --no-appstream \
         "$variant_appdir" \
-        "$final_name" \
-        2>&1 | tee "${APPDIR_ROOT}/${variant}_appimagetool.log" || {
-            error "appimagetool failed for ${variant}"
+        "$final_name" 2>&1 | tee "${APPDIR_ROOT}/${variant}_appimagetool.log" || {
+            error "appimagetool failed for ${variant} (check log)"
             return 1
         }
 

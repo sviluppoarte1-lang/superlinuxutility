@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import '../utils/process_utils.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -92,7 +93,7 @@ class AppSelfUpdateService {
           '(printf "%s\\n" "$escapedPassword" | sudo -S apt-get install -f -y && '
           'printf "%s\\n" "$escapedPassword" | sudo -S dpkg -i "$escapedDebPath")';
 
-      final installResult = await Process.run('bash', ['-c', installCommand], runInShell: true);
+      final installResult = await runProcess('bash', ['-c', installCommand], runInShell: true, timeout: const Duration(seconds: 300));
       final output = '${installResult.stdout}\n${installResult.stderr}'.trim();
       if (installResult.exitCode != 0) {
         return {'success': false, 'message': 'Install failed.', 'output': output};

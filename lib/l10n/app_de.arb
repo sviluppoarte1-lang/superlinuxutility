@@ -33,7 +33,9 @@
   "clipboardSavedTo": "Gespeichert in {path}",
   "@clipboardSavedTo": {
     "placeholders": {
-      "path": {"type": "String"}
+      "path": {
+        "type": "String"
+      }
     }
   },
   "clipboardSaveFailed": "Speichern fehlgeschlagen.",
@@ -44,7 +46,9 @@
   "clipboardRetentionHours": "{n} h",
   "@clipboardRetentionHours": {
     "placeholders": {
-      "n": {"type": "int"}
+      "n": {
+        "type": "int"
+      }
     }
   },
   "tabBattery": "Akku",
@@ -130,7 +134,9 @@
   "smartInstallError": "Installationsfehler: {error}",
   "@smartInstallError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrNoPassword": "Passwort nicht gespeichert. Speichern Sie Ihr Passwort in den Einstellungen.",
@@ -140,20 +146,26 @@
   "smartErrPasswordGeneric": "Validierungsfehler: {error}",
   "@smartErrPasswordGeneric": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrSudo": "sudo-Fehler: {error}",
   "@smartErrSudo": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrUnsupportedPm": "Nicht unterstützter Paketmanager.",
   "smartErrUnexpected": "Unerwarteter Fehler: {error}",
   "@smartErrUnexpected": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrAptLock": "Aktualisierung nicht möglich: Ein anderer Prozess verwendet apt. Versuchen Sie es in einigen Sekunden erneut.",
@@ -161,7 +173,9 @@
   "smartErrAptUpdateFailed": "Cache-Update fehlgeschlagen: {error}",
   "@smartErrAptUpdateFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrDpkgInterrupted": "dpkg wurde unterbrochen. Führen Sie \"sudo dpkg --configure -a\" aus und versuchen Sie es erneut.",
@@ -169,7 +183,9 @@
   "smartErrInstallFailed": "Installation fehlgeschlagen: {error}",
   "@smartErrInstallFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrNotFoundAfterInstall": "Installation abgeschlossen, aber smartctl nicht gefunden. Starten Sie die App neu und versuchen Sie es erneut.",
@@ -185,6 +201,13 @@
   "devGradle": "Gradle-Cache",
   "devDocker": "Ungenutzte Docker-Images",
   "devKernelHeaders": "Alte Kernel (Header + Images)",
+  "devPkgCache": "Package-Manager-Cache",
+  "devElectronCache": "Electron-App-Caches",
+  "devOpencodeData": "OpenCode-Daten (Log + Snapshot)",
+  "devCudaRepo": "CUDA-Installer-Repositories",
+  "devCudaDup": "Doppelte CUDA-Installationen",
+  "devSnapOld": "Alte Snap-Revisionen",
+  "devFlatpakUnused": "Unbenutzte Flatpak-Runtimes",
   "advEmpty": "Keine Entwicklungs-Caches gefunden.",
   "journalTitle": "Systemprotokolle (journald)",
   "journalCurrentSize": "Belegter Platz",
@@ -226,7 +249,9 @@
   "ramCleanupAutoEnabled": "Automatische RAM-Bereinigung aktiviert (alle {minutes} Minuten).",
   "@ramCleanupAutoEnabled": {
     "placeholders": {
-      "minutes": {"type": "int"}
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "ramCleanupAutoDisabled": "Automatische RAM-Bereinigung deaktiviert.",
@@ -313,6 +338,27 @@
   "settingsCloseToTrayOff": "In Tray belassen deaktiviert. Schließen beendet die App.",
   "settingsTrayEnabled": "System Tray aktiviert.",
   "settingsTrayDisabled": "System Tray deaktiviert. App neu starten, um zu übernehmen.",
+  "settingsTrayInitFailed": "Das System-Tray konnte nicht aktiviert werden. Details: {error}",
+  "@settingsTrayInitFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTrayInstallOk": "System-Tray-Abhängigkeiten erfolgreich installiert.",
+  "settingsTrayInstallUnsupported": "Automatische Installation für diese Distribution nicht verfügbar. Verwende die AppImage-Version: die System-Tray-Bibliotheken sind bereits enthalten.",
+  "settingsTrayInstallNoPassword": "Speichere das Passwort in den Einstellungen, um die Installation zu erlauben.",
+  "settingsTrayInstallWrongPassword": "Falsches Passwort. Überprüfe das Passwort in den Einstellungen.",
+  "settingsTrayInstallLocked": "Ein anderer Prozess verwendet die Repositorys. Versuche es in wenigen Sekunden erneut.",
+  "settingsTrayInstallFailed": "Installation fehlgeschlagen: {detail}",
+  "@settingsTrayInstallFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
   "settingsStartMinimized": "App minimiert in Tray starten",
   "settingsStartMinimizedDesc": "Wenn aktiviert, startet die App ohne Hauptfenster, nur mit Tray-Symbol.",
   "settingsStartMinimizedOn": "Minimiert starten aktiviert. Beim nächsten Start nur in Tray.",
@@ -339,89 +385,137 @@
   "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} Update verfügbar} other{APT: {count} Updates verfügbar}}",
   "@updateCheckAptHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} gestaffeltes Update erkannt} other{APT: {count} gestaffelte Updates erkannt}}",
   "@updateCheckAptPhasedExtra": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckAptError": "APT: Fehler bei der Prüfung: {error}",
   "@updateCheckAptError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckDnfNone": "DNF: Keine Updates verfügbar",
   "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} Update verfügbar} other{DNF: {count} Updates verfügbar}}",
   "@updateCheckDnfHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckDnfError": "DNF: Fehler bei der Prüfung: {error}",
   "@updateCheckDnfError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckPacmanNone": "Pacman: Keine Updates verfügbar",
   "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} Update verfügbar} other{Pacman: {count} Updates verfügbar}}",
   "@updateCheckPacmanHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckPacmanError": "Pacman: Fehler bei der Prüfung: {error}",
   "@updateCheckPacmanError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckSnapNone": "Snap: Keine Updates verfügbar",
   "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} Update verfügbar} other{Snap: {count} Updates verfügbar}}",
   "@updateCheckSnapHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckSnapError": "Snap: Fehler bei der Prüfung: {error}",
   "@updateCheckSnapError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckFlatpakNone": "Flatpak: Keine Updates verfügbar",
   "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} Update verfügbar} other{Flatpak: {count} Updates verfügbar}}",
   "@updateCheckFlatpakHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckFlatpakError": "Flatpak: Fehler bei der Prüfung: {error}",
   "@updateCheckFlatpakError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckSummaryPackageCount": "{count, plural, =0{0 Pakete} one{{count} Paket} other{{count} Pakete}}",
   "@updateCheckSummaryPackageCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updatesAvailableCount": "{count} Updates verfügbar",
-  "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesAvailableCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailableDialogTitle": "Updates verfügbar",
   "updatesAvailableDialogMessage": "{count} Updates verfügbar. Möchten Sie sie jetzt anwenden?",
-  "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesAvailableDialogMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailableDetectedListHeading": "Erkannt:",
   "updateLabelPhased": "{name} (gestaffelt — noch nicht installierbar)",
-  "@updateLabelPhased": {"placeholders": {"name": {"type": "String"}}},
+  "@updateLabelPhased": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "updatesPreviewTruncated": "… und {count} weitere",
-  "@updatesPreviewTruncated": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesPreviewTruncated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailablePhasedFooter": "Gestaffelte Pakete können noch nicht installiert werden. „Jetzt anwenden“ installiert nur, was das System zulässt.",
   "updatesCheckPreviewHeading": "Betroffene Einträge:",
   "applyNow": "Jetzt anwenden",
@@ -493,7 +587,7 @@
   "disclaimerNoWarranty": "Dieses Programm wird in der Hoffnung verteilt, dass es nützlich ist, aber OHNE JEDE GEWÄHRLEISTUNG; ohne sogar die implizite Gewährleistung der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Details finden Sie in der GNU General Public License.",
   "disclaimerCopyright": "Copyright (c) 2024-2025 Marco Di Giangiacomo. Alle Rechte vorbehalten unter GPL-3.0.",
   "payWithPaypal": "Mit PayPal bezahlen",
-  "purchaseLicenseViaPaypal": "Die Advanced-Version kostet 19,99 €. Um eine Lizenz zu erwerben, zahlen Sie per PayPal. Nach erfolgreicher Zahlung erhalten Sie Ihren Lizenzschlüssel per E-Mail. Ohne gültige Zahlung kann die Anwendung nicht aktiviert werden.",
+  "purchaseLicenseViaPaypal": "Die Advanced-Version kostet 19,99 €. Um eine Lizenz zu erwerben, zahlen Sie per PayPal. Nach erfolgreicher Zahlung erhalten Sie Ihren Lizenzschlüssel per E-Mail.",
   "languageSelectionTitle": "Sprachauswahl",
   "languageSelectionDesc": "Wählen Sie die Sprache für die Anwendung",
   "languageItalian": "Italienisch",
@@ -796,8 +890,6 @@
   "temperatureUnit": "°C",
   "removing": "Entfernen...",
   "versionLabel": "Version:",
-  "searchProcess": "Prozess suchen",
-  "searchApp": "App suchen",
   "selectBasePath": "Basis-Pfad auswählen:",
   "root": "Root",
   "home": "Home",
@@ -850,7 +942,6 @@
   "rename": "Umbenennen",
   "newName": "Neuer Name",
   "details": "Details",
-  "close": "Schließen",
   "renamedSuccessfully": "Erfolgreich umbenannt",
   "renameError": "Fehler beim Umbenennen",
   "type": "Typ",
@@ -929,11 +1020,36 @@
   "infoCleanupTrashDesc": "Leert den Papierkorb und bereinigt temporäre Dateien sicher",
   "infoInstalledApps": "Installierte Apps",
   "infoInstalledAppsManagement": "Verwaltung mehrerer Pakete",
-  "infoInstalledAppsManagementDesc": "Zeigt Apps an, die über APT, Snap, Flatpak und GNOME installiert wurden",
+  "infoInstalledAppsManagementDesc": "Zeigt installierte Apps über APT, Snap, Flatpak, GNOME, Pacman und DNF an",
   "infoInstalledAppsDependencies": "Abhängigkeitsprüfung",
   "infoInstalledAppsDependenciesDesc": "Prüft Abhängigkeiten vor dem Entfernen, um Probleme zu vermeiden",
   "infoInstalledAppsWarnings": "Sicherheitswarnungen",
   "infoInstalledAppsWarningsDesc": "Warnt, wenn ein Paket von anderer Software oder dem System verwendet wird",
+  "installedAppsLoading": "Installierte Apps werden geladen...\n{count} Apps gefunden",
+  "@installedAppsLoading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "installedAppsManagedBy": "Verwaltung: {manager}",
+  "@installedAppsManagedBy": {
+    "placeholders": {
+      "manager": {
+        "type": "String"
+      }
+    }
+  },
+  "installedAppsSystemWarning": "Dies ist ein Systempaket. Das Entfernen kann den Betrieb des Systems beeinträchtigen.",
+  "installedAppsReverseWarning": "{count} weitere(s) Paket(e) hängen davon ab",
+  "@installedAppsReverseWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "infoMonitor": "Systemmonitor",
   "infoMonitorProcesses": "Prozessüberwachung",
   "infoMonitorProcessesDesc": "Zeigt alle aktiven Prozesse mit CPU-, Speicher- und Festplattennutzung an",
@@ -1153,7 +1269,7 @@
   "licenseActivateError": "Ungültiger Code. Name, Nachname und E-Mail prüfen.",
   "licenseActivatePremium": "Aktivieren / Premium",
   "licenseActivateCardTitle": "Erweiterte Version aktivieren",
-  "licenseActivateCardDesc": "Die Advanced-Version kostet 19,99 €. Geben Sie Ihre Daten und den Lizenzschlüssel ein, den Sie nach erfolgreicher Zahlung erhalten haben, um GRUB-, Kernel- und Recovery-Tools freizuschalten. Ohne gültige Zahlung kann die Anwendung nicht aktiviert werden.",
+  "licenseActivateCardDesc": "Geben Sie Ihre Daten und den Lizenzschlüssel ein, den Sie nach erfolgreicher Zahlung erhalten haben, um GRUB-, Kernel- und Recovery-Tools freizuschalten.",
   "servicesGuideTitle": "Linux Services Guide",
   "servicesGuideWhatAre": "What are Linux Services?",
   "servicesGuideWhatAreBody": "Services (also called daemons) are background programs that start automatically when the system boots. They provide essential functions such as network management (NetworkManager), printing (CUPS), scheduling (cron), database servers (MySQL, PostgreSQL), web servers (Apache, Nginx), and many others.\n\nSome services are essential for the system to work correctly, while others are optional and depend on the specific use of the machine.",
@@ -1180,7 +1296,6 @@
   "repoContentLabel": "Inhalt",
   "repoUpdated": "Repository aktualisiert",
   "edit": "Bearbeiten",
-  "remove": "Entfernen",
   "tabTweaks": "Tweaks",
   "tweaksSwap": "Swap",
   "tweaksSwapRecommendations": "Swap-Empfehlungen",
@@ -1332,6 +1447,66 @@
   "driverManagerUpdate": "Aktualisieren",
   "driverManagerRebootRequired": "Neustart nach Update erforderlich",
   "driverManagerLinuxFirmware": "Linux Firmware (linux-firmware)",
-  "driverManagerLinuxFirmwareDesc": "Vollständiges Firmware-Paket für GPU, Wi-Fi, Bluetooth und andere Geräte"
+  "driverManagerLinuxFirmwareDesc": "Vollständiges Firmware-Paket für GPU, Wi-Fi, Bluetooth und andere Geräte",
+  "driverManagerFirmwareNotInstalled": "Nicht installiert",
+  "driverManagerFirmwareUpToDate": "Auf dem neuesten Stand",
+  "driverManagerFirmwareUpdateAvailable": "Update verfügbar",
+  "driverManagerFirmwareInstallSuccess": "linux-firmware erfolgreich installiert",
+  "driverManagerFirmwareUpdateSuccess": "linux-firmware aktualisiert. Neustart erforderlich.",
+  "driverManagerFirmwareFailed": "Firmware-Vorgang fehlgeschlagen:",
+  "tweaksSystemMemory": "Systemspeicher",
+  "tweaksSwapTotalLabel": "Swap gesamt",
+  "tweaksSwapNone": "Keiner",
+  "tweaksSwapUsedLabel": "Swap genutzt",
+  "tweaksSwapDeviceLabel": "Swap-Gerät",
+  "tweaksZswapLabel": "Zswap",
+  "tweaksStatusActive": "Aktiv",
+  "tweaksStatusInactive": "Inaktiv",
+  "tweaksStatusUnavailable": "Nicht verfügbar",
+  "tweaksRestartRequired": "Neustart erforderlich",
+  "swapAdjustLowTitle": "Swappiness anpassen ({current} → {ideal})",
+  "swapAdjustLowDesc": "Mit {ram} GB RAM sorgt ein Swappiness von 60 für genügend Swap für die Stabilität.",
+  "swapAdjustMidTitle": "Swappiness anpassen ({current} → {ideal})",
+  "swapAdjustMidDesc": "Mit {ram} GB RAM gleichen 40 Swappiness RAM-Nutzung und Swap aus.",
+  "swapAdjustHighTitle": "Swappiness anpassen ({current} → {ideal})",
+  "swapAdjustHighDesc": "Mit {ram} GB RAM minimiert ein Swappiness von 20 unnötige Swap-Nutzung.",
+  "swapOptimalTitle": "Swappiness ist optimal ({value})",
+  "swapOptimalDesc": "Die aktuelle Swappiness entspricht dem empfohlenen Wert für Ihre {ram} GB RAM.",
+  "swapCreateTitle": "Swap-Datei erstellen ({size} GB)",
+  "swapCreateDesc": "Kein Swap erkannt. Das Erstellen einer Swap-Datei verbessert die Stabilität bei Speicherdruck.",
+  "zramBootTitle": "ZRAM beim Systemstart aktivieren",
+  "zramBootDesc": "ZRAM läuft aktuell, aber der Dienst ist beim Start nicht aktiviert: er würde nach dem nächsten Neustart verloren gehen.",
+  "zramActiveTitle": "ZRAM ist aktiv",
+  "zramActiveDesc": "Komprimierter Swap im RAM läuft und startet automatisch beim Systemstart. Dies bietet schnelleren Swap und reduziert Datenträger-I/O.",
+  "zramStartTitle": "ZRAM-Dienst starten",
+  "zramStartDesc": "ZRAM-Tools sind installiert, aber der Dienst läuft nicht.",
+  "zramInstallTitle": "ZRAM aktivieren (komprimierter Swap im RAM)",
+  "zramInstallDesc": "ZRAM komprimiert Swap-Daten im RAM und bietet so schnelleren Swap und weniger Datenträger-I/O.",
+  "homeUpdateAction": "Aktualisieren",
+  "homeCheckingUpdates": "Suche nach Updates...",
+  "homeNewVersionAvailable": "Neue Version {version} verfügbar!",
+  "homeRestoringRepositories": "Repositories werden wiederhergestellt...",
+  "homeKernelUpdateTitle": "Kernel-Update",
+  "homeKernelUpdateBody": "Das Kernel-Update erfordert einen Neustart des Systems. Fortfahren?",
+  "grubUnsavedBanner": "Es gibt ungespeicherte Änderungen. Denken Sie daran, GRUB zu speichern und zu aktualisieren, um die Änderungen anzuwenden.",
+  "grubContentHint": "Inhalt der GRUB-Datei...",
+  "updateReleaseNotes": "Versionshinweise",
+  "updateDownloadAndInstall": "Herunterladen und installieren",
+  "updateInstalledOk": "Version {version} erfolgreich installiert.",
+  "updateDownloading": "Wird heruntergeladen...",
+  "languageSelectionSave": "Speichern",
+  "searchHint": "Funktionen und Registerkarten suchen...",
+  "searchNoResults": "Keine Treffer",
+  "undo": "R\u00fcckg\u00e4ngig",
+  "undoDone": "Vorgang zur\u00fcckgenommen",
+  "undoFailed": "Vorgang konnte nicht zur\u00fcckgenommen werden",
+  "onboardingContinue": "Weiter",
+  "warningSystemCard": "Erkanntes System",
+  "warningOsLabel": "Betriebssystem",
+  "warningDesktopLabel": "Desktop-Umgebung",
+  "warningGrubCommand": "GRUB-Befehl",
+  "settingsMinimizeToTray": "In Systemleiste minimieren",
+  "settingsMinimizeToTrayDesc": "Beim Minimieren verschwindet das Fenster in der Systemleiste (sonst bleibt es in der Fensterleiste)",
+  "settingsMinimizeToTrayOn": "\u201eIn Systemleiste minimieren\u201c aktiviert",
+  "settingsMinimizeToTrayOff": "\u201eIn Systemleiste minimieren\u201c deaktiviert"
 }
-

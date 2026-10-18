@@ -16,11 +16,28 @@ class _DriverManagerScreenState extends State<DriverManagerScreen> {
   String? _error;
   final Map<int, bool> _installing = {};
   bool _firmwareInstalling = false;
+  LinuxFirmwareStatus? _fwStatus;
+  bool _fwStatusLoading = false;
 
   @override
   void initState() {
     super.initState();
     _scanDrivers();
+  }
+
+  Future<void> _loadFirmwareStatus() async {
+    setState(() => _fwStatusLoading = true);
+    try {
+      final s = await DriverManagerService.getLinuxFirmwareStatus();
+      if (mounted) {
+        setState(() {
+          _fwStatus = s;
+          _fwStatusLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _fwStatusLoading = false);
+    }
   }
 
   Future<void> _scanDrivers() async {
@@ -36,6 +53,7 @@ class _DriverManagerScreenState extends State<DriverManagerScreen> {
         _error = result.error;
       });
     }
+    _loadFirmwareStatus();
   }
 
   Future<void> _installDriver(int index) async {
@@ -76,6 +94,7 @@ class _DriverManagerScreenState extends State<DriverManagerScreen> {
   }
 
   Future<void> _installFirmware() async {
+    final l10n = AppLocalizations.of(context)!;
     final password = await PasswordStorage.getPassword();
     if (password == null || password.isEmpty) {
       if (mounted) {
@@ -89,20 +108,40 @@ class _DriverManagerScreenState extends State<DriverManagerScreen> {
       return;
     }
     setState(() => _firmwareInstalling = true);
-    final result = await DriverManagerService.installLinuxFirmware();
+    // Stato attuale: determina se è un'installazione da zero o un aggiornamento.
+    LinuxFirmwareStatus status;
+    try {
+      status = await DriverManagerService.getLinuxFirmwareStatus();
+    } catch (_) {
+      status = _fwStatus ??
+          const LinuxFirmwareStatus(installed: false, updateAvailable: false);
+    }
+    final wasInstalled = status.installed;
+    final result =
+        await DriverManagerService.installOrUpdateLinuxFirmware(status);
+    // Riguarda lo stato dopo l'operazione per aggiornare la card.
+    LinuxFirmwareStatus? after;
+    try {
+      after = await DriverManagerService.getLinuxFirmwareStatus();
+    } catch (_) {}
     if (mounted) {
-      setState(() => _firmwareInstalling = false);
+      setState(() {
+        _firmwareInstalling = false;
+        if (after != null) _fwStatus = after;
+      });
       if (result == 'ok') {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Linux firmware installed successfully'),
+          SnackBar(
+            content: Text(wasInstalled
+                ? l10n.driverManagerFirmwareUpdateSuccess
+                : l10n.driverManagerFirmwareInstallSuccess),
             backgroundColor: Colors.green,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Firmware installation failed: $result'),
+            content: Text('${l10n.driverManagerFirmwareFailed} $result'),
             backgroundColor: Colors.red,
           ),
         );
@@ -434,6 +473,31 @@ class _DriverManagerScreenState extends State<DriverManagerScreen> {
   }
 
   Widget _buildFirmwarePackageCard(AppLocalizations l10n, ThemeData theme) {
+    final st = _fwStatus;
+    final checking = _fwStatusLoading && st == null;
+
+    // Stato secondario + stile del bottone secondo i 3 casi richiesti:
+    // non installato / installato con aggiornamento / installato e aggiornato.
+    String subtitle;
+    Color subtitleColor = theme.colorScheme.outline;
+    if (checking) {
+      subtitle = l10n.driverManagerLinuxFirmwareDesc;
+    } else if (st == null) {
+      subtitle = l10n.driverManagerLinuxFirmwareDesc;
+    } else if (!st.installed) {
+      subtitle = '${l10n.driverManagerLinuxFirmwareDesc}\n'
+          '${l10n.driverManagerFirmwareNotInstalled}';
+    } else if (st.updateAvailable) {
+      subtitle = '${l10n.driverManagerLinuxFirmwareDesc}\n'
+          '${l10n.driverManagerFirmwareUpdateAvailable} '
+          '(${st.updatablePackages.join(', ')})';
+      subtitleColor = Colors.orange;
+    } else {
+      subtitle = '${l10n.driverManagerLinuxFirmwareDesc}\n'
+          '${l10n.driverManagerFirmwareUpToDate}';
+      subtitleColor = Colors.green;
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -460,29 +524,62 @@ class _DriverManagerScreenState extends State<DriverManagerScreen> {
                           ?.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(
-                    l10n.driverManagerLinuxFirmwareDesc,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: st != null && st.installed && !st.updateAvailable
+                          ? Colors.green
+                          : subtitleColor,
+                      fontWeight: st != null &&
+                              st.installed &&
+                              !st.updateAvailable
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
                   ),
                 ],
               ),
             ),
-            ElevatedButton.icon(
-              onPressed:
-                  _firmwareInstalling ? null : _installFirmware,
-              icon: _firmwareInstalling
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.download, size: 18),
-              label: Text(l10n.driverManagerInstall),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple,
-                foregroundColor: Colors.white,
+            if (checking || _firmwareInstalling)
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else if (st != null && st.installed && !st.updateAvailable)
+              // Installato e aggiornato: nessun bottone, solo conferma + re-check.
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green, size: 22),
+                  IconButton(
+                    tooltip: l10n.driverManagerScan,
+                    icon: const Icon(Icons.refresh, size: 20),
+                    onPressed: _loadFirmwareStatus,
+                  ),
+                ],
+              )
+            else if (st != null && st.installed && st.updateAvailable)
+              // Aggiornamento disponibile.
+              ElevatedButton.icon(
+                onPressed: _installFirmware,
+                icon: const Icon(Icons.system_update, size: 18),
+                label: Text(l10n.driverManagerUpdate),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+              )
+            else
+              // Non installato (o stato non rilevato): installa da zero.
+              ElevatedButton.icon(
+                onPressed: _installFirmware,
+                icon: const Icon(Icons.download, size: 18),
+                label: Text(l10n.driverManagerInstall),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                ),
               ),
-            ),
           ],
         ),
       ),

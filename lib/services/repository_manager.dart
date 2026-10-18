@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'password_storage.dart';
 import 'system_detector.dart';
 
@@ -573,7 +574,7 @@ fi""");
         .replaceAll('`', '\\`');
     final fullCommand =
         'printf "%s\\n" "$escapedPassword" | sudo -p "" -S bash -c ${_shellQuote(command)}';
-    return await Process.run('bash', ['-c', fullCommand], runInShell: true);
+    return await runProcess('bash', ['-c', fullCommand], runInShell: true, timeout: const Duration(seconds: 120));
   }
 
   static String _shellQuote(String s) {

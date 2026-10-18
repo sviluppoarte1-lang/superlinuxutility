@@ -131,6 +131,19 @@ class OperationHistoryService {
     }
   }
 
+  /// Ultima operazione registrata (filtrabile): usata per il banner
+  /// "operazione annullabile" (SnackBar con azione Undo) subito dopo
+  /// un'azione che Logga con undoCommand.
+  static Future<OperationRecord?> latestRecord({String? category, String? action}) async {
+    final records = await getOperations();
+    for (final r in records) {
+      if (category != null && r.category != category) continue;
+      if (action != null && r.action != action) continue;
+      return r;
+    }
+    return null;
+  }
+
   static Future<List<OperationRecord>> getOperations() async {
     final file = await _historyFile();
     return _readRecords(file);

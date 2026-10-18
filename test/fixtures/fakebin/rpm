@@ -1,0 +1,29 @@
+#!/bin/sh
+# Fake rpm per i test di AppManager.getDnfApps().
+#
+# LANCIO (senza PATH dedicato il test corrispondente viene saltato):
+#   PATH="$PWD/test/fixtures/fakebin:$PATH" flutter test test/app_manager_test.dart
+#
+# Comportamento:
+#   --version        → stampa un marker (usato dal test per rilevare il fake)
+#   -qf con SUMMARY   → 3 pacchetti, il PRIMO con byte non-UTF-8 nel summary
+#                       (simula un %{SUMMARY} rpm corrotto/legacy)
+#   -qf senza SUMMARY → solo nome+versione (query di fallback)
+if [ "$1" = "--version" ]; then
+    echo "RPM version 4.19.0 (FAKE_RPM_FOR_TESTS)"
+    exit 0
+fi
+case "$*" in
+    *SUMMARY*)
+        # printf con \xff\xfe: byte invalidi UTF-8 nel summary di "alpha".
+        printf 'alpha\t1.0-1\tSummary con byte non validi: \xff\xfe\n'
+        printf 'beta\t2.0-1\tBeta summary\n'
+        printf 'gamma\t3.0-1\tGamma summary\n'
+        ;;
+    *)
+        printf 'alpha\t1.0-1\n'
+        printf 'beta\t2.0-1\n'
+        printf 'gamma\t3.0-1\n'
+        ;;
+esac
+exit 0

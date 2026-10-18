@@ -97,6 +97,13 @@
   "devGradle": "Gradle cache",
   "devDocker": "Unused Docker images",
   "devKernelHeaders": "Old kernels (headers + images)",
+  "devPkgCache": "Package manager cache",
+  "devElectronCache": "Electron app caches",
+  "devOpencodeData": "OpenCode data (log + snapshot)",
+  "devCudaRepo": "CUDA installer repositories",
+  "devCudaDup": "Duplicate CUDA installs",
+  "devSnapOld": "Old snap revisions",
+  "devFlatpakUnused": "Unused flatpak runtimes",
   "advEmpty": "No development caches detected.",
   "journalTitle": "System logs (journald)",
   "journalCurrentSize": "Space used",
@@ -225,6 +232,23 @@
   "settingsCloseToTrayOff": "Close to tray disabled. Closing the window will exit the app.",
   "settingsTrayEnabled": "System tray enabled.",
   "settingsTrayDisabled": "System tray disabled. Restart the app to apply.",
+  "settingsTrayInitFailed": "Unable to enable the system tray. Details: {error}",
+  "@settingsTrayInitFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "settingsTrayInstallOk": "System tray dependencies installed successfully.",
+  "settingsTrayInstallUnsupported": "Automatic installation is not available for this distribution. Use the AppImage version: the system tray libraries are already included.",
+  "settingsTrayInstallNoPassword": "Save your password in Settings to allow installation.",
+  "settingsTrayInstallWrongPassword": "Wrong password. Check the password in Settings.",
+  "settingsTrayInstallLocked": "Another process is using the repositories. Try again in a few seconds.",
+  "settingsTrayInstallFailed": "Installation failed: {detail}",
+  "@settingsTrayInstallFailed": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  },
   "settingsStartMinimized": "Start app minimized to tray",
   "settingsStartMinimizedDesc": "When enabled, the app starts without showing the main window, only the system tray icon.",
   "settingsStartMinimizedOn": "Start minimized enabled. Next launch will open in tray only.",
@@ -417,7 +441,7 @@
   "disclaimerNoWarranty": "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.",
   "disclaimerCopyright": "Copyright (c) 2024-2025 Marco Di Giangiacomo. All rights reserved under GPL-3.0.",
   "payWithPaypal": "Pay with PayPal",
-  "purchaseLicenseViaPaypal": "The Advanced version costs 19.99 €. To purchase a license, pay via PayPal. After successful payment you will receive your license code by email. Without valid payment, the application cannot be activated.",
+  "purchaseLicenseViaPaypal": "The Advanced version costs 19.99 €. To purchase a license, pay via PayPal. After successful payment you will receive your license code by email.",
   "languageSelectionTitle": "Language Selection",
   "languageSelectionDesc": "Select the language for the application",
   "languageItalian": "Italian",
@@ -884,11 +908,36 @@
   "infoCleanupTrashDesc": "Empties trash and safely cleans temporary files",
   "infoInstalledApps": "Installed Apps",
   "infoInstalledAppsManagement": "Multiple package management",
-  "infoInstalledAppsManagementDesc": "View apps installed via APT, Snap, Flatpak and GNOME",
+  "infoInstalledAppsManagementDesc": "View apps installed via APT, Snap, Flatpak, GNOME, Pacman and DNF",
   "infoInstalledAppsDependencies": "Dependency check",
   "infoInstalledAppsDependenciesDesc": "Checks dependencies before removal to avoid problems",
   "infoInstalledAppsWarnings": "Security warnings",
   "infoInstalledAppsWarningsDesc": "Warns when a package is used by other software or the system",
+  "installedAppsLoading": "Loading installed apps...\n{count} apps found",
+  "@installedAppsLoading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "installedAppsManagedBy": "Manager: {manager}",
+  "@installedAppsManagedBy": {
+    "placeholders": {
+      "manager": {
+        "type": "String"
+      }
+    }
+  },
+  "installedAppsSystemWarning": "This is a system package. Removing it could break the system.",
+  "installedAppsReverseWarning": "{count} other package(s) depend on this",
+  "@installedAppsReverseWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "infoMonitor": "System Monitor",
   "infoMonitorProcesses": "Process monitoring",
   "infoMonitorProcessesDesc": "View all active processes with CPU, memory and disk usage",
@@ -1082,7 +1131,7 @@
   "licenseActivateError": "Invalid code. Check name, surname and email.",
   "licenseActivatePremium": "Activate / Premium",
   "licenseActivateCardTitle": "Activate Advanced Version",
-  "licenseActivateCardDesc": "The Advanced version costs 19.99 €. Enter your details and the license code you received after successful payment to unlock GRUB, Kernel and Recovery tools. Without valid payment, the application cannot be activated.",
+  "licenseActivateCardDesc": "Enter your details and the license code you received after successful payment to unlock GRUB, Kernel and Recovery tools.",
   "noSmartDisksFound": "No disks with SMART support found.",
   "smartctlNotFound": "smartctl not found",
   "smartctlInstallPrompt": "smartmontools is required to monitor disk health. Do you want to install it?",
@@ -1344,6 +1393,66 @@
   "driverManagerUpdate": "Update",
   "driverManagerRebootRequired": "Reboot required after update",
   "driverManagerLinuxFirmware": "Linux Firmware (linux-firmware)",
-  "driverManagerLinuxFirmwareDesc": "Complete firmware package for GPU, Wi-Fi, Bluetooth and other devices"
+  "driverManagerLinuxFirmwareDesc": "Complete firmware package for GPU, Wi-Fi, Bluetooth and other devices",
+  "driverManagerFirmwareNotInstalled": "Not installed",
+  "driverManagerFirmwareUpToDate": "Up to date",
+  "driverManagerFirmwareUpdateAvailable": "Update available",
+  "driverManagerFirmwareInstallSuccess": "linux-firmware installed successfully",
+  "driverManagerFirmwareUpdateSuccess": "linux-firmware updated. Reboot required.",
+  "driverManagerFirmwareFailed": "Firmware operation failed:",
+  "tweaksSystemMemory": "System Memory",
+  "tweaksSwapTotalLabel": "Swap Total",
+  "tweaksSwapNone": "None",
+  "tweaksSwapUsedLabel": "Swap Used",
+  "tweaksSwapDeviceLabel": "Swap Device",
+  "tweaksZswapLabel": "Zswap",
+  "tweaksStatusActive": "Active",
+  "tweaksStatusInactive": "Inactive",
+  "tweaksStatusUnavailable": "Unavailable",
+  "tweaksRestartRequired": "Restart required",
+  "swapAdjustLowTitle": "Adjust swappiness ({current} → {ideal})",
+  "swapAdjustLowDesc": "With {ram} GB RAM, a swappiness of 60 ensures enough swap for stability.",
+  "swapAdjustMidTitle": "Adjust swappiness ({current} → {ideal})",
+  "swapAdjustMidDesc": "With {ram} GB RAM, a swappiness of 40 balances RAM usage and swap.",
+  "swapAdjustHighTitle": "Adjust swappiness ({current} → {ideal})",
+  "swapAdjustHighDesc": "With {ram} GB RAM, a swappiness of 20 minimizes unnecessary swap usage.",
+  "swapOptimalTitle": "Swappiness is optimal ({value})",
+  "swapOptimalDesc": "Current swappiness matches the recommended value for your {ram} GB RAM.",
+  "swapCreateTitle": "Create swap file ({size} GB)",
+  "swapCreateDesc": "No swap detected. Creating a swap file improves stability under memory pressure.",
+  "zramBootTitle": "Start ZRAM at boot",
+  "zramBootDesc": "ZRAM is running now, but the service is not enabled at startup: it would be lost after the next reboot.",
+  "zramActiveTitle": "ZRAM is active",
+  "zramActiveDesc": "Compressed swap in RAM is running and starts automatically at boot. This provides faster swap and reduces disk I/O.",
+  "zramStartTitle": "Start ZRAM service",
+  "zramStartDesc": "ZRAM tools are installed but the service is not running.",
+  "zramInstallTitle": "Enable ZRAM (compressed swap in RAM)",
+  "zramInstallDesc": "ZRAM compresses swap data in RAM, providing faster swap and reducing disk I/O.",
+  "homeUpdateAction": "Update",
+  "homeCheckingUpdates": "Checking for updates...",
+  "homeNewVersionAvailable": "New version {version} available!",
+  "homeRestoringRepositories": "Restoring repositories...",
+  "homeKernelUpdateTitle": "Kernel update",
+  "homeKernelUpdateBody": "Kernel update requires a system restart. Continue?",
+  "grubUnsavedBanner": "You have unsaved changes. Remember to save and update GRUB to apply the changes.",
+  "grubContentHint": "GRUB file content...",
+  "updateReleaseNotes": "Release notes",
+  "updateDownloadAndInstall": "Download & Install",
+  "updateInstalledOk": "Version {version} installed successfully.",
+  "updateDownloading": "Downloading...",
+  "languageSelectionSave": "Save",
+  "searchHint": "Search features and tabs...",
+  "searchNoResults": "No matches",
+  "undo": "Undo",
+  "undoDone": "Operation undone",
+  "undoFailed": "Failed to undo the operation",
+  "onboardingContinue": "Next",
+  "warningSystemCard": "Detected System",
+  "warningOsLabel": "Operating System",
+  "warningDesktopLabel": "Desktop Environment",
+  "warningGrubCommand": "GRUB command",
+  "settingsMinimizeToTray": "Minimize to tray",
+  "settingsMinimizeToTrayDesc": "When minimized, the window hides in the system tray (otherwise it stays in the taskbar)",
+  "settingsMinimizeToTrayOn": "Minimize to tray enabled",
+  "settingsMinimizeToTrayOff": "Minimize to tray disabled"
 }
-

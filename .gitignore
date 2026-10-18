@@ -52,3 +52,6 @@ Versione Arch Linux/
 
 # Personal build outputs (not distributed; rebuilt by build_deb.sh)
 deb_package_personal/
+
+# License secret (mai committare)
+license_secret

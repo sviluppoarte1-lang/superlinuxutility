@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'dart:convert';
 import 'password_storage.dart';
 
@@ -44,10 +45,11 @@ class ShutdownSchedulerService {
     
     final fullCommand = 'printf "%s\\n" "$escapedPassword" | sudo -S $command 2>&1';
     
-    final result = await Process.run(
+    final result = await runProcess(
       'bash',
       ['-c', fullCommand],
       runInShell: true,
+      timeout: const Duration(seconds: 60),
     );
     
     if (result.exitCode != 0) {

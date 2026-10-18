@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:super_linux_utility/services/advanced_cleanup_service.dart';
 
@@ -140,6 +142,172 @@ void main() {
       expect(await AdvancedCleanupService.vacuumJournal('abc'), isFalse);
       expect(await AdvancedCleanupService.setJournalSystemMaxUse('10X'),
           isFalse);
+    });
+
+    test('cleanDevCache con id sconosciuto -> false', () async {
+      expect(await AdvancedCleanupService.cleanDevCache('no-such-id'),
+          isFalse);
+    });
+  });
+
+  group('filterOldSnapRevisions', () {
+    const current = 'Nome Versione Rev Tracciamento Publisher Note\n'
+        'core24 1.0 2124 latest/stable canonical** -\n'
+        'cups 2.4 1238 latest/stable openprinting -\n';
+    const all = 'Nome Versione Rev Tracciamento Publisher Note\n'
+        'core24 1.0 2124 latest/stable canonical** -\n'
+        'core24 1.0 1643 latest/stable canonical** disabilitato\n'
+        'cups 2.4 1238 latest/stable openprinting -\n'
+        'cups 2.4 1229 latest/stable openprinting '
+        'disabilitato,malfunzionante\n'
+        'android-studio 2026.1 241 latest/stable snapcrafters* '
+        'disabilitato\n';
+
+    test('isola le revisioni non correnti', () {
+      final old =
+          AdvancedCleanupService.filterOldSnapRevisions(current, all);
+      expect(old.map((e) => '${e.name} ${e.rev}').toSet(), {
+        'core24 1643',
+        'cups 1229',
+        'android-studio 241',
+      });
+    });
+
+    test('intestazione localizzata saltata (inglese o italiano)', () {
+      final old = AdvancedCleanupService.filterOldSnapRevisions(
+        'Name Version Rev Tracking Publisher Notes\n'
+        'core24 1.0 2124 latest/stable canonical** -\n',
+        'Name Version Rev Tracking Publisher Notes\n'
+        'core24 1.0 2124 latest/stable canonical** -\n'
+        'core24 1.0 1643 latest/stable canonical** disabled\n',
+      );
+      expect(old.single.name, 'core24');
+      expect(old.single.rev, '1643');
+    });
+
+    test('output vuoto o snap list fallito -> lista vuota', () {
+      expect(
+          AdvancedCleanupService.filterOldSnapRevisions('', ''), isEmpty);
+      // `snap list` fallito ma `--all` ok: non proporre nulla.
+      expect(
+          AdvancedCleanupService.filterOldSnapRevisions(
+              '', 'Nome Version Rev\nfoo 1 2\n'),
+          isEmpty);
+      expect(
+          AdvancedCleanupService.filterOldSnapRevisions(
+              'Nome Version Rev\nfoo 1 2\n', ''),
+          isEmpty);
+    });
+
+    test('righe con rev non numerica o nome non valido saltate', () {
+      final old = AdvancedCleanupService.filterOldSnapRevisions(
+        'Nome Version Rev\nfoo 1 2\n',
+        'Nome Version Rev\n'
+        'foo 1 2\n'
+        'foo 1 xyz\n'
+        'Foo 1 3\n'
+        'bar 1 4\n',
+      );
+      expect(old.map((e) => e.name).toList(), ['bar']);
+    });
+  });
+
+  group('parseFlatpakUnusedRows', () {
+    test('riga tab-separated della tabella operazioni (con arch)', () {
+      const out = '\n'
+          '\n'
+          ' 1.\t   \torg.freedesktop.Platform.VAAPI.nvidia\t25.08\tr\n'
+          '\n'
+          'Proceed with these changes to the system installation? '
+          '[Y/n]: \n';
+      final rows = AdvancedCleanupService.parseFlatpakUnusedRows(out);
+      expect(rows, hasLength(1));
+      expect(rows.single.name, 'org.freedesktop.Platform.VAAPI.nvidia');
+      expect(rows.single.branch, '25.08');
+    });
+
+    test('riga senza colonna arch (4 campi)', () {
+      const out = ' 2.\torg.example.App\t1.0\tr\n';
+      final rows = AdvancedCleanupService.parseFlatpakUnusedRows(out);
+      expect(rows.single.name, 'org.example.App');
+      expect(rows.single.branch, '1.0');
+    });
+
+    test('sezione pinned e "Nothing unused" ignorate', () {
+      const out = "These runtimes in installation 'user' are pinned and "
+          "won't be removed; see flatpak-pin(1):\n"
+          '  runtime/org.freedesktop.Platform.GL.nvidia/x86_64/1.4\n'
+          'Nothing unused to uninstall\n';
+      expect(AdvancedCleanupService.parseFlatpakUnusedRows(out), isEmpty);
+    });
+
+    test('output vuoto -> vuoto', () {
+      expect(AdvancedCleanupService.parseFlatpakUnusedRows(''), isEmpty);
+    });
+  });
+
+  group('parseFlatpakSize', () {
+    test('punto decimale (LC_ALL=C)', () {
+      expect(AdvancedCleanupService.parseFlatpakSize('668.9 MB'),
+          (668.9 * 1024 * 1024).round());
+    });
+
+    test('virgola decimale + NBSP (locale italiana)', () {
+      expect(AdvancedCleanupService.parseFlatpakSize('20,7\u00a0MB'),
+          (20.7 * 1024 * 1024).round());
+    });
+
+    test('carattere sporco tra numero e unità', () {
+      expect(AdvancedCleanupService.parseFlatpakSize('668.9?MB'),
+          (668.9 * 1024 * 1024).round());
+    });
+
+    test('gigabyte', () {
+      expect(AdvancedCleanupService.parseFlatpakSize('1.5 GB'),
+          (1.5 * 1024 * 1024 * 1024).round());
+    });
+
+    test('testo non valido -> 0', () {
+      expect(AdvancedCleanupService.parseFlatpakSize(''), 0);
+      expect(AdvancedCleanupService.parseFlatpakSize('n/a'), 0);
+    });
+  });
+
+  group('buildCudaCleanupCommand', () {
+    test('contiene rm, ld.so, alternatives, ldconfig', () {
+      final cmd = AdvancedCleanupService.buildCudaCleanupCommand(
+          '/usr/local/cuda-13.0', ['/usr/local/cuda-13.1']);
+      expect(cmd, contains('rm -rf "/usr/local/cuda-13.1"'));
+      expect(cmd, contains('/etc/ld.so.conf.d/*.conf'));
+      expect(cmd, contains('update-alternatives --list'));
+      expect(cmd, contains('update-alternatives --set'));
+      expect(cmd, contains('ldconfig'));
+      expect(cmd, contains(r'${v#/usr/local/cuda-13.1}'));
+      expect(cmd, contains('nv="/usr/local/cuda-13.0'));
+      expect(cmd.trimRight(), endsWith(r'[ "$fail" -eq 0 ]'));
+    });
+
+    test('più duplicati -> più rm e più rami case', () {
+      final cmd = AdvancedCleanupService.buildCudaCleanupCommand(
+          '/usr/local/cuda-13.0',
+          ['/usr/local/cuda-12.4', '/usr/local/cuda-13.1']);
+      expect('rm -rf'.allMatches(cmd).length, 2);
+      expect(cmd, contains('/usr/local/cuda-12.4'));
+      expect(cmd, contains('/usr/local/cuda-13.1'));
+    });
+
+    test('nessun apice singolo (romperebbe il quoting sudo)', () {
+      final cmd = AdvancedCleanupService.buildCudaCleanupCommand(
+          '/usr/local/cuda-13.0', ['/usr/local/cuda-13.1']);
+      expect(cmd, isNot(contains("'")));
+    });
+
+    test('sintassi bash valida (bash -n, senza eseguire)', () async {
+      final cmd = AdvancedCleanupService.buildCudaCleanupCommand(
+          '/usr/local/cuda-13.0',
+          ['/usr/local/cuda-12.4', '/usr/local/cuda-13.1']);
+      final r = await Process.run('bash', ['-n', '-c', cmd]);
+      expect(r.exitCode, 0, reason: r.stderr.toString());
     });
   });
 }

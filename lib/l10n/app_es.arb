@@ -33,7 +33,9 @@
   "clipboardSavedTo": "Guardado en {path}",
   "@clipboardSavedTo": {
     "placeholders": {
-      "path": {"type": "String"}
+      "path": {
+        "type": "String"
+      }
     }
   },
   "clipboardSaveFailed": "Error al guardar.",
@@ -44,7 +46,9 @@
   "clipboardRetentionHours": "{n} h",
   "@clipboardRetentionHours": {
     "placeholders": {
-      "n": {"type": "int"}
+      "n": {
+        "type": "int"
+      }
     }
   },
   "tabBattery": "Batería",
@@ -130,7 +134,9 @@
   "smartInstallError": "Error de instalación: {error}",
   "@smartInstallError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrNoPassword": "Contraseña no guardada. Guarda tu contraseña en Configuración.",
@@ -140,20 +146,26 @@
   "smartErrPasswordGeneric": "Error de validación: {error}",
   "@smartErrPasswordGeneric": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrSudo": "Error de sudo: {error}",
   "@smartErrSudo": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrUnsupportedPm": "Gestor de paquetes no compatible.",
   "smartErrUnexpected": "Error inesperado: {error}",
   "@smartErrUnexpected": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrAptLock": "No se pudo actualizar: otro proceso está usando apt. Inténtalo de nuevo en unos segundos.",
@@ -161,7 +173,9 @@
   "smartErrAptUpdateFailed": "Error al actualizar la caché: {error}",
   "@smartErrAptUpdateFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrDpkgInterrupted": "dpkg interrumpido. Ejecuta \"sudo dpkg --configure -a\" e inténtalo de nuevo.",
@@ -169,7 +183,9 @@
   "smartErrInstallFailed": "Error de instalación: {error}",
   "@smartErrInstallFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrNotFoundAfterInstall": "Instalación completada pero smartctl no encontrado. Reinicia la aplicación e inténtalo de nuevo.",
@@ -185,6 +201,13 @@
   "devGradle": "Caché Gradle",
   "devDocker": "Imágenes Docker sin usar",
   "devKernelHeaders": "Kernels antiguos (headers + imágenes)",
+  "devPkgCache": "Caché del gestor de paquetes",
+  "devElectronCache": "Cachés de apps Electron",
+  "devOpencodeData": "Datos de OpenCode (log + snapshot)",
+  "devCudaRepo": "Repositorios de instalación de CUDA",
+  "devCudaDup": "Instalaciones CUDA duplicadas",
+  "devSnapOld": "Revisiones antiguas de snap",
+  "devFlatpakUnused": "Entornos de ejecución de flatpak sin usar",
   "advEmpty": "No se detectaron cachés de desarrollo.",
   "journalTitle": "Registros del sistema (journald)",
   "journalCurrentSize": "Espacio usado",
@@ -226,7 +249,9 @@
   "ramCleanupAutoEnabled": "Limpieza automática de RAM activada (cada {minutes} minutos).",
   "@ramCleanupAutoEnabled": {
     "placeholders": {
-      "minutes": {"type": "int"}
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "ramCleanupAutoDisabled": "Limpieza automática de RAM desactivada.",
@@ -313,6 +338,27 @@
   "settingsCloseToTrayOff": "Cerrar a bandeja desactivado. Cerrar la ventana saldrá de la app.",
   "settingsTrayEnabled": "Bandeja del sistema habilitada.",
   "settingsTrayDisabled": "Bandeja del sistema deshabilitada. Reinicia la app para aplicar.",
+  "settingsTrayInitFailed": "No se pudo activar la bandeja del sistema. Detalles: {error}",
+  "@settingsTrayInitFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTrayInstallOk": "Dependencias de la bandeja del sistema instaladas correctamente.",
+  "settingsTrayInstallUnsupported": "La instalación automática no está disponible para esta distribución. Usa la versión AppImage: las bibliotecas de la bandeja ya están incluidas.",
+  "settingsTrayInstallNoPassword": "Guarda la contraseña en Ajustes para permitir la instalación.",
+  "settingsTrayInstallWrongPassword": "Contraseña incorrecta. Verifica la contraseña en Ajustes.",
+  "settingsTrayInstallLocked": "Otro proceso está usando los repositorios. Inténtalo de nuevo en unos segundos.",
+  "settingsTrayInstallFailed": "Error de instalación: {detail}",
+  "@settingsTrayInstallFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
   "settingsStartMinimized": "Iniciar la app minimizada en la bandeja",
   "settingsStartMinimizedDesc": "Si está activo, la app inicia sin mostrar la ventana principal, solo el icono en la bandeja.",
   "settingsStartMinimizedOn": "Inicio minimizado activado. El próximo inicio abrirá solo en bandeja.",
@@ -339,89 +385,137 @@
   "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} actualización disponible} other{APT: {count} actualizaciones disponibles}}",
   "@updateCheckAptHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} actualización por fases detectada} other{APT: {count} actualizaciones por fases detectadas}}",
   "@updateCheckAptPhasedExtra": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckAptError": "APT: Error al comprobar: {error}",
   "@updateCheckAptError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckDnfNone": "DNF: No hay actualizaciones disponibles",
   "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} actualización disponible} other{DNF: {count} actualizaciones disponibles}}",
   "@updateCheckDnfHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckDnfError": "DNF: Error al comprobar: {error}",
   "@updateCheckDnfError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckPacmanNone": "Pacman: No hay actualizaciones disponibles",
   "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} actualización disponible} other{Pacman: {count} actualizaciones disponibles}}",
   "@updateCheckPacmanHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckPacmanError": "Pacman: Error al comprobar: {error}",
   "@updateCheckPacmanError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckSnapNone": "Snap: No hay actualizaciones disponibles",
   "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} actualización disponible} other{Snap: {count} actualizaciones disponibles}}",
   "@updateCheckSnapHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckSnapError": "Snap: Error al comprobar: {error}",
   "@updateCheckSnapError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckFlatpakNone": "Flatpak: No hay actualizaciones disponibles",
   "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} actualización disponible} other{Flatpak: {count} actualizaciones disponibles}}",
   "@updateCheckFlatpakHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckFlatpakError": "Flatpak: Error al comprobar: {error}",
   "@updateCheckFlatpakError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckSummaryPackageCount": "{count, plural, =0{0 paquetes} one{{count} paquete} other{{count} paquetes}}",
   "@updateCheckSummaryPackageCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updatesAvailableCount": "{count} actualizaciones disponibles",
-  "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesAvailableCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailableDialogTitle": "Actualizaciones disponibles",
   "updatesAvailableDialogMessage": "{count} actualizaciones disponibles. ¿Desea aplicarlas ahora?",
-  "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesAvailableDialogMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailableDetectedListHeading": "Detectados:",
   "updateLabelPhased": "{name} (despliegue gradual — aún no instalable)",
-  "@updateLabelPhased": {"placeholders": {"name": {"type": "String"}}},
+  "@updateLabelPhased": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "updatesPreviewTruncated": "… y {count} más",
-  "@updatesPreviewTruncated": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesPreviewTruncated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailablePhasedFooter": "Los paquetes en despliegue gradual no se pueden instalar aún. \"Aplicar ahora\" solo aplica lo que el sistema permite.",
   "updatesCheckPreviewHeading": "Elementos afectados:",
   "applyNow": "Aplicar ahora",
@@ -493,7 +587,7 @@
   "disclaimerNoWarranty": "Este programa se distribuye con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. Consulte la GNU General Public License para más detalles.",
   "disclaimerCopyright": "Copyright (c) 2024-2025 Marco Di Giangiacomo. Todos los derechos reservados bajo GPL-3.0.",
   "payWithPaypal": "Pagar con PayPal",
-  "purchaseLicenseViaPaypal": "La versión Advanced cuesta 19,99 €. Para comprar una licencia, pague por PayPal. Tras el pago correcto recibirá su código de licencia por correo electrónico. Sin un pago válido, la aplicación no puede activarse.",
+  "purchaseLicenseViaPaypal": "La versión Advanced cuesta 19,99 €. Para comprar una licencia, pague por PayPal. Tras el pago correcto recibirá su código de licencia por correo electrónico.",
   "languageSelectionTitle": "Selección de Idioma",
   "languageSelectionDesc": "Seleccione el idioma de la aplicación",
   "languageItalian": "Italiano",
@@ -796,8 +890,6 @@
   "temperatureUnit": "°C",
   "removing": "Eliminando...",
   "versionLabel": "Versión:",
-  "searchProcess": "Buscar proceso",
-  "searchApp": "Buscar aplicación",
   "selectBasePath": "Seleccionar ruta base:",
   "root": "Raíz",
   "home": "Inicio",
@@ -850,7 +942,6 @@
   "rename": "Renombrar",
   "newName": "Nuevo nombre",
   "details": "Detalles",
-  "close": "Cerrar",
   "renamedSuccessfully": "Renombrado exitosamente",
   "renameError": "Error al renombrar",
   "type": "Tipo",
@@ -929,11 +1020,36 @@
   "infoCleanupTrashDesc": "Vacía la papelera y limpia archivos temporales de forma segura",
   "infoInstalledApps": "Apps Instaladas",
   "infoInstalledAppsManagement": "Gestión de múltiples paquetes",
-  "infoInstalledAppsManagementDesc": "Ver apps instaladas a través de APT, Snap, Flatpak y GNOME",
+  "infoInstalledAppsManagementDesc": "Muestra las aplicaciones instaladas mediante APT, Snap, Flatpak, GNOME, Pacman y DNF",
   "infoInstalledAppsDependencies": "Verificación de dependencias",
   "infoInstalledAppsDependenciesDesc": "Verifica las dependencias antes de la eliminación para evitar problemas",
   "infoInstalledAppsWarnings": "Advertencias de seguridad",
   "infoInstalledAppsWarningsDesc": "Advierte cuando un paquete es utilizado por otro software o el sistema",
+  "installedAppsLoading": "Cargando aplicaciones instaladas...\n{count} aplicaciones encontradas",
+  "@installedAppsLoading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "installedAppsManagedBy": "Gestor: {manager}",
+  "@installedAppsManagedBy": {
+    "placeholders": {
+      "manager": {
+        "type": "String"
+      }
+    }
+  },
+  "installedAppsSystemWarning": "Este es un paquete del sistema. Eliminarlo podría comprometer el funcionamiento del sistema.",
+  "installedAppsReverseWarning": "{count} paquete(s) más dependen de este",
+  "@installedAppsReverseWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "infoMonitor": "Monitor del Sistema",
   "infoMonitorProcesses": "Monitoreo de procesos",
   "infoMonitorProcessesDesc": "Ver todos los procesos activos con uso de CPU, memoria y disco",
@@ -1153,7 +1269,7 @@
   "licenseActivateError": "Código no válido. Compruebe nombre, apellido y email.",
   "licenseActivatePremium": "Activar / Premium",
   "licenseActivateCardTitle": "Activar versión avanzada",
-  "licenseActivateCardDesc": "La versión Advanced cuesta 19,99 €. Introduzca sus datos y el código de licencia recibido tras el pago correcto para desbloquear GRUB, Kernel y Recovery. Sin un pago válido, la aplicación no puede activarse.",
+  "licenseActivateCardDesc": "Introduzca sus datos y el código de licencia recibido tras el pago correcto para desbloquear GRUB, Kernel y Recovery.",
   "servicesGuideTitle": "Linux Services Guide",
   "servicesGuideWhatAre": "What are Linux Services?",
   "servicesGuideWhatAreBody": "Services (also called daemons) are background programs that start automatically when the system boots. They provide essential functions such as network management (NetworkManager), printing (CUPS), scheduling (cron), database servers (MySQL, PostgreSQL), web servers (Apache, Nginx), and many others.\n\nSome services are essential for the system to work correctly, while others are optional and depend on the specific use of the machine.",
@@ -1180,7 +1296,6 @@
   "repoContentLabel": "Contenido",
   "repoUpdated": "Repositorio actualizado",
   "edit": "Editar",
-  "remove": "Eliminar",
   "tabTweaks": "Ajustes",
   "tweaksSwap": "Swap",
   "tweaksSwapRecommendations": "Recomendaciones de Swap",
@@ -1332,6 +1447,66 @@
   "driverManagerUpdate": "Actualizar",
   "driverManagerRebootRequired": "Reinicio necesario tras la actualización",
   "driverManagerLinuxFirmware": "Firmware Linux (linux-firmware)",
-  "driverManagerLinuxFirmwareDesc": "Paquete de firmware completo para GPU, Wi-Fi, Bluetooth y otros dispositivos"
+  "driverManagerLinuxFirmwareDesc": "Paquete de firmware completo para GPU, Wi-Fi, Bluetooth y otros dispositivos",
+  "driverManagerFirmwareNotInstalled": "No instalado",
+  "driverManagerFirmwareUpToDate": "Actualizado",
+  "driverManagerFirmwareUpdateAvailable": "Actualización disponible",
+  "driverManagerFirmwareInstallSuccess": "linux-firmware instalado correctamente",
+  "driverManagerFirmwareUpdateSuccess": "linux-firmware actualizado. Es necesario reiniciar.",
+  "driverManagerFirmwareFailed": "La operación de firmware falló:",
+  "tweaksSystemMemory": "Memoria del sistema",
+  "tweaksSwapTotalLabel": "Swap total",
+  "tweaksSwapNone": "Ninguno",
+  "tweaksSwapUsedLabel": "Swap usado",
+  "tweaksSwapDeviceLabel": "Dispositivo swap",
+  "tweaksZswapLabel": "Zswap",
+  "tweaksStatusActive": "Activo",
+  "tweaksStatusInactive": "Inactivo",
+  "tweaksStatusUnavailable": "No disponible",
+  "tweaksRestartRequired": "Reinicio requerido",
+  "swapAdjustLowTitle": "Ajusta la swappiness ({current} → {ideal})",
+  "swapAdjustLowDesc": "Con {ram} GB de RAM, una swappiness de 60 asegura suficiente swap para la estabilidad.",
+  "swapAdjustMidTitle": "Ajusta la swappiness ({current} → {ideal})",
+  "swapAdjustMidDesc": "Con {ram} GB de RAM, una swappiness de 40 equilibra el uso de RAM y swap.",
+  "swapAdjustHighTitle": "Ajusta la swappiness ({current} → {ideal})",
+  "swapAdjustHighDesc": "Con {ram} GB de RAM, una swappiness de 20 minimiza el uso innecesario del swap.",
+  "swapOptimalTitle": "Swappiness óptimo ({value})",
+  "swapOptimalDesc": "La swappiness actual coincide con el valor recomendado para tus {ram} GB de RAM.",
+  "swapCreateTitle": "Crear archivo swap ({size} GB)",
+  "swapCreateDesc": "No se detectó swap. Crear un archivo swap mejora la estabilidad bajo presión de memoria.",
+  "zramBootTitle": "Iniciar ZRAM al arrancar",
+  "zramBootDesc": "ZRAM se está ejecutando ahora, pero el servicio no está habilitado al inicio: se perdería tras el próximo reinicio.",
+  "zramActiveTitle": "ZRAM está activo",
+  "zramActiveDesc": "El swap comprimido en RAM se está ejecutando y se inicia automáticamente al arrancar. Proporciona un swap más rápido y reduce la E/S del disco.",
+  "zramStartTitle": "Iniciar servicio ZRAM",
+  "zramStartDesc": "Las herramientas ZRAM están instaladas pero el servicio no se está ejecutando.",
+  "zramInstallTitle": "Habilitar ZRAM (swap comprimido en RAM)",
+  "zramInstallDesc": "ZRAM comprime los datos de swap en la RAM, proporcionando un swap más rápido y reduciendo la E/S del disco.",
+  "homeUpdateAction": "Actualizar",
+  "homeCheckingUpdates": "Buscando actualizaciones...",
+  "homeNewVersionAvailable": "¡Nueva versión {version} disponible!",
+  "homeRestoringRepositories": "Restaurando repositorios...",
+  "homeKernelUpdateTitle": "Actualización del kernel",
+  "homeKernelUpdateBody": "La actualización del kernel requiere reiniciar el sistema. ¿Continuar?",
+  "grubUnsavedBanner": "Tiene cambios sin guardar. Recuerde guardar y actualizar GRUB para aplicarlos.",
+  "grubContentHint": "Contenido del archivo GRUB...",
+  "updateReleaseNotes": "Notas de la versión",
+  "updateDownloadAndInstall": "Descargar e instalar",
+  "updateInstalledOk": "Versión {version} instalada correctamente.",
+  "updateDownloading": "Descargando...",
+  "languageSelectionSave": "Guardar",
+  "searchHint": "Buscar funciones y pesta\u00f1as...",
+  "searchNoResults": "Sin resultados",
+  "undo": "Deshacer",
+  "undoDone": "Operaci\u00f3n deshecha",
+  "undoFailed": "No se pudo deshacer la operaci\u00f3n",
+  "onboardingContinue": "Siguiente",
+  "warningSystemCard": "Sistema detectado",
+  "warningOsLabel": "Sistema operativo",
+  "warningDesktopLabel": "Entorno de escritorio",
+  "warningGrubCommand": "Comando GRUB",
+  "settingsMinimizeToTray": "Minimizar a la bandeja",
+  "settingsMinimizeToTrayDesc": "Al minimizar, la ventana se oculta en la bandeja del sistema (si no, queda en la barra de tareas)",
+  "settingsMinimizeToTrayOn": "Minimizar a la bandeja activado",
+  "settingsMinimizeToTrayOff": "Minimizar a la bandeja desactivado"
 }
-

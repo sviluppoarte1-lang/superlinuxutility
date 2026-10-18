@@ -35,7 +35,7 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
             Expanded(child: Text('${l10n.app} ${l10n.version} $latest')),
           ],
         ),
-        content: Text('$latest ${l10n.version} installed successfully.'),
+        content: Text(l10n.updateInstalledOk(latest)),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
@@ -84,7 +84,7 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
             if (releaseNotes.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                'Release notes',
+                l10n.updateReleaseNotes,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
@@ -122,16 +122,17 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
               FilledButton.icon(
                 onPressed: _install,
                 icon: const Icon(Icons.download),
-                label: const Text('Download & Install'),
+                label: Text(l10n.updateDownloadAndInstall),
               ),
             ],
     );
   }
 
   Future<void> _install() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _installing = true;
-      _progressMessage = 'Downloading...';
+      _progressMessage = l10n.updateDownloading;
     });
     final result = await AppSelfUpdateService.downloadAndInstall(
       widget.updateInfo['downloadUrl'] as String,

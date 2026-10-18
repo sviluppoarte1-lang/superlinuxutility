@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'password_storage.dart';
 
 class SwapInfo {
@@ -35,12 +36,18 @@ class SwapRecommendation {
   final String description;
   final String command;
   final bool isCurrentlyApplied;
+  /// Codice per la localizzazione (es. `swapAdjustLow`); vuoto = non localizzata.
+  final String code;
+  /// Parametri testuali già formattati per i placeholder l10n.
+  final List<String> params;
 
   const SwapRecommendation({
     required this.title,
     required this.description,
     required this.command,
     required this.isCurrentlyApplied,
+    this.code = '',
+    this.params = const [],
   });
 }
 
@@ -74,7 +81,7 @@ class TweaksService {
           .replaceAll('`', '\\`');
       final fullCommand =
           'printf "%s\\n" "$escapedPassword" | sudo -p "" -S bash -c ${_shellQuote(command)} 2>&1';
-      final result = await Process.run('bash', ['-c', fullCommand], runInShell: true);
+      final result = await runProcess('bash', ['-c', fullCommand], runInShell: true, timeout: const Duration(seconds: 180));
       final output = (result.stdout as String).trim();
       final err = (result.stderr as String).trim();
       return err.isNotEmpty ? err : (output.isNotEmpty ? output : (result.exitCode == 0 ? 'OK' : 'Failed'));
@@ -225,7 +232,100 @@ class TweaksService {
     return false;
   }
 
-  static List<SwapRecommendation> getSwapRecommendations(SwapInfo info, {bool zramActive = false, bool zramInstalled = false}) {
+  /// Verifica se ZRAM parte automaticamente all'avvio del PC.
+  /// Controlla il servizio zramswap (Debian/Ubuntu/zram-tools), il generatore
+  /// systemd-zram-setup e la configurazione zram-generator (Fedora/Arch).
+  static Future<bool> isZramEnabledAtBoot() async {
+    for (final unit in ['zramswap.service', 'systemd-zram-setup@0.service']) {
+      try {
+        final result = await Process.run(
+          'systemctl',
+          ['is-enabled', unit],
+          environment: {'LC_ALL': 'C'},
+        );
+        final state = (result.stdout as String).trim().toLowerCase();
+        if (state.startsWith('enabled') ||
+            state == 'static' ||
+            state == 'indirect' ||
+            state == 'generated') {
+          return true;
+        }
+        if (state == 'disabled' || state.startsWith('masked')) {
+          return false;
+        }
+      } catch (_) {}
+    }
+    try {
+      if (File('/etc/systemd/zram-generator.conf').existsSync()) return true;
+    } catch (_) {}
+    return false;
+  }
+
+  // ─── Comandi ZRAM (verificati: exit != 0 se qualcosa non torna) ───
+
+  /// Attivazione manuale di fallback: modprobe + mkswap + swapon su ogni
+  /// device /dev/zram*.
+  static String get _zramActivateFallback =>
+      'modprobe zram 2>/dev/null; '
+      'for z in /dev/zram*; do [ -b "\$z" ] && '
+      '{ swapon -p 100 "\$z" 2>/dev/null || '
+      '{ mkswap "\$z" 2>/dev/null && swapon -p 100 "\$z" 2>/dev/null; }; }; done';
+
+  /// Verifica finale: zram DEVE risultare attivo, altrimenti exit 1 (la UI
+  /// mostra l'errore invece di un finto "Command executed successfully").
+  static String get _zramVerifyActive =>
+      'if swapon --show=NAME --noheadings 2>/dev/null | grep -q zram; then '
+      'echo "ZRAM active"; '
+      'else echo "ZRAM activation failed" >&2; exit 1; fi';
+
+  /// Verifica finale: il servizio deve essere abilitato all'avvio. Se l'unit
+  /// non esiste (zram-generator di Fedora/Arch) si accetta la sua configurazione.
+  static String get _zramVerifyEnabled =>
+      's=\$(systemctl is-enabled zramswap 2>/dev/null); '
+      'case "\$s" in '
+      'enabled*|static|indirect|generated) echo "ZRAM starts at boot";; '
+      'disabled*|masked*) '
+      'echo "zramswap is not enabled at boot" >&2; exit 1;; '
+      '*) if [ -e /etc/systemd/zram-generator.conf ]; then '
+      'echo "zram-generator configured"; fi;; '
+      'esac';
+
+  /// Servizio installato ma non attivo: abilita all'avvio, riavvia («start» è
+  /// un no-op se il unit è già "active (exited)"), attiva e verifica tutto.
+  static String buildStartZramCommand() =>
+      'systemctl enable zramswap 2>/dev/null || '
+      'systemctl enable systemd-zram-setup@0 2>/dev/null; '
+      'systemctl restart zramswap 2>/dev/null; sleep 2; '
+      'if ! swapon --show=NAME --noheadings 2>/dev/null | grep -q zram; then '
+      '$_zramActivateFallback; fi; '
+      '$_zramVerifyActive; '
+      '$_zramVerifyEnabled';
+
+  /// ZRAM attivo ma NON abilitato all'avvio: solo enable + verifica.
+  static String buildEnableZramAtBootCommand() =>
+      'systemctl enable zramswap 2>/dev/null || '
+      'systemctl enable systemd-zram-setup@0 2>/dev/null; '
+      '$_zramVerifyEnabled';
+
+  /// ZRAM non installato: installa zram-tools, abilita, attiva e verifica.
+  static String buildInstallZramCommand() =>
+      'if ! (dpkg -l zram-tools 2>/dev/null | grep -q "^ii" || '
+      'rpm -q zram-tools 2>/dev/null | grep -q "zram-tools" || '
+      'pacman -Qi zram-tools 2>/dev/null | grep -q "zram-tools" || '
+      '(apt-get update -qq && apt-get install -y zram-tools 2>/dev/null) || '
+      '(dnf install -y zram-tools 2>/dev/null) || '
+      '(pacman -S --noconfirm zram-tools 2>/dev/null)); then '
+      'echo "zram-tools install failed" >&2; exit 1; fi; '
+      'systemctl enable zramswap 2>/dev/null; '
+      'systemctl restart zramswap 2>/dev/null; sleep 2; '
+      '$_zramActivateFallback; '
+      '$_zramVerifyActive; '
+      '$_zramVerifyEnabled';
+
+  static List<SwapRecommendation> getSwapRecommendations(SwapInfo info,
+      {bool zramActive = false,
+      bool zramInstalled = false,
+      bool zramEnabledAtBoot = true}) {
     final recs = <SwapRecommendation>[];
 
     // Recommendation 1: Swappiness
@@ -233,7 +333,14 @@ class TweaksService {
     // Use persisted value for comparison (not runtime which can be overridden at boot)
     final effectiveSwappiness = info.persistedSwappiness > 0 ? info.persistedSwappiness : info.swapinness;
     if (effectiveSwappiness != idealSwappiness) {
+      final adjustCode = info.ramGb <= 4
+          ? 'swapAdjustLow'
+          : info.ramGb <= 8
+              ? 'swapAdjustMid'
+              : 'swapAdjustHigh';
       recs.add(SwapRecommendation(
+        code: adjustCode,
+        params: [info.swapinness.toString(), '$idealSwappiness', info.ramGb.toStringAsFixed(1)],
         title: 'Adjust swappiness (${info.swapinness} → $idealSwappiness)',
         description: info.ramGb <= 4
             ? 'With ${info.ramGb.toStringAsFixed(1)} GB RAM, swappiness of 60 ensures enough swap for stability.'
@@ -251,6 +358,8 @@ class TweaksService {
       ));
     } else {
       recs.add(SwapRecommendation(
+        code: 'swapOptimal',
+        params: [effectiveSwappiness.toString(), info.ramGb.toStringAsFixed(1)],
         title: 'Swappiness is optimal ($effectiveSwappiness)',
         description: 'Current swappiness matches the recommended value for your ${info.ramGb.toStringAsFixed(1)} GB RAM.',
         command: '',
@@ -267,6 +376,8 @@ class TweaksService {
           'swapon /swapfile && '
           '(grep -q "/swapfile" /etc/fstab || echo "/swapfile none swap sw 0 0" | tee -a /etc/fstab > /dev/null)';
       recs.add(SwapRecommendation(
+        code: 'swapCreate',
+        params: ['$swapSize'],
         title: 'Create swap file ($swapSize GB)',
         description: 'No swap detected. Creating a swap file improves stability under memory pressure.',
         command: createCmd,
@@ -275,39 +386,41 @@ class TweaksService {
     }
 
     // Recommendation 3: ZRAM
-    if (zramActive) {
+    if (zramActive && !zramEnabledAtBoot) {
+      // Attivo ORA ma perso al prossimo reboot: manca solo l'enable.
       recs.add(SwapRecommendation(
+        code: 'zramBoot',
+        title: 'Start ZRAM at boot',
+        description:
+            'ZRAM is running now, but the service is not enabled at startup: '
+            'it would be lost after the next reboot.',
+        command: buildEnableZramAtBootCommand(),
+        isCurrentlyApplied: false,
+      ));
+    } else if (zramActive) {
+      recs.add(SwapRecommendation(
+        code: 'zramActive',
         title: 'ZRAM is active',
-        description: 'Compressed swap in RAM is running. This provides faster swap and reduces disk I/O.',
+        description:
+            'Compressed swap in RAM is running and starts automatically at '
+            'boot. This provides faster swap and reduces disk I/O.',
         command: '',
         isCurrentlyApplied: true,
       ));
     } else if (zramInstalled) {
       recs.add(SwapRecommendation(
+        code: 'zramStart',
         title: 'Start ZRAM service',
         description: 'ZRAM tools are installed but the service is not running.',
-        command: 'systemctl enable zramswap 2>/dev/null; '
-            'systemctl restart zramswap 2>/dev/null; '
-            'sleep 2; '
-            'if ! swapon --show=NAME --noheadings 2>/dev/null | grep -q zram; then '
-            '  for z in /dev/zram*; do [ -b "\$z" ] && mkswap "\$z" 2>/dev/null && swapon -p 100 "\$z" 2>/dev/null; done; '
-            'fi',
+        command: buildStartZramCommand(),
         isCurrentlyApplied: false,
       ));
     } else {
       recs.add(SwapRecommendation(
+        code: 'zramInstall',
         title: 'Enable ZRAM (compressed swap in RAM)',
         description: 'ZRAM compresses swap data in RAM, providing faster swap and reducing disk I/O.',
-        command: '(dpkg -l zram-tools 2>/dev/null | grep -q "^ii" || '
-            'rpm -q zram-tools 2>/dev/null | grep -q "zram-tools" || '
-            'pacman -Qi zram-tools 2>/dev/null | grep -q "zram-tools" || '
-            '(apt-get update -qq && apt-get install -y zram-tools 2>/dev/null) || '
-            '(dnf install -y zram-tools 2>/dev/null) || '
-            '(pacman -S --noconfirm zram-tools 2>/dev/null)) && '
-            'systemctl enable zramswap 2>/dev/null; '
-            'systemctl restart zramswap 2>/dev/null; '
-            'sleep 2; '
-            'for z in /dev/zram*; do [ -b "\$z" ] && mkswap "\$z" 2>/dev/null && swapon -p 100 "\$z" 2>/dev/null; done',
+        command: buildInstallZramCommand(),
         isCurrentlyApplied: false,
       ));
     }
@@ -344,32 +457,7 @@ class TweaksService {
   }
 
   static Future<String> enableZram() async {
-    return _runSudoCommandOutput(
-      // 1) Install zram-tools if not present
-      '(dpkg -l zram-tools 2>/dev/null | grep -q "^ii" || '
-      'rpm -q zram-tools 2>/dev/null | grep -q "zram-tools" || '
-      'pacman -Qi zram-tools 2>/dev/null | grep -q "zram-tools" || '
-      '(apt-get update -qq && apt-get install -y zram-tools 2>/dev/null) || '
-      '(dnf install -y zram-tools 2>/dev/null) || '
-      '(pacman -S --noconfirm zram-tools 2>/dev/null)) && '
-      // 2) Enable and start zramswap service
-      'systemctl enable zramswap 2>/dev/null; '
-      'systemctl restart zramswap 2>/dev/null; '
-      // 3) Wait for device to appear
-      'sleep 2; '
-      // 4) Force-activate zram if service didn't do it
-      'if ! swapon --show=NAME --noheadings 2>/dev/null | grep -q zram; then '
-      '  for z in /dev/zram*; do '
-      '    [ -b "\$z" ] && mkswap "\$z" 2>/dev/null && swapon -p 100 "\$z" 2>/dev/null; '
-      '  done; '
-      'fi; '
-      // 5) Verify
-      'if swapon --show=NAME --noheadings 2>/dev/null | grep -q zram; then '
-      '  echo "ZRAM active"; '
-      'else '
-      '  echo "ZRAM service started (activation may need reboot)"; '
-      'fi',
-    );
+    return _runSudoCommandOutput(buildInstallZramCommand());
   }
 
   // ─── DAVINCI RESOLVE ───

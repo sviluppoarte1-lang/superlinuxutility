@@ -54,7 +54,13 @@ fi
 # --- Build e pacchetto STANDARD (gratuito) ---
 echo ""
 echo "📦 Building STANDARD version (free)..."
-flutter build linux --release --dart-define=APP_BUILD=standard
+LICENSE_SECRET="$(read_license_secret)"
+if [ -n "$LICENSE_SECRET" ]; then
+    flutter build linux --release --dart-define=APP_BUILD=standard --dart-define=SLU_LICENSE_SECRET="${LICENSE_SECRET}"
+else
+    echo "⚠️  License secret mancante: build senza attivazione licenze."
+    flutter build linux --release --dart-define=APP_BUILD=standard
+fi
 # Fix permissions after Flutter build (Flutter sets 777, dpkg-deb needs 755-0775)
 chmod 755 "$BUILD_DIR"
 chmod 755 "$BUILD_DIR/data" 2>/dev/null || true
@@ -178,7 +184,12 @@ chmod 755 "$BUILD_DIR/"* 2>/dev/null || true
 # --- Build e pacchetto ADVANCED (a pagamento) ---
 echo ""
 echo "📦 Building ADVANCED version (paid)..."
-flutter build linux --release --dart-define=APP_BUILD=advanced
+if [ -n "$LICENSE_SECRET" ]; then
+    flutter build linux --release --dart-define=APP_BUILD=advanced --dart-define=SLU_LICENSE_SECRET="${LICENSE_SECRET}"
+else
+    echo "⚠️  License secret mancante: build senza attivazione licenze."
+    flutter build linux --release --dart-define=APP_BUILD=advanced
+fi
 
 APP_NAME="super-linux-utility-advanced"
 DEB_DIR="${DEB_BASE}_advanced"
@@ -370,6 +381,23 @@ chmod +x $DEB_DIR/DEBIAN/postinst
 cat > $DEB_DIR/DEBIAN/postrm << 'POSTEOF'
 #!/bin/bash
 set -e
+
+# ---- Secret licenza (git-ignored, fuori dal repo) ----
+# Legge $SLU_LICENSE_SECRET_FILE (default: $HOME/.config/slu/license_secret).
+# Il valore viene passato via --dart-define al build: le licenze già vendute
+# restano valide finché il file non cambia. Se manca, il build va avanti SENZA
+# il secret (attivazione impossibile in Advanced) con un warning.
+read_license_secret() {
+    local f="${SLU_LICENSE_SECRET_FILE:-$HOME/.config/slu/license_secret}"
+    if [ -n "${SLU_LICENSE_SECRET:-}" ]; then
+        echo "${SLU_LICENSE_SECRET}"
+    elif [ -f "$f" ]; then
+        tr -d "[:space:]" < "$f"
+    else
+        echo ""
+    fi
+}
+
 [ -x /usr/bin/update-desktop-database ] && update-desktop-database -q /usr/share/applications 2>/dev/null || true
 exit 0
 POSTEOF

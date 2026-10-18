@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'dart:convert';
 import 'dart:math' show min;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,10 +20,11 @@ class CleanupService {
     
     final fullCommand = 'printf "%s\\n" "$escapedPassword" | sudo -S $command';
     
-    return await Process.run(
+    return await runProcess(
       'bash',
       ['-c', fullCommand],
       runInShell: true,
+      timeout: const Duration(seconds: 300),
     );
   }
   
@@ -54,7 +56,7 @@ class CleanupService {
       final dir = Directory(path);
       if (!await dir.exists()) return 0;
       if (Platform.isLinux) {
-        final r = await Process.run('du', ['-sb', path], runInShell: false);
+        final r = await runProcess('du', ['-sb', path], runInShell: false, timeout: const Duration(seconds: 300));
         if (r.exitCode != 0) return 0;
         final out = r.stdout.toString().trim();
         if (out.isEmpty) return 0;
@@ -329,10 +331,11 @@ class CleanupService {
           cleanupCommand = 'find "$path" -mindepth 1 -maxdepth 1 \\( $excludeNames \\) -prune -o -print0 | xargs -0 rm -rf 2>&1 || true';
         }
         
-        result = await Process.run(
+        result = await runProcess(
           'bash',
           ['-c', cleanupCommand],
           runInShell: true,
+          timeout: const Duration(seconds: 300),
         );
         
         if (result.exitCode != 0 && 

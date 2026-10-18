@@ -628,6 +628,48 @@ abstract class AppLocalizations {
   /// **'Vecchi kernel (headers + immagini)'**
   String get devKernelHeaders;
 
+  /// No description provided for @devPkgCache.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache package manager'**
+  String get devPkgCache;
+
+  /// No description provided for @devElectronCache.
+  ///
+  /// In it, this message translates to:
+  /// **'Cache app Electron'**
+  String get devElectronCache;
+
+  /// No description provided for @devOpencodeData.
+  ///
+  /// In it, this message translates to:
+  /// **'Dati OpenCode (log + snapshot)'**
+  String get devOpencodeData;
+
+  /// No description provided for @devCudaRepo.
+  ///
+  /// In it, this message translates to:
+  /// **'Repository installer CUDA'**
+  String get devCudaRepo;
+
+  /// No description provided for @devCudaDup.
+  ///
+  /// In it, this message translates to:
+  /// **'Installazioni CUDA duplicate'**
+  String get devCudaDup;
+
+  /// No description provided for @devSnapOld.
+  ///
+  /// In it, this message translates to:
+  /// **'Revisioni snap vecchie'**
+  String get devSnapOld;
+
+  /// No description provided for @devFlatpakUnused.
+  ///
+  /// In it, this message translates to:
+  /// **'Runtime flatpak inutilizzati'**
+  String get devFlatpakUnused;
+
   /// No description provided for @advEmpty.
   ///
   /// In it, this message translates to:
@@ -1366,6 +1408,48 @@ abstract class AppLocalizations {
   /// **'System tray disabilitato. Riavvia l\'app per applicare.'**
   String get settingsTrayDisabled;
 
+  /// No description provided for @settingsTrayInitFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile attivare la system tray. Dettagli: {error}'**
+  String settingsTrayInitFailed(String error);
+
+  /// No description provided for @settingsTrayInstallOk.
+  ///
+  /// In it, this message translates to:
+  /// **'Dipendenze del system tray installate correttamente.'**
+  String get settingsTrayInstallOk;
+
+  /// No description provided for @settingsTrayInstallUnsupported.
+  ///
+  /// In it, this message translates to:
+  /// **'Installazione automatica non disponibile per questa distribuzione. Usa la versione AppImage: le librerie della system tray sono già incluse.'**
+  String get settingsTrayInstallUnsupported;
+
+  /// No description provided for @settingsTrayInstallNoPassword.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva la password nelle Impostazioni per consentire l\'installazione.'**
+  String get settingsTrayInstallNoPassword;
+
+  /// No description provided for @settingsTrayInstallWrongPassword.
+  ///
+  /// In it, this message translates to:
+  /// **'Password non corretta. Verifica la password nelle Impostazioni.'**
+  String get settingsTrayInstallWrongPassword;
+
+  /// No description provided for @settingsTrayInstallLocked.
+  ///
+  /// In it, this message translates to:
+  /// **'Un altro processo sta usando i repository. Riprova tra qualche secondo.'**
+  String get settingsTrayInstallLocked;
+
+  /// No description provided for @settingsTrayInstallFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Installazione non riuscita: {detail}'**
+  String settingsTrayInstallFailed(String detail);
+
   /// No description provided for @settingsStartMinimized.
   ///
   /// In it, this message translates to:
@@ -2023,7 +2107,7 @@ abstract class AppLocalizations {
   /// No description provided for @purchaseLicenseViaPaypal.
   ///
   /// In it, this message translates to:
-  /// **'La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email. Senza un pagamento valido l\'app non può essere attivata.'**
+  /// **'La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email.'**
   String get purchaseLicenseViaPaypal;
 
   /// No description provided for @languageSelectionTitle.
@@ -3907,7 +3991,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoInstalledAppsManagementDesc.
   ///
   /// In it, this message translates to:
-  /// **'Visualizza app installate tramite APT, Snap, Flatpak e GNOME'**
+  /// **'Visualizza app installate tramite APT, Snap, Flatpak, GNOME, Pacman e DNF'**
   String get infoInstalledAppsManagementDesc;
 
   /// No description provided for @infoInstalledAppsDependencies.
@@ -3933,6 +4017,30 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Avvisa quando un pacchetto è utilizzato da altri software o dal sistema'**
   String get infoInstalledAppsWarningsDesc;
+
+  /// No description provided for @installedAppsLoading.
+  ///
+  /// In it, this message translates to:
+  /// **'Caricamento app installate...\n{count} app trovate'**
+  String installedAppsLoading(int count);
+
+  /// No description provided for @installedAppsManagedBy.
+  ///
+  /// In it, this message translates to:
+  /// **'Gestore: {manager}'**
+  String installedAppsManagedBy(String manager);
+
+  /// No description provided for @installedAppsSystemWarning.
+  ///
+  /// In it, this message translates to:
+  /// **'Questo è un pacchetto di sistema. Rimuoverlo potrebbe compromettere il funzionamento del sistema.'**
+  String get installedAppsSystemWarning;
+
+  /// No description provided for @installedAppsReverseWarning.
+  ///
+  /// In it, this message translates to:
+  /// **'Altri {count} pacchetto/i dipendono da questo'**
+  String installedAppsReverseWarning(int count);
 
   /// No description provided for @infoMonitor.
   ///
@@ -4711,7 +4819,7 @@ abstract class AppLocalizations {
   /// No description provided for @licenseActivateCardDesc.
   ///
   /// In it, this message translates to:
-  /// **'La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery. Senza un pagamento valido l\'app non può essere attivata.'**
+  /// **'Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery.'**
   String get licenseActivateCardDesc;
 
   /// No description provided for @noSmartDisksFound.
@@ -6099,6 +6207,372 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Pacchetto firmware completo per GPU, Wi-Fi, Bluetooth e altri dispositivi'**
   String get driverManagerLinuxFirmwareDesc;
+
+  /// No description provided for @driverManagerFirmwareNotInstalled.
+  ///
+  /// In it, this message translates to:
+  /// **'Non installato'**
+  String get driverManagerFirmwareNotInstalled;
+
+  /// No description provided for @driverManagerFirmwareUpToDate.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornato'**
+  String get driverManagerFirmwareUpToDate;
+
+  /// No description provided for @driverManagerFirmwareUpdateAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento disponibile'**
+  String get driverManagerFirmwareUpdateAvailable;
+
+  /// No description provided for @driverManagerFirmwareInstallSuccess.
+  ///
+  /// In it, this message translates to:
+  /// **'linux-firmware installato con successo'**
+  String get driverManagerFirmwareInstallSuccess;
+
+  /// No description provided for @driverManagerFirmwareUpdateSuccess.
+  ///
+  /// In it, this message translates to:
+  /// **'linux-firmware aggiornato. Riavvia il PC.'**
+  String get driverManagerFirmwareUpdateSuccess;
+
+  /// No description provided for @driverManagerFirmwareFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Operazione firmware fallita:'**
+  String get driverManagerFirmwareFailed;
+
+  /// No description provided for @tweaksSystemMemory.
+  ///
+  /// In it, this message translates to:
+  /// **'Memoria di sistema'**
+  String get tweaksSystemMemory;
+
+  /// No description provided for @tweaksSwapTotalLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Swap totale'**
+  String get tweaksSwapTotalLabel;
+
+  /// No description provided for @tweaksSwapNone.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuno'**
+  String get tweaksSwapNone;
+
+  /// No description provided for @tweaksSwapUsedLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Swap usato'**
+  String get tweaksSwapUsedLabel;
+
+  /// No description provided for @tweaksSwapDeviceLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Dispositivo swap'**
+  String get tweaksSwapDeviceLabel;
+
+  /// No description provided for @tweaksZswapLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Zswap'**
+  String get tweaksZswapLabel;
+
+  /// No description provided for @tweaksStatusActive.
+  ///
+  /// In it, this message translates to:
+  /// **'Attivo'**
+  String get tweaksStatusActive;
+
+  /// No description provided for @tweaksStatusInactive.
+  ///
+  /// In it, this message translates to:
+  /// **'Disattivo'**
+  String get tweaksStatusInactive;
+
+  /// No description provided for @tweaksStatusUnavailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Non disponibile'**
+  String get tweaksStatusUnavailable;
+
+  /// No description provided for @tweaksRestartRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Riavvio richiesto'**
+  String get tweaksRestartRequired;
+
+  /// No description provided for @swapAdjustLowTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Regola swappiness ({current} → {ideal})'**
+  String swapAdjustLowTitle(String current, String ideal);
+
+  /// No description provided for @swapAdjustLowDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Con {ram} GB di RAM, uno swappiness di 60 garantisce swap sufficiente per la stabilità.'**
+  String swapAdjustLowDesc(String ram);
+
+  /// No description provided for @swapAdjustMidTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Regola swappiness ({current} → {ideal})'**
+  String swapAdjustMidTitle(String current, String ideal);
+
+  /// No description provided for @swapAdjustMidDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Con {ram} GB di RAM, uno swappiness di 40 bilancia l\'uso della RAM e dello swap.'**
+  String swapAdjustMidDesc(String ram);
+
+  /// No description provided for @swapAdjustHighTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Regola swappiness ({current} → {ideal})'**
+  String swapAdjustHighTitle(String current, String ideal);
+
+  /// No description provided for @swapAdjustHighDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Con {ram} GB di RAM, uno swappiness di 20 minimizza l\'uso non necessario dello swap.'**
+  String swapAdjustHighDesc(String ram);
+
+  /// No description provided for @swapOptimalTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Swappiness ottimale ({value})'**
+  String swapOptimalTitle(String value);
+
+  /// No description provided for @swapOptimalDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Lo swappiness attuale corrisponde al valore consigliato per i tuoi {ram} GB di RAM.'**
+  String swapOptimalDesc(String ram);
+
+  /// No description provided for @swapCreateTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Crea file swap ({size} GB)'**
+  String swapCreateTitle(String size);
+
+  /// No description provided for @swapCreateDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuno swap rilevato. Creare un file swap migliora la stabilità in caso di pressione di memoria.'**
+  String get swapCreateDesc;
+
+  /// No description provided for @zramBootTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Abilita ZRAM all\'avvio'**
+  String get zramBootTitle;
+
+  /// No description provided for @zramBootDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'ZRAM è attivo ora, ma il servizio non è abilitato all\'avvio: verrebbe perso al prossimo riavvio.'**
+  String get zramBootDesc;
+
+  /// No description provided for @zramActiveTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'ZRAM è attivo'**
+  String get zramActiveTitle;
+
+  /// No description provided for @zramActiveDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Lo swap compresso in RAM è in esecuzione e parte automaticamente all\'avvio. Offre swap più veloce e riduce l\'I/O del disco.'**
+  String get zramActiveDesc;
+
+  /// No description provided for @zramStartTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Avvia servizio ZRAM'**
+  String get zramStartTitle;
+
+  /// No description provided for @zramStartDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'I tool ZRAM sono installati ma il servizio non è in esecuzione.'**
+  String get zramStartDesc;
+
+  /// No description provided for @zramInstallTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Abilita ZRAM (swap compresso in RAM)'**
+  String get zramInstallTitle;
+
+  /// No description provided for @zramInstallDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'ZRAM comprime i dati di swap nella RAM, offrendo swap più veloce e riducendo l\'I/O del disco.'**
+  String get zramInstallDesc;
+
+  /// No description provided for @homeUpdateAction.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiorna'**
+  String get homeUpdateAction;
+
+  /// No description provided for @homeCheckingUpdates.
+  ///
+  /// In it, this message translates to:
+  /// **'Ricerca aggiornamenti in corso...'**
+  String get homeCheckingUpdates;
+
+  /// No description provided for @homeNewVersionAvailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Nuova versione {version} disponibile!'**
+  String homeNewVersionAvailable(String version);
+
+  /// No description provided for @homeRestoringRepositories.
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristino dei repository...'**
+  String get homeRestoringRepositories;
+
+  /// No description provided for @homeKernelUpdateTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento kernel'**
+  String get homeKernelUpdateTitle;
+
+  /// No description provided for @homeKernelUpdateBody.
+  ///
+  /// In it, this message translates to:
+  /// **'L\'aggiornamento del kernel richiede un riavvio del sistema. Proseguire?'**
+  String get homeKernelUpdateBody;
+
+  /// No description provided for @grubUnsavedBanner.
+  ///
+  /// In it, this message translates to:
+  /// **'Hai modifiche non salvate. Ricorda di salvare e aggiornare GRUB per applicare le modifiche.'**
+  String get grubUnsavedBanner;
+
+  /// No description provided for @grubContentHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Contenuto del file GRUB...'**
+  String get grubContentHint;
+
+  /// No description provided for @updateReleaseNotes.
+  ///
+  /// In it, this message translates to:
+  /// **'Note di rilascio'**
+  String get updateReleaseNotes;
+
+  /// No description provided for @updateDownloadAndInstall.
+  ///
+  /// In it, this message translates to:
+  /// **'Scarica e installa'**
+  String get updateDownloadAndInstall;
+
+  /// No description provided for @updateInstalledOk.
+  ///
+  /// In it, this message translates to:
+  /// **'Versione {version} installata con successo.'**
+  String updateInstalledOk(String version);
+
+  /// No description provided for @updateDownloading.
+  ///
+  /// In it, this message translates to:
+  /// **'Download in corso...'**
+  String get updateDownloading;
+
+  /// No description provided for @languageSelectionSave.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva'**
+  String get languageSelectionSave;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Cerca funzioni e schede...'**
+  String get searchHint;
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun risultato'**
+  String get searchNoResults;
+
+  /// No description provided for @undo.
+  ///
+  /// In it, this message translates to:
+  /// **'Annulla'**
+  String get undo;
+
+  /// No description provided for @undoDone.
+  ///
+  /// In it, this message translates to:
+  /// **'Operazione annullata'**
+  String get undoDone;
+
+  /// No description provided for @undoFailed.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile annullare l\'operazione'**
+  String get undoFailed;
+
+  /// No description provided for @onboardingContinue.
+  ///
+  /// In it, this message translates to:
+  /// **'Avanti'**
+  String get onboardingContinue;
+
+  /// No description provided for @warningSystemCard.
+  ///
+  /// In it, this message translates to:
+  /// **'Sistema rilevato'**
+  String get warningSystemCard;
+
+  /// No description provided for @warningOsLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Sistema operativo'**
+  String get warningOsLabel;
+
+  /// No description provided for @warningDesktopLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Ambiente desktop'**
+  String get warningDesktopLabel;
+
+  /// No description provided for @warningGrubCommand.
+  ///
+  /// In it, this message translates to:
+  /// **'Comando GRUB'**
+  String get warningGrubCommand;
+
+  /// No description provided for @settingsMinimizeToTray.
+  ///
+  /// In it, this message translates to:
+  /// **'Riduci a icona nel tray'**
+  String get settingsMinimizeToTray;
+
+  /// No description provided for @settingsMinimizeToTrayDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Quando la finestra è ridotta a icona si nasconde nel vassoio di sistema (altrimenti resta nella barra delle applicazioni)'**
+  String get settingsMinimizeToTrayDesc;
+
+  /// No description provided for @settingsMinimizeToTrayOn.
+  ///
+  /// In it, this message translates to:
+  /// **'Riduci a icona nel tray attivato'**
+  String get settingsMinimizeToTrayOn;
+
+  /// No description provided for @settingsMinimizeToTrayOff.
+  ///
+  /// In it, this message translates to:
+  /// **'Riduci a icona nel tray disattivato'**
+  String get settingsMinimizeToTrayOff;
 }
 
 class _AppLocalizationsDelegate

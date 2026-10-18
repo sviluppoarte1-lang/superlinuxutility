@@ -1,5 +1,7 @@
 #include "my_application.h"
 
+#include <string.h>
+
 #include <flutter_linux/flutter_linux.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
@@ -15,8 +17,79 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+// Reads a boolean key ("key":true / "key":false) from the raw JSON text of
+// shared_preferences.json. Returns dflt when the key is absent.
+static gboolean slu_pref_bool(const gchar* contents, const gchar* key,
+                              gboolean dflt) {
+  if (contents == nullptr) return dflt;
+  g_autofree gchar* needle_true =
+      g_strdup_printf("\"%s\":true", key);
+  g_autofree gchar* needle_true_sp =
+      g_strdup_printf("\"%s\": true", key);
+  g_autofree gchar* needle_false =
+      g_strdup_printf("\"%s\":false", key);
+  g_autofree gchar* needle_false_sp =
+      g_strdup_printf("\"%s\": false", key);
+  if (strstr(contents, needle_true) != nullptr ||
+      strstr(contents, needle_true_sp) != nullptr)
+    return TRUE;
+  if (strstr(contents, needle_false) != nullptr ||
+      strstr(contents, needle_false_sp) != nullptr)
+    return FALSE;
+  return dflt;
+}
+
+// TRUE quando l'utente ha chiesto di avviare ridotto a icona nel tray e
+// l'app NON deve MAI mostrare la finestra principale (nemmeno un frame).
+// Lettura diretta delle prefs: a livello C++ è l'unico modo per evitare il
+// flash iniziale (la finestra viene mostrata qui al primo frame Flutter,
+// prima che Dart possa nasconderla).
+static gboolean should_start_hidden() {
+  static gboolean checked = FALSE;
+  static gboolean hidden = FALSE;
+  if (checked) return hidden;
+  checked = TRUE;
+
+  // Modalità standalone (task manager / aggiornamenti / appunti): mostra.
+  const gchar* mode = g_getenv("SUPER_LINUX_UTILITY_MODE");
+  if (mode != nullptr && mode[0] != '\0') return hidden;
+
+  g_autofree gchar* path = nullptr;
+  const gchar* xdg = g_getenv("XDG_DATA_HOME");
+  if (xdg != nullptr && xdg[0] != '\0') {
+    path = g_build_filename(xdg, "com.superlinux.utility",
+                            "shared_preferences.json", nullptr);
+  } else {
+    const gchar* home = g_getenv("HOME");
+    if (home == nullptr || home[0] == '\0') return hidden;
+    path = g_build_filename(home, ".local", "share", "com.superlinux.utility",
+                            "shared_preferences.json", nullptr);
+  }
+
+  gchar* contents = nullptr;
+  if (!g_file_get_contents(path, &contents, nullptr, nullptr)) return hidden;
+
+  const gboolean start_min =
+      slu_pref_bool(contents, "flutter.start_minimized", FALSE);
+  const gboolean tray_on =
+      slu_pref_bool(contents, "flutter.system_tray_enabled", TRUE);
+  // Primo avvio (lingua/avviso/password non completati): deve mostrare.
+  const gboolean language_selected =
+      slu_pref_bool(contents, "flutter.language_selected", FALSE);
+  const gboolean warning_accepted =
+      slu_pref_bool(contents, "flutter.warning_accepted", FALSE);
+  const gboolean password_configured =
+      slu_pref_bool(contents, "flutter.password_configured", FALSE);
+  g_free(contents);
+
+  hidden = start_min && tray_on && language_selected && warning_accepted &&
+           password_configured;
+  return hidden;
+}
+
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
+  if (should_start_hidden()) return;  // Avvio in tray: finestra mai mappata.
   gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
 }
 

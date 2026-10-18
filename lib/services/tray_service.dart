@@ -94,6 +94,11 @@ class TrayCallbacks {
 class TrayService {
   static const String prefKeySystemTrayEnabled = 'system_tray_enabled';
   static const String prefKeyCloseToTray = 'close_to_tray';
+
+  /// Quando attivo (default FALSE), il minimo della finestra la nasconde
+  /// nel tray invece di lasciarla minimizzata nella barra applicazioni.
+  /// Separato da close_to_tray: ridurre a icona non deve sorprendere.
+  static const String prefKeyMinimizeToTray = 'minimize_to_tray';
   static const String prefKeyStartMinimized = 'start_minimized';
   static const String prefKeyStartAtLogin = 'start_at_login';
 
@@ -254,10 +259,21 @@ class TrayService {
       final iconPath = await _getTrayIconPath();
       _appWindow = AppWindow();
       _systemTray = SystemTray();
-      await _systemTray!.initSystemTray(
+      final ok = await _systemTray!.initSystemTray(
         title: '',
         iconPath: iconPath ?? '',
       );
+      if (!ok) {
+        // Lato nativo NON ha creato l'indicatore (libreria appindicator
+        // assente o dlopen fallito, es. Fedora senza libappindicator3.so.1).
+        // Interrompere subito: non costruire il menu né avviare i timer con un
+        // indicatore nullo — era il percorso che storicamente portava a
+        // segfault/crash su Fedora/KDE. L'errore viene mostrato dalla UI.
+        _lastError =
+            'initSystemTray: init nativo fallito (libreria appindicator assente o dlopen non riuscito)';
+        _initialized = false;
+        return false;
+      }
       // Menu iniziale già nella lingua salvata dall'utente: finché HomeScreen
       // non fornisce le etichette dal contesto, non si deve vedere l'italiano
       // (o qualsiasi altra lingua diversa da quella scelta).

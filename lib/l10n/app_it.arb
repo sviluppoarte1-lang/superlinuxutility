@@ -37,7 +37,9 @@
   "clipboardSavedTo": "Salvato in {path}",
   "@clipboardSavedTo": {
     "placeholders": {
-      "path": {"type": "String"}
+      "path": {
+        "type": "String"
+      }
     }
   },
   "clipboardSaveFailed": "Salvataggio non riuscito.",
@@ -48,7 +50,9 @@
   "clipboardRetentionHours": "{n} h",
   "@clipboardRetentionHours": {
     "placeholders": {
-      "n": {"type": "int"}
+      "n": {
+        "type": "int"
+      }
     }
   },
   "tabBattery": "Batteria",
@@ -100,6 +104,13 @@
   "devGradle": "Cache Gradle",
   "devDocker": "Immagini Docker inutilizzate",
   "devKernelHeaders": "Vecchi kernel (headers + immagini)",
+  "devPkgCache": "Cache package manager",
+  "devElectronCache": "Cache app Electron",
+  "devOpencodeData": "Dati OpenCode (log + snapshot)",
+  "devCudaRepo": "Repository installer CUDA",
+  "devCudaDup": "Installazioni CUDA duplicate",
+  "devSnapOld": "Revisioni snap vecchie",
+  "devFlatpakUnused": "Runtime flatpak inutilizzati",
   "advEmpty": "Nessuna cache di sviluppo rilevata.",
   "journalTitle": "Log di sistema (journald)",
   "journalCurrentSize": "Spazio occupato",
@@ -141,7 +152,9 @@
   "ramCleanupAutoEnabled": "Pulizia automatica RAM attivata (ogni {minutes} minuti).",
   "@ramCleanupAutoEnabled": {
     "placeholders": {
-      "minutes": {"type": "int"}
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "ramCleanupAutoDisabled": "Pulizia automatica RAM disattivata.",
@@ -228,6 +241,27 @@
   "settingsCloseToTrayOff": "Chiusura in tray disattivata. La chiusura della finestra terminerà l'app.",
   "settingsTrayEnabled": "System tray abilitato.",
   "settingsTrayDisabled": "System tray disabilitato. Riavvia l'app per applicare.",
+  "settingsTrayInitFailed": "Impossibile attivare la system tray. Dettagli: {error}",
+  "@settingsTrayInitFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTrayInstallOk": "Dipendenze del system tray installate correttamente.",
+  "settingsTrayInstallUnsupported": "Installazione automatica non disponibile per questa distribuzione. Usa la versione AppImage: le librerie della system tray sono già incluse.",
+  "settingsTrayInstallNoPassword": "Salva la password nelle Impostazioni per consentire l'installazione.",
+  "settingsTrayInstallWrongPassword": "Password non corretta. Verifica la password nelle Impostazioni.",
+  "settingsTrayInstallLocked": "Un altro processo sta usando i repository. Riprova tra qualche secondo.",
+  "settingsTrayInstallFailed": "Installazione non riuscita: {detail}",
+  "@settingsTrayInstallFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
   "settingsStartMinimized": "Avvia l'app ridotta a icona",
   "settingsStartMinimizedDesc": "Se attivo, l'app si avvia senza mostrare la finestra principale, solo l'icona nella system tray.",
   "settingsStartMinimizedOn": "Avvio ridotto a icona attivato. Al prossimo avvio l'app aprirà solo in tray.",
@@ -254,92 +288,136 @@
   "updateCheckAptHasUpdates": "{count, plural, one{APT: {count} aggiornamento disponibile} other{APT: {count} aggiornamenti disponibili}}",
   "@updateCheckAptHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckAptPhasedExtra": "{count, plural, one{APT: {count} aggiornamento scaglionato rilevato} other{APT: {count} aggiornamenti scaglionati rilevati}}",
   "@updateCheckAptPhasedExtra": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckAptError": "APT: Errore durante la verifica: {error}",
   "@updateCheckAptError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckDnfNone": "DNF: Nessun aggiornamento disponibile",
   "updateCheckDnfHasUpdates": "{count, plural, one{DNF: {count} aggiornamento disponibile} other{DNF: {count} aggiornamenti disponibili}}",
   "@updateCheckDnfHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckDnfError": "DNF: Errore durante la verifica: {error}",
   "@updateCheckDnfError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckPacmanNone": "Pacman: Nessun aggiornamento disponibile",
   "updateCheckPacmanHasUpdates": "{count, plural, one{Pacman: {count} aggiornamento disponibile} other{Pacman: {count} aggiornamenti disponibili}}",
   "@updateCheckPacmanHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckPacmanError": "Pacman: Errore durante la verifica: {error}",
   "@updateCheckPacmanError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckSnapNone": "Snap: Nessun aggiornamento disponibile",
   "updateCheckSnapHasUpdates": "{count, plural, one{Snap: {count} aggiornamento disponibile} other{Snap: {count} aggiornamenti disponibili}}",
   "@updateCheckSnapHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckSnapError": "Snap: Errore durante la verifica: {error}",
   "@updateCheckSnapError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckFlatpakNone": "Flatpak: Nessun aggiornamento disponibile",
   "updateCheckFlatpakHasUpdates": "{count, plural, one{Flatpak: {count} aggiornamento disponibile} other{Flatpak: {count} aggiornamenti disponibili}}",
   "@updateCheckFlatpakHasUpdates": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updateCheckFlatpakError": "Flatpak: Errore durante la verifica: {error}",
   "@updateCheckFlatpakError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updateCheckSummaryPackageCount": "{count, plural, =0{0 pacchetti} one{{count} pacchetto} other{{count} pacchetti}}",
   "@updateCheckSummaryPackageCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "updatesAvailableCount": "{count} aggiornamenti disponibili",
-  "@updatesAvailableCount": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesAvailableCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailableDialogTitle": "Aggiornamenti disponibili",
   "updatesAvailableDialogMessage": "{count} aggiornamenti disponibili. Vuoi applicarli ora?",
-  "@updatesAvailableDialogMessage": {"placeholders": {"count": {"type": "int"}}},
+  "@updatesAvailableDialogMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesAvailableDetectedListHeading": "Rilevati:",
   "updateLabelPhased": "{name} (scaglionato — non ancora installabile)",
   "@updateLabelPhased": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "updatesPreviewTruncated": "… e altri {count}",
   "@updatesPreviewTruncated": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "updatesAvailablePhasedFooter": "I pacchetti in rollout graduale non si possono installare subito. \"Applica ora\" aggiorna solo ciò che il sistema consente.",
   "updatesCheckPreviewHeading": "Elementi interessati:",
@@ -382,8 +460,8 @@
   "gpu": "Scheda Video",
   "usage": "Uso",
   "total": "Totale",
-  "used": "Usato",
-  "free": "Libero",
+  "used": "Usata",
+  "free": "Libera",
   "model": "Modello",
   "driver": "Driver",
   "temperature": "Temperatura",
@@ -412,7 +490,7 @@
   "disclaimerNoWarranty": "Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA GARANZIA; senza nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedere la GNU General Public License per i dettagli.",
   "disclaimerCopyright": "Copyright (c) 2024-2025 Marco Di Giangiacomo. Tutti i diritti riservati sotto GPL-3.0.",
   "payWithPaypal": "Paga con PayPal",
-  "purchaseLicenseViaPaypal": "La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email. Senza un pagamento valido l'app non può essere attivata.",
+  "purchaseLicenseViaPaypal": "La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email.",
   "languageSelectionTitle": "Selezione Lingua",
   "languageSelectionDesc": "Seleziona la lingua per l'applicazione",
   "languageItalian": "Italiano",
@@ -709,17 +787,12 @@
   "errorRemoving": "Errore durante la rimozione",
   "terminateProcesses": "Termina Processi",
   "noProcessesRunning": "Nessun processo in esecuzione per questa app",
-  "total": "Totale",
-  "used": "Usata",
-  "free": "Libera",
   "cache": "Cache",
   "swap": "Swap",
   "filesystem": "Filesystem",
   "temperatureUnit": "°C",
   "removing": "Rimozione in corso...",
   "versionLabel": "Versione:",
-  "searchProcess": "Cerca processo",
-  "searchApp": "Cerca app",
   "selectBasePath": "Seleziona percorso base:",
   "root": "Root",
   "home": "Home",
@@ -772,7 +845,6 @@
   "rename": "Rinomina",
   "newName": "Nuovo nome",
   "details": "Dettagli",
-  "close": "Chiudi",
   "renamedSuccessfully": "Rinominato con successo",
   "renameError": "Errore durante la rinomina",
   "type": "Tipo",
@@ -882,11 +954,36 @@
   "infoCleanupTrashDesc": "Svuota il cestino e pulisce file temporanei in modo sicuro",
   "infoInstalledApps": "App Installate",
   "infoInstalledAppsManagement": "Gestione pacchetti multipli",
-  "infoInstalledAppsManagementDesc": "Visualizza app installate tramite APT, Snap, Flatpak e GNOME",
+  "infoInstalledAppsManagementDesc": "Visualizza app installate tramite APT, Snap, Flatpak, GNOME, Pacman e DNF",
   "infoInstalledAppsDependencies": "Controllo dipendenze",
   "infoInstalledAppsDependenciesDesc": "Verifica le dipendenze prima della rimozione per evitare problemi",
   "infoInstalledAppsWarnings": "Avvisi di sicurezza",
   "infoInstalledAppsWarningsDesc": "Avvisa quando un pacchetto è utilizzato da altri software o dal sistema",
+  "installedAppsLoading": "Caricamento app installate...\n{count} app trovate",
+  "@installedAppsLoading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "installedAppsManagedBy": "Gestore: {manager}",
+  "@installedAppsManagedBy": {
+    "placeholders": {
+      "manager": {
+        "type": "String"
+      }
+    }
+  },
+  "installedAppsSystemWarning": "Questo è un pacchetto di sistema. Rimuoverlo potrebbe compromettere il funzionamento del sistema.",
+  "installedAppsReverseWarning": "Altri {count} pacchetto/i dipendono da questo",
+  "@installedAppsReverseWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "infoMonitor": "Monitor Sistema",
   "infoMonitorProcesses": "Monitoraggio processi",
   "infoMonitorProcessesDesc": "Visualizza tutti i processi attivi con uso CPU, memoria e disco",
@@ -1080,7 +1177,7 @@
   "licenseActivateError": "Codice non valido. Verifica nome, cognome e email.",
   "licenseActivatePremium": "Attiva / Premium",
   "licenseActivateCardTitle": "Attiva versione avanzata",
-  "licenseActivateCardDesc": "La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery. Senza un pagamento valido l'app non può essere attivata.",
+  "licenseActivateCardDesc": "Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery.",
   "noSmartDisksFound": "Nessun disco con supporto SMART trovato.",
   "smartctlNotFound": "smartctl non trovato",
   "smartctlInstallPrompt": "smartmontools è necessario per monitorare la salute del disco. Vuoi installarlo?",
@@ -1121,7 +1218,9 @@
   "smartInstallError": "Errore di installazione: {error}",
   "@smartInstallError": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrNoPassword": "Password non salvata. Salva la password nelle impostazioni.",
@@ -1131,20 +1230,26 @@
   "smartErrPasswordGeneric": "Errore durante validazione: {error}",
   "@smartErrPasswordGeneric": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrSudo": "Errore sudo: {error}",
   "@smartErrSudo": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrUnsupportedPm": "Package manager non supportato.",
   "smartErrUnexpected": "Errore imprevisto: {error}",
   "@smartErrUnexpected": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrAptLock": "Impossibile aggiornare: un altro processo sta usando apt. Riprova tra qualche secondo.",
@@ -1152,7 +1257,9 @@
   "smartErrAptUpdateFailed": "Aggiornamento cache fallito: {error}",
   "@smartErrAptUpdateFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrDpkgInterrupted": "dpkg interrotto. Esegui \"sudo dpkg --configure -a\" e riprova.",
@@ -1160,7 +1267,9 @@
   "smartErrInstallFailed": "Installazione fallita: {error}",
   "@smartErrInstallFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "smartErrNotFoundAfterInstall": "Installazione completata ma smartctl non trovato. Riavvia l'app e riprova.",
@@ -1190,7 +1299,6 @@
   "repoContentLabel": "Contenuto",
   "repoUpdated": "Repository aggiornata",
   "edit": "Modifica",
-  "remove": "Rimuovi",
   "tabTweaks": "Tweaks",
   "tweaksSwap": "Swap",
   "tweaksSwapRecommendations": "Raccomandazioni Swap",
@@ -1342,6 +1450,124 @@
   "driverManagerUpdate": "Aggiorna",
   "driverManagerRebootRequired": "Riavvio necessario dopo l'aggiornamento",
   "driverManagerLinuxFirmware": "Firmware Linux (linux-firmware)",
-  "driverManagerLinuxFirmwareDesc": "Pacchetto firmware completo per GPU, Wi-Fi, Bluetooth e altri dispositivi"
+  "driverManagerLinuxFirmwareDesc": "Pacchetto firmware completo per GPU, Wi-Fi, Bluetooth e altri dispositivi",
+  "driverManagerFirmwareNotInstalled": "Non installato",
+  "driverManagerFirmwareUpToDate": "Aggiornato",
+  "driverManagerFirmwareUpdateAvailable": "Aggiornamento disponibile",
+  "driverManagerFirmwareInstallSuccess": "linux-firmware installato con successo",
+  "driverManagerFirmwareUpdateSuccess": "linux-firmware aggiornato. Riavvia il PC.",
+  "driverManagerFirmwareFailed": "Operazione firmware fallita:",
+  "tweaksSystemMemory": "Memoria di sistema",
+  "tweaksSwapTotalLabel": "Swap totale",
+  "tweaksSwapNone": "Nessuno",
+  "tweaksSwapUsedLabel": "Swap usato",
+  "tweaksSwapDeviceLabel": "Dispositivo swap",
+  "tweaksZswapLabel": "Zswap",
+  "tweaksStatusActive": "Attivo",
+  "tweaksStatusInactive": "Disattivo",
+  "tweaksStatusUnavailable": "Non disponibile",
+  "tweaksRestartRequired": "Riavvio richiesto",
+  "swapAdjustLowTitle": "Regola swappiness ({current} → {ideal})",
+  "@swapAdjustLowTitle": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "ideal": {"type": "String"}
+    }
+  },
+  "swapAdjustLowDesc": "Con {ram} GB di RAM, uno swappiness di 60 garantisce swap sufficiente per la stabilità.",
+  "@swapAdjustLowDesc": {
+    "placeholders": {
+      "ram": {"type": "String"}
+    }
+  },
+  "swapAdjustMidTitle": "Regola swappiness ({current} → {ideal})",
+  "@swapAdjustMidTitle": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "ideal": {"type": "String"}
+    }
+  },
+  "swapAdjustMidDesc": "Con {ram} GB di RAM, uno swappiness di 40 bilancia l'uso della RAM e dello swap.",
+  "@swapAdjustMidDesc": {
+    "placeholders": {
+      "ram": {"type": "String"}
+    }
+  },
+  "swapAdjustHighTitle": "Regola swappiness ({current} → {ideal})",
+  "@swapAdjustHighTitle": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "ideal": {"type": "String"}
+    }
+  },
+  "swapAdjustHighDesc": "Con {ram} GB di RAM, uno swappiness di 20 minimizza l'uso non necessario dello swap.",
+  "@swapAdjustHighDesc": {
+    "placeholders": {
+      "ram": {"type": "String"}
+    }
+  },
+  "swapOptimalTitle": "Swappiness ottimale ({value})",
+  "@swapOptimalTitle": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "swapOptimalDesc": "Lo swappiness attuale corrisponde al valore consigliato per i tuoi {ram} GB di RAM.",
+  "@swapOptimalDesc": {
+    "placeholders": {
+      "ram": {"type": "String"}
+    }
+  },
+  "swapCreateTitle": "Crea file swap ({size} GB)",
+  "@swapCreateTitle": {
+    "placeholders": {
+      "size": {"type": "String"}
+    }
+  },
+  "swapCreateDesc": "Nessuno swap rilevato. Creare un file swap migliora la stabilità in caso di pressione di memoria.",
+  "zramBootTitle": "Abilita ZRAM all'avvio",
+  "zramBootDesc": "ZRAM è attivo ora, ma il servizio non è abilitato all'avvio: verrebbe perso al prossimo riavvio.",
+  "zramActiveTitle": "ZRAM è attivo",
+  "zramActiveDesc": "Lo swap compresso in RAM è in esecuzione e parte automaticamente all'avvio. Offre swap più veloce e riduce l'I/O del disco.",
+  "zramStartTitle": "Avvia servizio ZRAM",
+  "zramStartDesc": "I tool ZRAM sono installati ma il servizio non è in esecuzione.",
+  "zramInstallTitle": "Abilita ZRAM (swap compresso in RAM)",
+  "zramInstallDesc": "ZRAM comprime i dati di swap nella RAM, offrendo swap più veloce e riducendo l'I/O del disco.",
+  "homeUpdateAction": "Aggiorna",
+  "homeCheckingUpdates": "Ricerca aggiornamenti in corso...",
+  "homeNewVersionAvailable": "Nuova versione {version} disponibile!",
+  "@homeNewVersionAvailable": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "homeRestoringRepositories": "Ripristino dei repository...",
+  "homeKernelUpdateTitle": "Aggiornamento kernel",
+  "homeKernelUpdateBody": "L'aggiornamento del kernel richiede un riavvio del sistema. Proseguire?",
+  "grubUnsavedBanner": "Hai modifiche non salvate. Ricorda di salvare e aggiornare GRUB per applicare le modifiche.",
+  "grubContentHint": "Contenuto del file GRUB...",
+  "updateReleaseNotes": "Note di rilascio",
+  "updateDownloadAndInstall": "Scarica e installa",
+  "updateInstalledOk": "Versione {version} installata con successo.",
+  "@updateInstalledOk": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "updateDownloading": "Download in corso...",
+  "languageSelectionSave": "Salva",
+  "searchHint": "Cerca funzioni e schede...",
+  "searchNoResults": "Nessun risultato",
+  "undo": "Annulla",
+  "undoDone": "Operazione annullata",
+  "undoFailed": "Impossibile annullare l'operazione",
+  "onboardingContinue": "Avanti",
+  "warningSystemCard": "Sistema rilevato",
+  "warningOsLabel": "Sistema operativo",
+  "warningDesktopLabel": "Ambiente desktop",
+  "warningGrubCommand": "Comando GRUB",
+  "settingsMinimizeToTray": "Riduci a icona nel tray",
+  "settingsMinimizeToTrayDesc": "Quando la finestra \u00e8 ridotta a icona si nasconde nel vassoio di sistema (altrimenti resta nella barra delle applicazioni)",
+  "settingsMinimizeToTrayOn": "Riduci a icona nel tray attivato",
+  "settingsMinimizeToTrayOff": "Riduci a icona nel tray disattivato"
 }
-

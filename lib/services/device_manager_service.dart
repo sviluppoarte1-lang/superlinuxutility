@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'password_storage.dart';
 import '../models/device_info.dart';
 
@@ -27,7 +28,7 @@ class DeviceManagerService {
         .replaceAll("'", r"\'");
     final full =
         'printf "%s\\n" "$escaped" | sudo -S bash -c ${_shellQuote(command)} 2>&1';
-    return Process.run('bash', ['-c', full], runInShell: true);
+    return runProcess('bash', ['-c', full], runInShell: true, timeout: const Duration(seconds: 180));
   }
 
   static String _shellQuote(String s) {
@@ -37,7 +38,7 @@ class DeviceManagerService {
 
   static Future<String> _run(String cmd) async {
     try {
-      final r = await Process.run('bash', ['-c', cmd], runInShell: true);
+      final r = await runProcess('bash', ['-c', cmd], runInShell: true, timeout: const Duration(seconds: 20));
       return ((r.stdout as String?) ?? '').trim();
     } catch (_) {
       return '';
@@ -629,7 +630,7 @@ WantedBy=multi-user.target
     final cmd = 'echo $value > $path';
     bool immediateOk = false;
     try {
-      final r = await Process.run('bash', ['-c', cmd], runInShell: true);
+      final r = await runProcess('bash', ['-c', cmd], runInShell: true, timeout: const Duration(seconds: 20));
       immediateOk = r.exitCode == 0;
     } catch (_) {}
     if (!immediateOk) {
@@ -662,7 +663,7 @@ WantedBy=multi-user.target
     final cmd = 'echo $value > $path';
     bool immediateOk = false;
     try {
-      final r = await Process.run('bash', ['-c', cmd], runInShell: true);
+      final r = await runProcess('bash', ['-c', cmd], runInShell: true, timeout: const Duration(seconds: 20));
       immediateOk = r.exitCode == 0;
     } catch (_) {}
     if (!immediateOk) {
@@ -693,7 +694,7 @@ WantedBy=multi-user.target
     final cmd = enable ? 'ip link set $iface up' : 'ip link set $iface down';
     bool immediateOk = false;
     try {
-      final r = await Process.run('bash', ['-c', cmd], runInShell: true);
+      final r = await runProcess('bash', ['-c', cmd], runInShell: true, timeout: const Duration(seconds: 20));
       immediateOk = r.exitCode == 0;
     } catch (_) {}
     if (!immediateOk) {

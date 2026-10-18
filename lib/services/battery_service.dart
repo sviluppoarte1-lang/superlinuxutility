@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'password_storage.dart';
 
@@ -117,6 +118,11 @@ class BatteryService {
     return names;
   }
 
+  /// True se esiste un alimentatore di tipo Battery (BAT*) su sysfs.
+  /// Usato dalla Home per nascondere il tab Batteria sui desktop senza
+  /// batteria. Errori di lettura → true (non nascondere per sbaglio).
+  static bool hasBatteryDevice() => _batteryNames().isNotEmpty;
+
   static bool _readAcOnline() {
     try {
       final dir = Directory('/sys/class/power_supply');
@@ -229,7 +235,7 @@ class BatteryService {
         .replaceAll("'", "\\'");
     final full =
         'printf "%s\\n" "$escaped" | sudo -S bash -c ${_shellQuote(command)} 2>&1';
-    return Process.run('bash', ['-c', full], runInShell: true);
+    return runProcess('bash', ['-c', full], runInShell: true, timeout: const Duration(seconds: 60));
   }
 
   static String _shellQuote(String s) {

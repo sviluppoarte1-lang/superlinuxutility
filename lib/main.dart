@@ -9,9 +9,9 @@ import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'screens/home_screen.dart';
 import 'screens/tray_task_manager_dialog.dart';
 import 'screens/clipboard_history_dialog.dart';
-import 'screens/warning_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/password_setup_screen.dart';
-import 'screens/language_selection_screen.dart';
+
 import 'services/ocs_url_service.dart';
 import 'services/system_detector.dart';
 import 'services/font_service.dart';
@@ -20,7 +20,75 @@ import 'services/tray_service.dart';
 import 'services/dependency_check_service.dart';
 import 'services/window_close_to_tray.dart';
 import 'services/app_memory_maintenance.dart';
+import 'utils/scrollbar_theme.dart';
 import 'package:window_manager/window_manager.dart';
+
+/// ─── Diagnosi di avvio ──────────────────────────────────────────────────────
+/// In release `debugPrint` e' inaffidabile e le eccezioni native (segfault di
+/// GTK/appindicator) non arrivano mai a Dart: ogni passaggio critico viene
+/// tracciato su stdout E su file con flush. Se l'AppImage muore durante
+/// l'avvio, l'ultima riga del file indica dove.
+const String _kDiagLogFile = '/tmp/slu-startup.log';
+
+void _diag(String message) {
+  final line = '${DateTime.now().toIso8601String()} [pid $pid] $message';
+  try {
+    stdout.writeln('[SLU] $line');
+  } catch (_) {}
+  try {
+    final f = File(_kDiagLogFile);
+    if (f.existsSync() && f.lengthSync() > 262144) {
+      f.writeAsStringSync('--- log oltre 256KB, azzerato ---\n');
+    }
+    f.writeAsStringSync('$line\n', mode: FileMode.append, flush: true);
+  } catch (_) {}
+}
+
+/// Cattura le eccezioni Dart non gestite (in release finirebbero solo su
+/// stderr, spesso invisibili con un doppio clic sull'AppImage).
+void _installErrorLogging() {
+  ui.PlatformDispatcher.instance.onError = (error, stack) {
+    _diag('FATAL non gestita: $error\n$stack');
+    return false; // stesso comportamento di default, ma con traccia su file
+  };
+  FlutterError.onError = (details) {
+    _diag('FlutterError: ${details.exception}\n${details.stack}');
+    FlutterError.presentError(details);
+  };
+}
+
+/// Contesto di esecuzione utile per diagnosare crash su distro diverse
+/// (Fedora/Wayland/AppImage): variabili XDG + /etc/os-release.
+void _diagEnvironment() {
+  const keys = [
+    'APPDIR',
+    'APPIMAGE',
+    'SUPER_LINUX_UTILITY_MODE',
+    'XDG_SESSION_TYPE',
+    'WAYLAND_DISPLAY',
+    'DISPLAY',
+    'XDG_CURRENT_DESKTOP',
+    'DESKTOP_SESSION',
+    'GDK_BACKEND',
+  ];
+  final env = Platform.environment;
+  final envDesc = keys.map((k) => '$k=${env[k] ?? '-'}').join(' ');
+  _diag('env: $envDesc');
+  _diag('exe=${Platform.resolvedExecutable} | ${Platform.operatingSystemVersion}');
+  try {
+    final osRelease = File('/etc/os-release');
+    if (osRelease.existsSync()) {
+      for (final l in osRelease.readAsLinesSync()) {
+        if (l.startsWith('PRETTY_NAME=') || l.startsWith('VERSION_ID=')) {
+          _diag('os-release $l');
+        }
+      }
+    }
+  } catch (e) {
+    _diag('os-release non leggibile: $e');
+  }
+}
+
 
 /// Rilascia il lock anche se il lifecycle `detached` non viene notificato (es. terminazione da WM).
 void _registerSingleInstanceShutdownHooks() {
@@ -35,19 +103,32 @@ void _registerSingleInstanceShutdownHooks() {
   } catch (_) {}
 }
 
-/// Rileva se la distro è Fedora (evita init system tray per segfault noti con appindicator su Fedora/KDE).
-Future<bool> _isFedora() async {
-  try {
-    final file = File('/etc/os-release');
-    if (!await file.exists()) return false;
-    final content = await file.readAsString();
-    return content.contains('ID=fedora') || content.contains('ID="fedora"');
-  } catch (_) {
-    return false;
+/// Mostra la finestra principale se a livello C++ non è stata mai mappata
+/// (avvio ridotto a icona senza tray pronto, o seconda istanza già in esecuzione).
+/// Primo tentativo immediato + retry al primo frame: il plugin window_manager
+/// potrebbe non essere ancora pronto subito dopo l'avvio.
+Future<void> ensureWindowShown() async {
+  _diag('ensureWindowShown: richiesta (trayInitialized=${TrayService.isInitialized})');
+  Future<void> show(String phase) async {
+    try {
+      await windowManager.show();
+      await windowManager.focus();
+      _diag('ensureWindowShown[$phase]: show+focus OK');
+    } catch (e) {
+      _diag('ensureWindowShown[$phase]: show/focus fallito: $e');
+    }
   }
+
+  await show('immediato');
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    show('primo-frame');
+  });
 }
 
 void main() async {
+  _installErrorLogging();
+  _diag('=== Super Linux Utility: avvio ===');
+  _diagEnvironment();
   WidgetsFlutterBinding.ensureInitialized();
   // Limita cache immagini decodificate (default Flutter molto alto → crescita RSS nel tempo).
   PaintingBinding.instance.imageCache.maximumSize = 40;
@@ -87,22 +168,23 @@ void main() async {
         }
         if (used != null) {
           await windowManager.setIcon(used);
-          // ignore: avoid_print
-          print('SuperLinuxUtility: window icon set from $used');
+          _diag('icona finestra impostata da $used');
         } else {
-          // ignore: avoid_print
-          print('SuperLinuxUtility: WARNING window icon not found '
-              '(tried ${candidates.length} paths, first: ${candidates.first})');
+          _diag('icona finestra NON trovata '
+              '(${candidates.length} percorsi provati, primo: ${candidates.first})');
         }
       } catch (e) {
-        // ignore: avoid_print
-        print('SuperLinuxUtility: WARNING setIcon failed: $e');
+        _diag('setIcon fallita: $e');
       }
-    } catch (_) {}
+    } catch (e) {
+      _diag('windowManager.ensureInitialized/setIcon fallito: $e');
+    }
   }
 
   final singleInstance = await isSingleInstance();
+  _diag('singleInstance=$singleInstance');
   if (!singleInstance) {
+    _diag('seconda istanza: niente tray, solo schermata "gia in esecuzione"');
     runApp(const _AlreadyRunningApp());
     return;
   }
@@ -113,22 +195,70 @@ void main() async {
     final trayEnabled = prefs.getBool(TrayService.prefKeySystemTrayEnabled) ?? true;
     final skipTrayEnv = Platform.environment['SUPER_LINUX_UTILITY_NO_TRAY'] == '1' ||
         Platform.environment['SUPER_LINUX_UTILITY_NO_TRAY'] == 'true';
-    final isFedora = await _isFedora();
-    if (trayEnabled && !skipTrayEnv && !isFedora) {
+    // ATTENZIONE: in passato Fedora veniva saltata del tutto (_isFedora) per
+    // segfault storici con appindicator. Ora la guardia è la rilevazione reale
+    // delle librerie (isSystemTraySupported, fixata: prima era "sempre true"):
+    //  - AppImage su Fedora → librerie bundled → supportata → init funziona;
+    //  - Fedora nativo (no ayatana) → non supportata → si salta l'init SENZA
+    //    tentativi crashogeni e SENZA installazioni silenziose all'avvio
+    //    (si installa solo dai pulsanti delle Impostazioni).
+    if (trayEnabled && !skipTrayEnv) {
       final supported = await DependencyCheckService.isSystemTraySupported();
-      if (!supported) {
-        await DependencyCheckService.installSystemTrayDependencies();
+      _diag('tray: isSystemTraySupported=$supported');
+      if (supported) {
+        try {
+          await TrayService.init();
+          _diag('tray: init terminato (isInitialized=${TrayService.isInitialized})');
+        } catch (e, st) {
+          _diag('tray: init ECCEZIONE $e\n$st');
+        }
+        if (!TrayService.isInitialized) {
+          _diag('tray: init NON riuscito -> lastError=${TrayService.lastError ?? '(nullo)'}');
+        }
+      } else {
+        _diag('tray: librerie appindicator assenti -> init saltato');
       }
-      await TrayService.init();
+    } else {
+      _diag('tray: disabilitato (trayEnabled=$trayEnabled, skipTrayEnv=$skipTrayEnv)');
+    }
+    // Avvio ridotto a icona: la finestra non è mai stata mappata a livello C++
+    // (my_application.cc). Se il tray NON è pronto l'app resterebbe invisibile:
+    // in quel caso la finestra va mostrata qui (nessun flash: C++ non l'ha
+    // mai mostrata, quindi non c'è nulla da nascondere).
+    final startMinimized =
+        prefs.getBool(TrayService.prefKeyStartMinimized) ?? false;
+    _diag('startMinimized=$startMinimized trayInitialized=${TrayService.isInitialized}');
+    if (startMinimized && !TrayService.isInitialized) {
+      await ensureWindowShown();
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => initWindowCloseToTray());
   }
 
+  _diag('avvio completato: runApp(MyApp)');
   runApp(const MyApp());
 }
 
-class _AlreadyRunningApp extends StatelessWidget {
+class _AlreadyRunningApp extends StatefulWidget {
   const _AlreadyRunningApp();
+
+  @override
+  State<_AlreadyRunningApp> createState() => _AlreadyRunningAppState();
+}
+
+class _AlreadyRunningAppState extends State<_AlreadyRunningApp> {
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isLinux) {
+      // Con avvio ridotto a icona la finestra della seconda istanza non viene
+      // mappata a livello C++: va mostrata esplicitamente, altrimenti il
+      // messaggio "applicazione già in esecuzione" resterebbe invisibile.
+      _diag('seconda istanza (_AlreadyRunningApp): mostra la finestra');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ensureWindowShown();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -193,6 +323,7 @@ class _AlreadyRunningApp extends StatelessWidget {
 /// cronologia appunti). Il processo è separato dalla finestra principale e
 /// mostra solo la schermata richiesta.
 Future<void> _runStandalone(String mode) async {
+  _diag('modalita standalone: $mode');
   final isTaskManager = mode == 'task-manager';
   final isClipboard = mode == 'clipboard';
   final prefs = await SharedPreferences.getInstance();
@@ -294,8 +425,12 @@ class _StandaloneApp extends StatelessWidget {
     return MaterialApp(
       title: 'Super Linux Utility',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.light(useMaterial3: true),
-      darkTheme: ThemeData.dark(useMaterial3: true),
+      theme: ThemeData.light(useMaterial3: true).copyWith(
+        scrollbarTheme: buildAppScrollbarTheme(Brightness.light),
+      ),
+      darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+        scrollbarTheme: buildAppScrollbarTheme(Brightness.dark),
+      ),
       themeMode: themeMode,
       locale: locale,
       localizationsDelegates: const [
@@ -395,6 +530,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   /// Chiude e riapre l'app per liberare memoria accumulata.
   Future<void> _performAutoRestart() async {
+    _diag('auto-restart periodico (90 min): rilascio tray/lock e riavvio');
     _memoryMaintenanceTimer?.cancel();
     _autoRestartTimer?.cancel();
     try {
@@ -425,7 +561,110 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       AppMemoryMaintenance.requestTrim();
     }
   }
-  
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Super Linux Utility',
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('it', ''),
+        Locale('en', ''),
+        Locale('fr', ''),
+        Locale('es', ''),
+        Locale('de', ''),
+        Locale('pt', ''),
+      ],
+      locale: _locale,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.light,
+        ).copyWith(
+          inversePrimary: const Color(0xFFE8E8E8),
+          surfaceContainerHighest: const Color(0xFFECECEC),
+          surfaceContainerHigh: const Color(0xFFF2F2F2),
+          surfaceContainerLow: const Color(0xFFF8F8F8),
+          surfaceContainerLowest: Colors.white,
+        ),
+        scaffoldBackgroundColor: Colors.white,
+        useMaterial3: true,
+        scrollbarTheme: buildAppScrollbarTheme(Brightness.light),
+        fontFamily: _fontFamily,
+        textTheme: TextTheme(
+          displayLarge: TextStyle(fontSize: _fontSize * 2.0, fontFamily: _fontFamily),
+          displayMedium: TextStyle(fontSize: _fontSize * 1.75, fontFamily: _fontFamily),
+          displaySmall: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
+          headlineLarge: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
+          headlineMedium: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
+          headlineSmall: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          titleLarge: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
+          titleMedium: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          titleSmall: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
+          bodyLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          bodyMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
+          bodySmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
+          labelLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          labelMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
+          labelSmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
+        ),
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.dark,
+        ).copyWith(
+          inversePrimary: const Color(0xFF3A3A3A),
+          surfaceContainerHighest: const Color(0xFF2A2A2A),
+          surfaceContainerHigh: const Color(0xFF242424),
+          surfaceContainerLow: const Color(0xFF1E1E1E),
+          surfaceContainerLowest: const Color(0xFF121212),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        useMaterial3: true,
+        scrollbarTheme: buildAppScrollbarTheme(Brightness.dark),
+        fontFamily: _fontFamily,
+        textTheme: TextTheme(
+          displayLarge: TextStyle(fontSize: _fontSize * 2.0, fontFamily: _fontFamily),
+          displayMedium: TextStyle(fontSize: _fontSize * 1.75, fontFamily: _fontFamily),
+          displaySmall: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
+          headlineLarge: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
+          headlineMedium: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
+          headlineSmall: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          titleLarge: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
+          titleMedium: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          titleSmall: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
+          bodyLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          bodyMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
+          bodySmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
+          labelLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
+          labelMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
+          labelSmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
+        ),
+      ),
+      themeMode: _themeMode,
+      // NB: usare SOLO routes['/'] (home + routes['/'] insieme violano
+      // l'assert di MaterialApp e la navigazione pushReplacementNamed('/').
+      routes: {
+        '/': (context) => InitialScreen(
+          onThemeModeChanged: (mode) => setThemeMode(mode),
+          onLocaleChanged: (locale) => setLocale(locale),
+          onFontChanged: (fontFamily, fontSize) => setFont(fontFamily, fontSize),
+        ),
+        '/home': (context) => const HomeScreen(),
+      },
+      builder: (context, child) {
+        return RepaintBoundary(child: child!);
+      },
+    );
+  }
+
   Future<void> _loadFontSettings() async {
     final fontFamily = await FontService.getFontFamily();
     final fontSize = await FontService.getFontSize();
@@ -528,107 +767,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _locale = locale;
       });
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Super Linux Utility',
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('it', ''),
-        Locale('en', ''),
-        Locale('fr', ''),
-        Locale('es', ''),
-        Locale('de', ''),
-        Locale('pt', ''),
-      ],
-      locale: _locale,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueGrey,
-          brightness: Brightness.light,
-        ).copyWith(
-          inversePrimary: const Color(0xFFE8E8E8),
-          surfaceContainerHighest: const Color(0xFFECECEC),
-          surfaceContainerHigh: const Color(0xFFF2F2F2),
-          surfaceContainerLow: const Color(0xFFF8F8F8),
-          surfaceContainerLowest: Colors.white,
-        ),
-        scaffoldBackgroundColor: Colors.white,
-        useMaterial3: true,
-        fontFamily: _fontFamily,
-        textTheme: TextTheme(
-          displayLarge: TextStyle(fontSize: _fontSize * 2.0, fontFamily: _fontFamily),
-          displayMedium: TextStyle(fontSize: _fontSize * 1.75, fontFamily: _fontFamily),
-          displaySmall: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
-          headlineLarge: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
-          headlineMedium: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
-          headlineSmall: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          titleLarge: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
-          titleMedium: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          titleSmall: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
-          bodyLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          bodyMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
-          bodySmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
-          labelLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          labelMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
-          labelSmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
-        ),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueGrey,
-          brightness: Brightness.dark,
-        ).copyWith(
-          inversePrimary: const Color(0xFF3A3A3A),
-          surfaceContainerHighest: const Color(0xFF2A2A2A),
-          surfaceContainerHigh: const Color(0xFF242424),
-          surfaceContainerLow: const Color(0xFF1E1E1E),
-          surfaceContainerLowest: const Color(0xFF121212),
-        ),
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        useMaterial3: true,
-        fontFamily: _fontFamily,
-        textTheme: TextTheme(
-          displayLarge: TextStyle(fontSize: _fontSize * 2.0, fontFamily: _fontFamily),
-          displayMedium: TextStyle(fontSize: _fontSize * 1.75, fontFamily: _fontFamily),
-          displaySmall: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
-          headlineLarge: TextStyle(fontSize: _fontSize * 1.5, fontFamily: _fontFamily),
-          headlineMedium: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
-          headlineSmall: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          titleLarge: TextStyle(fontSize: _fontSize * 1.25, fontFamily: _fontFamily),
-          titleMedium: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          titleSmall: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
-          bodyLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          bodyMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
-          bodySmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
-          labelLarge: TextStyle(fontSize: _fontSize * 1.1, fontFamily: _fontFamily),
-          labelMedium: TextStyle(fontSize: _fontSize, fontFamily: _fontFamily),
-          labelSmall: TextStyle(fontSize: _fontSize * 0.875, fontFamily: _fontFamily),
-        ),
-      ),
-      themeMode: _themeMode,
-      // NB: usare SOLO routes['/'] (home + routes['/'] insieme violano
-      // l'assert di MaterialApp e la navigazione pushReplacementNamed('/').
-      routes: {
-        '/': (context) => InitialScreen(
-          onThemeModeChanged: (mode) => setThemeMode(mode),
-          onLocaleChanged: (locale) => setLocale(locale),
-          onFontChanged: (fontFamily, fontSize) => setFont(fontFamily, fontSize),
-        ),
-        '/home': (context) => const HomeScreen(),
-      },
-      builder: (context, child) {
-        return RepaintBoundary(child: child!);
-      },
-    );
   }
 }
 
@@ -760,21 +898,21 @@ class _InitialScreenState extends State<InitialScreen> {
       );
     }
 
-    if (_showLanguageSelection) {
-      return LanguageSelectionScreen(
-        onThemeModeChanged: widget.onThemeModeChanged,
+    if (_showLanguageSelection || _showWarning) {
+      return OnboardingScreen(
         onLocaleChanged: widget.onLocaleChanged,
+        systemInfo: _systemInfo,
+        initialStep: _showLanguageSelection ? 0 : 1,
+        onComplete: () {
+          setState(() {
+            _showLanguageSelection = false;
+            _showWarning = false;
+          });
+          _checkInitialStatus();
+        },
       );
     }
 
-    if (_showWarning) {
-      return WarningScreen(
-        onThemeModeChanged: widget.onThemeModeChanged,
-        onLocaleChanged: widget.onLocaleChanged,
-        systemInfo: _systemInfo,
-      );
-    }
-    
     if (_showPasswordSetup) {
       return PasswordSetupScreen(
         onThemeModeChanged: widget.onThemeModeChanged,

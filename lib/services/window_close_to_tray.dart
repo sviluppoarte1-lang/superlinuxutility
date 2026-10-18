@@ -16,8 +16,13 @@ class _CloseToTrayListener extends WindowListener {
   @override
   void onWindowMinimize() async {
     final prefs = await SharedPreferences.getInstance();
-    final closeToTray = prefs.getBool(TrayService.prefKeyCloseToTray) ?? true;
-    if (closeToTray && TrayService.isInitialized) {
+    // Nasconde nel tray SOLO se l'utente lo ha chiesto esplicitamente
+    // (Impostazioni → Riduci a icona nel tray). Default: comportamento
+    // normale del minimize (resta nella barra delle applicazioni) —
+    // un hide involontario al cambio focus/minimizzazione confonde
+    // durante l'uso normale.
+    final minimizeToTray = prefs.getBool(TrayService.prefKeyMinimizeToTray) ?? false;
+    if (minimizeToTray && TrayService.isInitialized) {
       TrayService.hideWindow();
     }
   }
@@ -37,7 +42,14 @@ Future<void> initWindowCloseToTray() async {
       _listenerAdded = true;
     }
     final startMinimized = prefs.getBool(TrayService.prefKeyStartMinimized) ?? false;
-    if (startMinimized && TrayService.isInitialized) {
+    // Primo avvio (lingua/avviso/password da completare): non nascondere mai,
+    // le schermate di setup devono restare visibili.
+    final languageSelected = prefs.getBool('language_selected') ?? false;
+    final warningAccepted = prefs.getBool('warning_accepted') ?? false;
+    final passwordConfigured = prefs.getBool('password_configured') ?? false;
+    final firstRun =
+        !languageSelected || !warningAccepted || !passwordConfigured;
+    if (startMinimized && !firstRun && TrayService.isInitialized) {
       void doHide() {
         TrayService.hideWindow();
       }

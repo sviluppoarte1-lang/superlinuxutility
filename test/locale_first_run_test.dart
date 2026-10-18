@@ -18,6 +18,26 @@ const Map<String, String> _warningTitleByLang = {
   'pt': 'AVISO',
 };
 
+/// Etichetta del bottone "Avanti" del passo lingua (chiave onboardingContinue).
+const Map<String, String> _continueByLang = {
+  'it': 'Avanti',
+  'en': 'Next',
+  'fr': 'Suivant',
+  'es': 'Siguiente',
+  'de': 'Weiter',
+  'pt': 'Seguinte',
+};
+
+/// Etichetta del bottone di accettazione dei rischi (chiave warningAccept).
+const Map<String, String> _acceptByLang = {
+  'it': 'Ho Capito, Procedi',
+  'en': 'I Understand, Proceed',
+  'fr': "J'ai Compris, Continuer",
+  'es': 'Entendido, Continuar',
+  'de': 'Verstanden, Fortfahren',
+  'pt': 'Entendi, Prosseguir',
+};
+
 /// Preferenze comuni che evitano subprocess/timer inattesi nei test.
 Map<String, Object> _basePrefs({String? locale}) => <String, Object>{
       'theme_mode': 'light',
@@ -64,7 +84,7 @@ String _languageName(String code) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('primo avvio: scegliere inglese applica la lingua',
+  testWidgets('primo avvio: stepper onboarding, inglese applicato subito',
       (tester) async {
     SharedPreferences.setMockInitialValues(_basePrefs());
 
@@ -74,13 +94,11 @@ void main() {
         reason: 'La schermata di scelta lingua deve comparire al primo avvio');
 
     await _tapSafe(tester, find.text('English'));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    await _tapSafe(tester, find.text('Save'));
-    await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
 
+    // La lingua si applica IMMEDIATAMENTE al tap (feedback diretto),
+    // senza bisogno di un bottone Save.
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('locale'), 'en',
         reason: 'La preferenza locale deve essere salvata come "en"');
@@ -90,8 +108,24 @@ void main() {
     expect(app.locale?.languageCode, 'en',
         reason: 'MaterialApp deve ricevere il locale "en"');
 
+    // Avanti → passo 2: avviso rischi già localizzato.
+    await _tapSafe(tester, find.text('Next'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
     expect(find.text('WARNING'), findsOneWidget,
-        reason: 'Lo screen successivo deve mostrare il titolo in inglese');
+        reason: 'Il passo 2 dello stepper è l\'avviso rischi in inglese');
+
+    await _tapSafe(tester, find.text('I Understand, Proceed'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final prefs2 = await SharedPreferences.getInstance();
+    expect(prefs2.getBool('warning_accepted'), isTrue,
+        reason: 'L\'accettazione dell\'avviso chiude l\'onboarding');
+    expect(find.text('Password Configuration'), findsOneWidget,
+        reason: 'Senza password configurata si passa al setup password');
 
     await _teardown(tester);
   });
@@ -106,9 +140,6 @@ void main() {
           reason: 'Primo avvio atteso per la lingua ${entry.key}');
 
       await _tapSafe(tester, find.text(_languageName(entry.key)));
-      await tester.pump(const Duration(milliseconds: 100));
-      await _tapSafe(tester, find.text('Save'));
-      await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -119,8 +150,19 @@ void main() {
       expect(app.locale?.languageCode, entry.key,
           reason: 'MaterialApp deve ricevere il locale "${entry.key}"');
 
+      // Avanti (etichetta localizzata) → passo avviso localizzato.
+      await _tapSafe(tester, find.text(_continueByLang[entry.key]!));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+
       expect(find.text(entry.value), findsOneWidget,
           reason: 'Il titolo di warning deve essere in "${entry.key}"');
+
+      // Chiudi l'onboarding: il passo successivo non deve più essere l'avviso.
+      await _tapSafe(tester, find.text(_acceptByLang[entry.key]!));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(entry.value), findsNothing);
 
       await _teardown(tester);
     }

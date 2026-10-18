@@ -50,6 +50,45 @@ else
 fi
 
 # Funzione per creare il pacchetto Arch
+patch_system_tray_plugin() {
+    # FIX (vedasi build_appimage.sh): dlopen ayatana-first nel plugin system_tray.
+    # Su Arch esiste il VERO libappindicator3.so.1 (libappindicator-gtk3) che,
+    # caricato accanto a libayatana-appindicator3, causa SIGSEGV nel tray.
+    local pub_cache_dir="${PUB_CACHE:-$HOME/.pub-cache}"
+    local f="$pub_cache_dir/hosted/pub.dev/system_tray-2.0.3/linux/tray.cc"
+    [ -f "$f" ] || { echo "⚠️  system_tray tray.cc non trovato: patch saltata"; return 0; }
+    if grep -q 'SLU-AYATANA-FIRST-PATCH' "$f"; then
+        echo "✅ system_tray: patch ayatana-first già presente"
+        return 0
+    fi
+    python3 - "$f" <<'PYEOF' || { echo "❌ system_tray: patch non applicata"; exit 1; }
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = '''    void* handle = dlopen("libappindicator3.so.1", RTLD_LAZY);
+    if (!handle) {
+      break;
+    }
+'''
+new = '''    // SLU-AYATANA-FIRST-PATCH: vedasi build_appimage.sh. Il primo dlopen con
+    // il soname ayatana dedup con il NEEDED gia' caricato dal loader; su host
+    // senza ayatana (fallback) si usa il vecchio nome libappindicator3.so.1.
+    void* handle = dlopen("libayatana-appindicator3.so.1", RTLD_LAZY);
+    if (!handle) {
+      handle = dlopen("libappindicator3.so.1", RTLD_LAZY);
+    }
+    if (!handle) {
+      break;
+    }
+'''
+if old not in s:
+    sys.exit(2)
+open(p, "w").write(s.replace(old, new, 1))
+PYEOF
+    echo "✅ system_tray: patch ayatana-first applicata"
+}
+patch_system_tray_plugin
+
 build_variant() {
     local variant="$1"       # standard, advanced, personal
     local pkg_name="$2"      # nome pacchetto
@@ -58,7 +97,14 @@ build_variant() {
 
     echo ""
     echo "📦 Building $variant version..."
-    flutter build linux --release --dart-define=APP_BUILD="$dart_define"
+    LICENSE_SECRET="$(read_license_secret)"
+    if [ -n "$LICENSE_SECRET" ]; then
+        flutter build linux --release --dart-define=APP_BUILD="$dart_define" \
+            --dart-define=SLU_LICENSE_SECRET="${LICENSE_SECRET}"
+    else
+        echo "⚠️  License secret mancante (~/.config/slu/license_secret): build senza attivazione licenze."
+        flutter build linux --release --dart-define=APP_BUILD="$dart_define"
+    fi
 
     local pkg_dir="${PKG_BASE}_${variant}"
     rm -rf "$pkg_dir"
@@ -75,6 +121,23 @@ build_variant() {
     # Wrapper script
     cat > "$pkg_dir/usr/bin/$pkg_name" << WRAPPER
 #!/bin/bash
+
+# ---- Secret licenza (git-ignored, fuori dal repo) ----
+# Legge $SLU_LICENSE_SECRET_FILE (default: $HOME/.config/slu/license_secret).
+# Il valore viene passato via --dart-define al build: le licenze già vendute
+# restano valide finché il file non cambia. Se manca, il build va avanti SENZA
+# il secret (attivazione impossibile in Advanced) con un warning.
+read_license_secret() {
+    local f="${SLU_LICENSE_SECRET_FILE:-$HOME/.config/slu/license_secret}"
+    if [ -n "${SLU_LICENSE_SECRET:-}" ]; then
+        echo "${SLU_LICENSE_SECRET}"
+    elif [ -f "$f" ]; then
+        tr -d "[:space:]" < "$f"
+    else
+        echo ""
+    fi
+}
+
 exec /usr/share/$pkg_name/super_linux_utility "\$@"
 WRAPPER
     chmod +x "$pkg_dir/usr/bin/$pkg_name"

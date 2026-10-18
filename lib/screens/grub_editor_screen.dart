@@ -429,10 +429,10 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
                 children: [
                   const Icon(Icons.info_outline, color: Colors.orange),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Hai modifiche non salvate. Ricorda di salvare e aggiornare GRUB per applicare le modifiche.',
-                      style: TextStyle(fontSize: 12),
+                      AppLocalizations.of(context)!.grubUnsavedBanner,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ],
@@ -494,8 +494,8 @@ class _GrubEditorScreenState extends State<GrubEditorScreen> {
                         fontFamily: 'monospace',
                         fontSize: 14,
                       ),
-                      decoration: const InputDecoration(
-                        hintText: 'Contenuto del file GRUB...',
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.grubContentHint,
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.all(12),
                       ),

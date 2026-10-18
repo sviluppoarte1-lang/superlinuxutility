@@ -42,45 +42,54 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
       _error = null;
       _apps = [];
       _filteredApps = [];
+      // Invalida la memoizzazione dei filtri: con una ricerca attiva, senza
+      // invalidazione il ricaricamento mostrerebbe la lista non filtrata.
+      _cachedSearchQuery = null;
+      _cachedPackageManager = null;
     });
 
     try {
-      // Carica le app in modo incrementale per mostrare progresso
-      final aptApps = <InstalledApp>[];
-      final snapApps = <InstalledApp>[];
-      final flatpakApps = <InstalledApp>[];
-      final gnomeApps = <InstalledApp>[];
-      
-      // Carica in parallelo
-      await Future.wait([
-        AppManager.getAptApps().then((apps) {
-          aptApps.addAll(apps);
-        }),
-        AppManager.getSnapApps().then((apps) {
-          snapApps.addAll(apps);
-        }),
-        AppManager.getFlatpakApps().then((apps) {
-          flatpakApps.addAll(apps);
-        }),
-        AppManager.getGnomeApps().then((apps) {
-          gnomeApps.addAll(apps);
-        }),
-      ]);
-      
-      final allApps = [...aptApps, ...snapApps, ...flatpakApps, ...gnomeApps];
-      
+      // Carica in parallelo da tutti i gestori; i risultati vengono aggiunti
+      // man mano che arrivano, così il contatore di avanzamento è reale.
+      final loaders = [
+        AppManager.getAptApps(),
+        AppManager.getSnapApps(),
+        AppManager.getFlatpakApps(),
+        AppManager.getGnomeApps(),
+        AppManager.getPacmanApps(),
+        AppManager.getDnfApps(),
+      ].map((future) => future.then((apps) {
+            if (!mounted || apps.isEmpty) return;
+            setState(() => _apps.addAll(apps));
+          }));
+
+      await Future.wait(loaders);
+
+      if (!mounted) return;
       setState(() {
-        _apps = allApps;
-        _filteredApps = allApps;
+        _apps.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        _filteredApps = List.of(_apps);
         _isLoading = false;
       });
       _applyFilters();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
     }
+  }
+
+  /// Testo di avviso per la riga/dialog di rimozione (localizzato).
+  String? _warningText(BuildContext context, InstalledApp app) {
+    final l10n = AppLocalizations.of(context)!;
+    if (app.isSystemPackage) return l10n.installedAppsSystemWarning;
+    if (app.reverseDependencies.isNotEmpty) {
+      return l10n.installedAppsReverseWarning(app.reverseDependencies.length);
+    }
+    return null;
   }
   
   void _applyFilters() {
@@ -152,7 +161,7 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
     
     // Mostra avviso se necessario
     if (!mounted) return;
-    final warning = appWithDeps.warningMessage;
+    final warning = _warningText(context, appWithDeps);
     if (warning != null) {
       final proceed = await showDialog<bool>(
         context: context,
@@ -175,7 +184,8 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
                       child: Text('• $dep'),
                     )),
                 if (appWithDeps.reverseDependencies.length > 5)
-                  Text('... e altri ${appWithDeps.reverseDependencies.length - 5}'),
+                  Text(AppLocalizations.of(context)!.updatesPreviewTruncated(
+                      appWithDeps.reverseDependencies.length - 5)),
               ],
               const SizedBox(height: 16),
               Text(
@@ -252,22 +262,31 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
     );
 
     try {
-      final success = await AppManager.removeApp(appWithDeps);
-      
+      final result = await AppManager.removeApp(appWithDeps);
+
       if (mounted) {
         navigator.pop(); // Chiudi dialog di progresso
-        
+
+        final l10n = AppLocalizations.of(context)!;
+        final success = result.success;
+        final String message;
+        if (result.code == 'no-password') {
+          message = l10n.passwordSetupDesc;
+        } else if (success) {
+          message = l10n.appRemoved(app.name);
+        } else if (result.message != null) {
+          message = '${l10n.errorRemoving}: ${result.message}';
+        } else {
+          message = l10n.errorRemoving;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              success
-                  ? 'App ${app.name} rimossa con successo'
-                  : 'Errore durante la rimozione di ${app.name}',
-            ),
+            content: Text(message),
             backgroundColor: success ? Colors.green : Colors.red,
           ),
         );
-        
+
         if (success) {
           _loadApps();
         }
@@ -275,9 +294,10 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
     } catch (e) {
       if (mounted) {
         navigator.pop(); // Chiudi dialog di progresso
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text('${l10n.errorRemoving}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -295,6 +315,10 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
         return 'Flatpak';
       case PackageManager.gnome:
         return 'GNOME';
+      case PackageManager.pacman:
+        return 'Pacman';
+      case PackageManager.dnf:
+        return 'DNF';
     }
   }
 
@@ -308,6 +332,10 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
         return Icons.apps;
       case PackageManager.gnome:
         return Icons.desktop_windows;
+      case PackageManager.pacman:
+        return Icons.architecture;
+      case PackageManager.dnf:
+        return Icons.inventory_2;
     }
   }
 
@@ -426,7 +454,8 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
                     const CircularProgressIndicator(),
                     const SizedBox(height: 16),
                     Text(
-                      'Caricamento app installate...\n${_apps.length} app trovate',
+                      AppLocalizations.of(context)!
+                          .installedAppsLoading(_apps.length),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[600]),
                     ),
@@ -442,6 +471,7 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
                       itemCount: _filteredApps.length,
                       itemBuilder: (context, index) {
                         final app = _filteredApps[index];
+                        final warning = _warningText(context, app);
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -468,12 +498,15 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
                                 if (app.description != null && app.description!.isNotEmpty)
                                   Text(app.description!),
                                 Text(
-                                  'Gestore: ${_getPackageManagerName(app.packageManager)}',
+                                  AppLocalizations.of(context)!
+                                      .installedAppsManagedBy(
+                                          _getPackageManagerName(
+                                              app.packageManager)),
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                   ),
                                 ),
-                                if (!app.canSafelyRemove && app.warningMessage != null)
+                                if (!app.canSafelyRemove && warning != null)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 8),
                                     child: Container(
@@ -493,7 +526,7 @@ class _InstalledAppsScreenState extends State<InstalledAppsScreen> {
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              app.warningMessage!,
+                                              warning,
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.orange,

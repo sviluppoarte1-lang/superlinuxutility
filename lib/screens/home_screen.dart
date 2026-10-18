@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'package:super_linux_utility/config/app_build.dart';
@@ -39,6 +40,7 @@ import '../utils/update_preview_helper.dart';
 import '../widgets/updates_apply_progress_view.dart';
 import '../widgets/tab_page_no_keep_alive.dart';
 import '../widgets/feature_icon.dart';
+import '../widgets/global_search_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(ThemeMode)? onThemeModeChanged;
@@ -56,6 +58,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isAdvancedMode = false;
   bool _isLoading = true;
   bool _licenseActivated = false;
+
+  /// True se sul sistema esiste una batteria (sysfs). Tab Batteria nascosto
+  /// sui desktop senza alimentatore di tipo Battery (detection sincrona e
+  /// economica su /sys/class/power_supply, fatta in _initializeController).
+  /// Default true: finché detection non può dire altro, non nascondere.
+  bool _hasBattery = true;
   Timer? _updateCheckTimer;
   Timer? _updateCheckInitialTimer;
   Timer? _ramCleanupTimer;
@@ -65,8 +73,62 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   static const int _defaultUpdateCheckMinutes = 60;
   /// Dopo un check fallito riprova dopo questi minuti (non a fine intervallo).
   static const int _failedCheckRetryMinutes = 10;
-  static const int _standardTabCount = 14;
-  static const int _advancedTabCount = 15;
+
+  /// Ordine dei tab: deve corrispondere alla sequenza storica della sidebar
+  /// (0..9 base, grub solo advanced, battery, tweaks, settings, info). Le
+  /// costanti icona sono definite più in basso nella stessa classe.
+  static const List<_TabSpec> _allTabSpecs = [
+    _TabSpec('services', _servicesIcon, [
+      'services', 'systemd', 'unit', 'daemon', 'management', 'restart',
+    ]),
+    _TabSpec('startup', _startupAppsIcon, [
+      'startup', 'autostart', 'boot', 'cron', 'rc.local', 'launcher',
+    ]),
+    _TabSpec('cleanup', _cleanupIcon, [
+      'cleanup', 'cache', 'temporary', 'temp files', 'trash', 'ram',
+    ]),
+    _TabSpec('installed', _installedAppsIcon, [
+      'installed', 'apps', 'packages', 'software', 'uninstall', 'remove',
+      'flatpak', 'snap', 'apt', 'dnf', 'pacman',
+    ]),
+    _TabSpec('monitor', _monitorIcon, [
+      'monitor', 'performance', 'cpu', 'gpu', 'ram', 'memory', 'temperature',
+      'processes', 'task manager', 'usage', 'wayland', 'x11',
+    ]),
+    _TabSpec('diskAnalyzer', _diskAnalyzerIcon, [
+      'disk', 'analyzer', 'storage', 'space', 'usage', 'directories',
+    ]),
+    _TabSpec('smart', _smartIcon, [
+      'smart', 'disk health', 'ssd', 'hdd', 'nvme', 'bad sectors',
+    ]),
+    _TabSpec('deviceManager', _deviceManagerIcon, [
+      'device', 'usb', 'pci', 'bluetooth', 'peripherals', 'hardware',
+    ]),
+    _TabSpec('driverManager', _driverManagerIcon, [
+      'driver', 'nvidia', 'firmware', 'kernel modules', 'pci ids',
+    ]),
+    _TabSpec('recovery', _recoveryIcon, [
+      'recovery', 'repositories', 'security', 'software installer',
+      'operation history', 'rescue', 'fix',
+    ]),
+    _TabSpec('grub', _grubIcon, [
+      'grub', 'bootloader', 'kernel parameters', 'boot menu', 'double boot',
+      'advanced',
+    ], advancedOnly: true),
+    _TabSpec('battery', _batteryIcon, [
+      'battery', 'charge limit', 'power profile', 'battery health', 'laptop',
+    ], needsBattery: true),
+    _TabSpec('tweaks', _tweaksIcon, [
+      'tweaks', 'kernel', 'zram', 'swap', 'optimization', 'hugepages',
+      'sysctl', 'benchmark',
+    ]),
+    _TabSpec('settings', _settingsIcon, [
+      'settings', 'preferences', 'language', 'password', 'tray', 'themes',
+    ]),
+    _TabSpec('info', _infoIcon, [
+      'info', 'about', 'license', 'version', 'changelog', 'help',
+    ]),
+  ];
 
   @override
   void initState() {
@@ -293,16 +355,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       onShowMainWindow: () => TrayService.showWindow(),
       onCheckUpdates: () => TrayService.launchStandaloneProcess(['--check-updates']),
       onShowCheckUpdatesDialog: () => TrayService.launchStandaloneProcess(['--check-updates']),
-      onCleanTempFiles: () => _goToTab(2),
+      onCleanTempFiles: () => _goToTabKey('cleanup'),
       onShowCleanCacheDialog: () => _showTrayCleanCacheDialog(),
-      onShowCpuGpuTemp: () => _goToTab(4),
-      onShowDiskUsage: () => _goToTab(5),
-      onShowSmartHealth: () => _goToTab(6),
+      onShowCpuGpuTemp: () => _goToTabKey('monitor'),
+      onShowDiskUsage: () => _goToTabKey('diskAnalyzer'),
+      onShowSmartHealth: () => _goToTabKey('smart'),
       onShowTaskManagerDialog: () => TrayService.launchStandaloneProcess(['--task-manager']),
       onShowShutdownTimerDialog: () => _showTrayShutdownTimerDialog(),
-      onShowCpuGpuUsage: () => _goToTab(4),
+      onShowCpuGpuUsage: () => _goToTabKey('monitor'),
       onShowClipboard: () => TrayService.launchStandaloneProcess(['--clipboard']),
-      onShowBattery: () => _goToBatteryTab(),
+      onShowBattery: () => _goToTabKey('battery'),
       onShowSettings: () => _goToSettingsTab(),
       showSnackbar: (msg) {
         if (mounted) {
@@ -313,18 +375,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _goToSettingsTab() {
-    final count = _tabController?.length ?? 0;
-    if (count >= 2) {
-      _goToTab(count - 2);
-    } else {
-      _goToTab(0);
-    }
-  }
-
-  /// Scheda Batteria: indice 9 in standard, 10 in advanced (Grub
-  /// occupa indice 9 in advanced).
-  void _goToBatteryTab() {
-    _goToTab(_isAdvancedMode ? 10 : 9);
+    _goToTabKey('settings');
   }
 
   void _showTrayCheckUpdatesDialog() {
@@ -343,11 +394,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _checkGitHubUpdateInBackground() async {
     final updateInfo = await AppSelfUpdateService.checkForUpdate();
     if (!mounted || updateInfo == null) return;
-    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('New version ${updateInfo["latestVersion"]} available!'),
-        action: SnackBarAction(label: 'Update', onPressed: () {
+        content: Text(l10n.homeNewVersionAvailable(updateInfo["latestVersion"].toString())),
+        action: SnackBarAction(label: l10n.homeUpdateAction, onPressed: () {
           showDialog<bool>(
             context: context,
             barrierDismissible: false,
@@ -375,17 +426,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _showTrayTaskManagerDialog() {
+  /// SINGLE SOURCE OF TRUTH highlight sidebar: la UI si ricompila a ogni
+  /// cambio tab (animateTo, tap sulla sidebar, reset da tray/password).
+  void _onTabIndexChanged() {
     if (!mounted) return;
-    TrayService.showWindow();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      showDialog<void>(
-        context: context,
-        barrierColor: Colors.transparent,
-        builder: (ctx) => const TrayTaskManagerDialog(),
-      );
-    });
+    // during animation indexIsChanging salta al valore finale; ricostruire
+    // solo quando l'indice si è realmente stabilizzato evita rebuild extra.
+    if (_tabController != null && !_tabController!.indexIsChanging) {
+      setState(() {});
+    }
   }
 
   void _goToTab(int index) {
@@ -393,6 +442,135 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (_tabController != null && index < _tabController!.length) {
       _tabController!.animateTo(index);
     }
+  }
+
+  /// Tab visibili per la modalità corrente: advanced-only (Grub) solo in
+  /// modalità advanced, NeedsBattery (Batteria) solo se c'è una batteria.
+  List<_TabSpec> _visibleSpecs({required bool advanced}) {
+    return _allTabSpecs
+        .where((s) => !s.advancedOnly || advanced)
+        .where((s) => !s.needsBattery || _hasBattery)
+        .toList();
+  }
+
+  Widget _viewForSpec(_TabSpec s) {
+    switch (s.key) {
+      case 'services':
+        return const ServicesScreen();
+      case 'startup':
+        return const StartupAppsScreen();
+      case 'cleanup':
+        return const CleanupScreen();
+      case 'installed':
+        return const InstalledAppsScreen();
+      case 'monitor':
+        return const SystemMonitorScreen();
+      case 'diskAnalyzer':
+        return const DiskAnalyzerScreen();
+      case 'smart':
+        return const SmartMonitorScreen();
+      case 'deviceManager':
+        return const DeviceManagerScreen();
+      case 'driverManager':
+        return const DriverManagerScreen();
+      case 'recovery':
+        return const RecoveryScreen();
+      case 'grub':
+        return const GrubEditorScreen();
+      case 'battery':
+        return const BatteryScreen();
+      case 'tweaks':
+        return TweaksScreen(isAdvanced: _isAdvancedMode);
+      case 'settings':
+        return SettingsScreen(
+          onThemeModeChanged: widget.onThemeModeChanged,
+          onLocaleChanged: _handleLocaleChanged,
+          onFontChanged: widget.onFontChanged,
+          onUpdateCheckPolicyChanged: _startUpdateCheckTimer,
+          onRamCleanupPolicyChanged: _startRamCleanupTimer,
+        );
+      case 'info':
+        return InfoScreen(
+          onLicenseActivated: isAdvancedBuild ? _initializeController : null,
+        );
+    }
+    throw StateError('Tab sconosciuto: ${s.key}');
+  }
+
+  /// Etichetta localizzata del tab. Unica fonte per sidebar e ricerca
+  /// globale (una sola traduzione per chiave).
+  String _tabLabel(String key, AppLocalizations l10n) {
+    switch (key) {
+      case 'services':
+        return l10n.tabServices;
+      case 'startup':
+        return l10n.tabStartupApps;
+      case 'cleanup':
+        return l10n.tabCleanup;
+      case 'installed':
+        return l10n.tabInstalledApps;
+      case 'monitor':
+        return l10n.tabMonitor;
+      case 'diskAnalyzer':
+        return l10n.tabDiskAnalyzer;
+      case 'smart':
+        return l10n.tabSmart;
+      case 'deviceManager':
+        return l10n.tabDeviceManager;
+      case 'driverManager':
+        return l10n.tabDriverManager;
+      case 'recovery':
+        return l10n.tabRecovery;
+      case 'grub':
+        return l10n.tabGrub;
+      case 'battery':
+        return l10n.tabBattery;
+      case 'tweaks':
+        return l10n.tabTweaks;
+      case 'settings':
+        return l10n.tabSettings;
+      case 'info':
+        return l10n.tabInfo;
+    }
+    return key;
+  }
+
+  /// Navigazione programmatica a un tab per CHIAVE stabile (non indice):
+  /// gli indici suntano se un tab è nascosto (es. Batteria assente).
+  void _goToTabKey(String key) {
+    if (_tabController == null) return;
+    final specs = _visibleSpecs(advanced: _isAdvancedMode);
+    var index = specs.indexWhere((s) => s.key == key);
+    if (index < 0 && key == 'battery') {
+      // Desktop senza batteria: il tab Batteria non esisterà → Monitor.
+      index = specs.indexWhere((s) => s.key == 'monitor');
+    }
+    if (index >= 0) {
+      _goToTab(index);
+    }
+  }
+
+  /// Ricerca globale (Ctrl+K o icona lente in AppBar): dialog con filtro
+  /// sui tab dell'app; il risultato riporta la chiave di navigazione.
+  void _openGlobalSearch() {
+    final l10n = AppLocalizations.of(context)!;
+    final entries = _visibleSpecs(advanced: _isAdvancedMode)
+        .map((s) => TabSearchEntry(
+              s.key,
+              _tabLabel(s.key, l10n),
+              s.icon.icon,
+              s.icon.color,
+              s.keywords,
+            ))
+        .toList();
+    showDialog<String>(
+      context: context,
+      builder: (ctx) => GlobalSearchDialog(entries: entries),
+    ).then((key) {
+      if (key != null && mounted) {
+        _goToTabKey(key);
+      }
+    });
   }
 
   Future<void> _initializeController() async {
@@ -409,11 +587,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _licenseActivated = await isActivated();
       effectiveAdvanced = _licenseActivated && (prefs.getBool('advancedMode') ?? false);
     }
-    final tabCount = effectiveAdvanced ? _advancedTabCount : _standardTabCount;
+    _hasBattery = BatteryService.hasBatteryDevice();
+    final tabCount = _visibleSpecs(advanced: effectiveAdvanced).length;
     _tabController = TabController(
       length: tabCount,
       vsync: this,
     );
+    _tabController!.addListener(_onTabIndexChanged);
+    // aggiorna subito l'highlight sidebar sulla pagina iniziale corretta
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
     setState(() {
       _isAdvancedMode = effectiveAdvanced;
       _isLoading = false;
@@ -439,12 +623,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final currentIndex = _tabController?.index ?? 0;
     _tabController?.dispose();
     
-    final tabCount = advanced ? _advancedTabCount : _standardTabCount;
+    final tabCount = _visibleSpecs(advanced: advanced).length;
     _tabController = TabController(
       length: tabCount,
       vsync: this,
       initialIndex: currentIndex < tabCount ? currentIndex : 0,
     );
+    _tabController!.addListener(_onTabIndexChanged);
     setState(() {
       _isAdvancedMode = advanced;
     });
@@ -513,66 +698,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   );
 
   List<Widget> _buildTabViews() {
-    Widget page(Widget child) => TabPageNoKeepAlive(child: child);
-
-    final views = <Widget>[
-      page(const ServicesScreen()),
-      page(const StartupAppsScreen()),
-      page(const CleanupScreen()),
-      page(const InstalledAppsScreen()),
-      page(const SystemMonitorScreen()),
-      page(const DiskAnalyzerScreen()),
-      page(const SmartMonitorScreen()),
-      page(const DeviceManagerScreen()),
-      page(const DriverManagerScreen()),
-      page(const RecoveryScreen()),
-      page(const BatteryScreen()),
-    ];
-
-    if (_isAdvancedMode) {
-      views.insert(9, page(const GrubEditorScreen()));
-    }
-
-    views.add(page(TweaksScreen(isAdvanced: _isAdvancedMode)));
-    views.add(page(SettingsScreen(
-      onThemeModeChanged: widget.onThemeModeChanged,
-      onLocaleChanged: _handleLocaleChanged,
-      onFontChanged: widget.onFontChanged,
-      onUpdateCheckPolicyChanged: _startUpdateCheckTimer,
-      onRamCleanupPolicyChanged: _startRamCleanupTimer,
-    )));
-    views.add(page(InfoScreen(
-      onLicenseActivated: isAdvancedBuild ? _initializeController : null,
-    )));
-
-    return views;
+    return _visibleSpecs(advanced: _isAdvancedMode)
+        .map((s) => TabPageNoKeepAlive(child: _viewForSpec(s)))
+        .toList();
   }
 
   List<_NavEntry> _navEntries() {
     final l10n = AppLocalizations.of(context)!;
-    final entries = <_NavEntry>[
-      _NavEntry(_servicesIcon, l10n.tabServices),
-      _NavEntry(_startupAppsIcon, l10n.tabStartupApps),
-      _NavEntry(_cleanupIcon, l10n.tabCleanup),
-      _NavEntry(_installedAppsIcon, l10n.tabInstalledApps),
-      _NavEntry(_monitorIcon, l10n.tabMonitor),
-      _NavEntry(_diskAnalyzerIcon, l10n.tabDiskAnalyzer),
-      _NavEntry(_smartIcon, l10n.tabSmart),
-      _NavEntry(_deviceManagerIcon, l10n.tabDeviceManager),
-      _NavEntry(_driverManagerIcon, l10n.tabDriverManager),
-      _NavEntry(_recoveryIcon, l10n.tabRecovery),
-      _NavEntry(_batteryIcon, l10n.tabBattery),
-    ];
-
-    if (_isAdvancedMode) {
-      entries.insert(9, _NavEntry(_grubIcon, l10n.tabGrub));
-    }
-
-    entries.add(_NavEntry(_tweaksIcon, l10n.tabTweaks));
-    entries.add(_NavEntry(_settingsIcon, l10n.tabSettings));
-    entries.add(_NavEntry(_infoIcon, l10n.tabInfo));
-
-    return entries;
+    return _visibleSpecs(advanced: _isAdvancedMode)
+        .map((s) => _NavEntry(s.icon, _tabLabel(s.key, l10n)))
+        .toList();
   }
 
   Widget _buildSidebar() {
@@ -650,11 +785,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       );
     }
 
-    return Scaffold(
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true):
+            _openGlobalSearch,
+        const SingleActivator(LogicalKeyboardKey.keyK, meta: true):
+            _openGlobalSearch,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.appTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Ctrl+K',
+            onPressed: _openGlobalSearch,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Row(
@@ -731,7 +880,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
-      body: Row(
+        body: Row(
         children: [
           _buildSidebar(),
           Expanded(
@@ -742,6 +891,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 }
@@ -750,6 +901,24 @@ class _NavEntry {
   final FeatureIconData icon;
   final String label;
   const _NavEntry(this.icon, this.label);
+}
+
+/// Specifica di un tab: chiave stabile usata per sidebar, viste, ricerca
+/// globale e navigazione programmatica. L'indice posizionale non è più
+/// fonte di verità ( cambia se un tab è nascosto, es. Batteria assente).
+class _TabSpec {
+  final String key;
+  final FeatureIconData icon;
+  final List<String> keywords;
+  final bool advancedOnly;
+  final bool needsBattery;
+  const _TabSpec(
+    this.key,
+    this.icon,
+    this.keywords, {
+    this.advancedOnly = false,
+    this.needsBattery = false,
+  });
 }
 
 class TrayCheckUpdatesDialog extends StatefulWidget {
@@ -783,7 +952,11 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
       _loading = false;
       _initSelection();
     } else {
-      _runCheck();
+      // NB: AppLocalizations.of(context) non è legale in initState →
+      // esegui la check dopo il primo frame (localizzazioni pronte).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _runCheck();
+      });
     }
   }
 
@@ -811,10 +984,12 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
   }
 
   Future<void> _runCheck() async {
-    setState(() => _checkStatus = 'Restoring repositories...');
+    setState(() => _checkStatus = AppLocalizations.of(context)!.homeRestoringRepositories);
     // Run check asynchronously: update status while waiting
     Future.delayed(const Duration(milliseconds: 50)).then((_) {
-      if (mounted) setState(() => _checkStatus = 'Checking for updates...');
+      if (mounted) {
+        setState(() => _checkStatus = AppLocalizations.of(context)!.homeCheckingUpdates);
+      }
     });
     final result = await RecoveryService.checkForUpdates();
     if (mounted) {
@@ -1095,10 +1270,9 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
                                     showDialog<bool>(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
-                                        title: const Text('Aggiornamento kernel'),
-                                        content: const Text(
-                                          'L\'aggiornamento del kernel richiede un riavvio del sistema. '
-                                          'Proseguire?',
+                                        title: Text(AppLocalizations.of(context)!.homeKernelUpdateTitle),
+                                        content: Text(
+                                          AppLocalizations.of(context)!.homeKernelUpdateBody,
                                         ),
                                         actions: [
                                           TextButton(

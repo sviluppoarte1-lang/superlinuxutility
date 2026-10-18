@@ -434,9 +434,11 @@ class _CleanupScreenState extends State<CleanupScreen> {
         _devCaches = dev;
         _devLoaded = true;
         _devLoading = false;
-        // Seleziona tutto di default (tranne kernel: prudenza).
+        // Seleziona tutto di default (tranne kernel e CUDA duplicate:
+        // operazioni più delicate, scelte esplicitamente).
         _devSelected = dev
-            .where((d) => d.id != 'kernel-headers')
+            .where((d) =>
+                d.id != 'kernel-headers' && d.id != 'cuda-dup')
             .map((d) => d.id)
             .toSet();
         _journalBytes = jb;
@@ -535,6 +537,20 @@ class _CleanupScreenState extends State<CleanupScreen> {
         return l10n.devDocker;
       case 'kernel-headers':
         return l10n.devKernelHeaders;
+      case 'pkg-cache':
+        return l10n.devPkgCache;
+      case 'electron-cache':
+        return l10n.devElectronCache;
+      case 'opencode-data':
+        return l10n.devOpencodeData;
+      case 'cuda-repo':
+        return l10n.devCudaRepo;
+      case 'cuda-dup':
+        return l10n.devCudaDup;
+      case 'snap-old':
+        return l10n.devSnapOld;
+      case 'flatpak-unused':
+        return l10n.devFlatpakUnused;
       default:
         return id;
     }
@@ -556,6 +572,20 @@ class _CleanupScreenState extends State<CleanupScreen> {
         return Colors.indigo;
       case 'kernel-headers':
         return Colors.purple;
+      case 'pkg-cache':
+        return Colors.deepOrange;
+      case 'electron-cache':
+        return Colors.blueGrey;
+      case 'opencode-data':
+        return Colors.teal;
+      case 'cuda-repo':
+        return Colors.amber;
+      case 'cuda-dup':
+        return Colors.pink;
+      case 'snap-old':
+        return Colors.lightBlue;
+      case 'flatpak-unused':
+        return Colors.orange;
       default:
         return Colors.grey;
     }
@@ -577,6 +607,20 @@ class _CleanupScreenState extends State<CleanupScreen> {
         return Icons.inventory;
       case 'kernel-headers':
         return Icons.memory;
+      case 'pkg-cache':
+        return Icons.get_app;
+      case 'electron-cache':
+        return Icons.web_asset;
+      case 'opencode-data':
+        return Icons.terminal;
+      case 'cuda-repo':
+        return Icons.save_alt;
+      case 'cuda-dup':
+        return Icons.copy_all;
+      case 'snap-old':
+        return Icons.archive;
+      case 'flatpak-unused':
+        return Icons.delete_sweep;
       default:
         return Icons.folder;
     }
@@ -585,7 +629,13 @@ class _CleanupScreenState extends State<CleanupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
+      // TUTTA la pagina scorre in una sola ListView ⇒ una sola scrollbar
+      // (sempre visibile su Linux grazie al scrollbarTheme globale).
+      // Prima testata/card/errore erano sezioni fisse in una Column: con
+      // il tile "Pulizia avanzata" aperto il layout traboccava e ritagliava
+      // la lista file temporanei e i pulsanti sotto (irraggiungibili).
+      body: ListView(
+        padding: EdgeInsets.zero,
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1028,172 +1078,165 @@ class _CleanupScreenState extends State<CleanupScreen> {
               ),
             ),
           if (_isLoading || _isCleaning)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: CircularProgressIndicator(),
-              ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(child: CircularProgressIndicator()),
             )
-          else
-            Expanded(
-              child: Column(
-                children: [
-                  if (_sizes.isNotEmpty)
-                    Card(
-                      margin: const EdgeInsets.all(16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.totalSpaceToFree,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              CleanupService.formatSize(_getTotalSize()),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange,
-                              ),
-                            ),
-                          ],
+          else ...[
+            if (_sizes.isNotEmpty)
+              Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.totalSpaceToFree,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _sizes.length,
-                      itemBuilder: (context, index) {
-                        final entry = _sizes.entries.elementAt(index);
-                        final path = entry.key;
-                        final size = entry.value;
-                        
-                        // Formatta il path per la visualizzazione
-                        String displayPath = path.replaceAll(
-                          RegExp(r'^/home/[^/]+'),
-                          '~',
-                        );
-                        
-                        // Estrai il nome dell'app se possibile
-                        String? appName;
-                        if (path.contains('/.cache/') || path.contains('/.config/')) {
-                          final parts = path.split('/');
-                          for (var i = 0; i < parts.length; i++) {
-                            if (parts[i] == '.cache' || parts[i] == '.config') {
-                              if (i + 1 < parts.length) {
-                                appName = parts[i + 1];
-                                // Rimuovi prefissi comuni
-                                appName = appName
-                                    .replaceAll('google-', '')
-                                    .replaceAll('microsoft-', '')
-                                    .replaceAll('-cache', '')
-                                    .replaceAll('cache', '');
-                                break;
-                              }
-                            }
-                          }
-                        }
-                        
-                        // Usa il nome dell'app se disponibile, altrimenti il path
-                        if (appName != null && appName.isNotEmpty) {
-                          displayPath = appName;
-                        }
-
-                        final cleanupResult = _cleanupResults?[path];
-
-                        final isExcluded = _excludedPaths.contains(path);
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          color: isExcluded 
-                              ? Theme.of(context).colorScheme.surfaceContainerHighest
-                              : null,
-                          child: ListTile(
-                            leading: Icon(
-                              cleanupResult == null
-                                  ? Icons.folder
-                                  : cleanupResult
-                                      ? Icons.check_circle
-                                      : Icons.error,
-                              color: cleanupResult == null
-                                  ? (isExcluded ? Colors.grey : Colors.blue)
-                                  : cleanupResult
-                                      ? Colors.green
-                                      : Colors.red,
-                            ),
-                            title: Text(
-                              displayPath,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                decoration: isExcluded ? TextDecoration.lineThrough : null,
-                                color: isExcluded 
-                                    ? Theme.of(context).textTheme.bodySmall?.color
-                                    : null,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${AppLocalizations.of(context)!.size}: ${CleanupService.formatSize(size)}',
-                                ),
-                                if (isExcluded)
-                                  Text(
-                                    AppLocalizations.of(context)!.excluded,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    isExcluded ? Icons.check_circle : Icons.radio_button_unchecked,
-                                    color: isExcluded 
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context).iconTheme.color?.withOpacity(0.6),
-                                    size: 24,
-                                  ),
-                                  onPressed: () => _toggleExclude(path),
-                                  tooltip: isExcluded 
-                                      ? AppLocalizations.of(context)!.include
-                                      : AppLocalizations.of(context)!.exclude,
-                                ),
-                                if (cleanupResult != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 8.0),
-                                    child: Icon(
-                                      cleanupResult
-                                          ? Icons.check
-                                          : Icons.close,
-                                      color: cleanupResult
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                      Text(
+                        CleanupService.formatSize(_getTotalSize()),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ..._sizes.entries.map((e) => _buildSizeEntry(context, e)),
+          ],
         ],
+      ),
+    );
+  }
+
+  /// Riga della lista dei file temporanei (path, dimensione, esclusione
+  /// ed esito della pulizia). Estratta da `itemBuilder`: la sezione ora
+  /// vive dentro la ListView della pagina, quindi gli elementi vengono
+  /// costruiti in modo eager.
+  Widget _buildSizeEntry(BuildContext context, MapEntry<String, int> entry) {
+    final path = entry.key;
+    final size = entry.value;
+
+    // Formatta il path per la visualizzazione
+    String displayPath = path.replaceAll(
+      RegExp(r'^/home/[^/]+'),
+      '~',
+    );
+
+    // Estrai il nome dell'app se possibile
+    String? appName;
+    if (path.contains('/.cache/') || path.contains('/.config/')) {
+      final parts = path.split('/');
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i] == '.cache' || parts[i] == '.config') {
+          if (i + 1 < parts.length) {
+            appName = parts[i + 1];
+            // Rimuovi prefissi comuni
+            appName = appName
+                .replaceAll('google-', '')
+                .replaceAll('microsoft-', '')
+                .replaceAll('-cache', '')
+                .replaceAll('cache', '');
+            break;
+          }
+        }
+      }
+    }
+
+    // Usa il nome dell'app se disponibile, altrimenti il path
+    if (appName != null && appName.isNotEmpty) {
+      displayPath = appName;
+    }
+
+    final cleanupResult = _cleanupResults?[path];
+
+    final isExcluded = _excludedPaths.contains(path);
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      color: isExcluded 
+          ? Theme.of(context).colorScheme.surfaceContainerHighest
+          : null,
+      child: ListTile(
+        leading: Icon(
+          cleanupResult == null
+              ? Icons.folder
+              : cleanupResult
+                  ? Icons.check_circle
+                  : Icons.error,
+          color: cleanupResult == null
+              ? (isExcluded ? Colors.grey : Colors.blue)
+              : cleanupResult
+                  ? Colors.green
+                  : Colors.red,
+        ),
+        title: Text(
+          displayPath,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            decoration: isExcluded ? TextDecoration.lineThrough : null,
+            color: isExcluded 
+                ? Theme.of(context).textTheme.bodySmall?.color
+                : null,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${AppLocalizations.of(context)!.size}: ${CleanupService.formatSize(size)}',
+            ),
+            if (isExcluded)
+              Text(
+                AppLocalizations.of(context)!.excluded,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.primary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(
+                isExcluded ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: isExcluded 
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).iconTheme.color?.withOpacity(0.6),
+                size: 24,
+              ),
+              onPressed: () => _toggleExclude(path),
+              tooltip: isExcluded 
+                  ? AppLocalizations.of(context)!.include
+                  : AppLocalizations.of(context)!.exclude,
+            ),
+            if (cleanupResult != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Icon(
+                  cleanupResult
+                      ? Icons.check
+                      : Icons.close,
+                  color: cleanupResult
+                      ? Colors.green
+                      : Colors.red,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

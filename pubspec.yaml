@@ -38,6 +38,7 @@ dependencies:
   process_run: ^1.3.1+1
   path: ^1.8.0
   shared_preferences: ^2.2.2
+  flutter_secure_storage: ^10.0.0
   intl: ^0.20.2
   file_picker: ^10.3.10
   package_info_plus: ^9.0.0

@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'password_storage.dart';
 
 /// Snapshot dei valori di RAM letti da /proc/meminfo.
@@ -104,7 +105,7 @@ class RamCleanupService {
       );
     } catch (_) {
       try {
-        final result = await Process.run('bash', ['-c', 'LANG=C free -b']);
+        final result = await runProcess('bash', ['-c', 'LANG=C free -b'], timeout: const Duration(seconds: 30));
         final output = result.stdout.toString();
         int totalB = 0, usedB = 0, freeB = 0, availB = 0, cacheB = 0,
             swapTB = 0, swapUB = 0;
@@ -172,7 +173,7 @@ class RamCleanupService {
         .replaceAll("'", r"\'");
     final fullCommand =
         'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(command)} 2>&1';
-    return Process.run('bash', ['-c', fullCommand], runInShell: true);
+    return runProcess('bash', ['-c', fullCommand], runInShell: true, timeout: const Duration(seconds: 180));
   }
 
   static String shellQuote(String s) {
@@ -181,7 +182,7 @@ class RamCleanupService {
   }
 
   static Future<ProcessResult> _run(String command) =>
-      Process.run('bash', ['-c', command], runInShell: false);
+      runProcess('bash', ['-c', command], runInShell: false, timeout: const Duration(seconds: 30));
 
   /// Esegue la pulizia della RAM (solo drop_caches + riciclo swap).
   /// NON tocca servizi di sistema né file temporanei.
@@ -218,19 +219,24 @@ class RamCleanupService {
       }
 
       // 3) Riciclo dello swap: libera la RAM usata da dati inattivi.
-      //    Preserva zram: se attivo prima del cleanup, viene riattivato dopo.
+      //    Preserva zram: `swapon -a` riattiva SOLO i device elencati in
+      //    /etc/fstab, quindi ogni device attivo (zram incluso) va riattivato
+      //    esplicitamente dopo lo swapoff.
       try {
-        // Detect zram prima di swapoff
-        bool zramWasActive = false;
-        try {
-          final zramCheck = await _run('swapon --show=NAME --noheadings 2>/dev/null');
-          zramWasActive = (zramCheck.stdout as String).trim().contains('zram');
-        } catch (_) {}
+        // Device swap attivi PRIMA dello swapoff.
+        final beforeR =
+            await _run('swapon --show=NAME --noheadings 2>/dev/null');
+        final beforeDevs = (beforeR.stdout as String)
+            .split('\n')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+        bool zramWasActive = beforeDevs.any((d) => d.contains('zram'));
 
         final swapStats = await _run(r"free -b | awk '/Swap/ {print $2, $3}'");
         final swapParts = swapStats.stdout.toString().trim().split(RegExp(r'\s+'));
         final swapUsed = swapParts.length >= 2 ? int.tryParse(swapParts[1]) ?? 0 : 0;
-        if (swapUsed > 0 || zramWasActive) {
+        if (swapUsed > 0 || zramWasActive || beforeDevs.isNotEmpty) {
           final result = hasSudo
               ? await _runSudoCommand('swapoff -a 2>&1 && swapon -a 2>&1')
               : await _run('swapoff -a 2>&1 && swapon -a 2>&1');
@@ -247,18 +253,68 @@ class RamCleanupService {
             }
           }
 
-          // Riattiva zram se era attivo prima del cleanup
-          if (zramWasActive) {
+          // Riattiva i device non tornati da `swapon -a`. zram non compare in
+          // /etc/fstab: senza questo passaggio ogni cleanup (anche automatico)
+          // spegnerebbe zram fino al reboot, facendo credere che il servizio
+          // non si avvii più all'avvio del PC.
+          if (beforeDevs.isNotEmpty) {
             try {
-              final zramNow = await _run('swapon --show=NAME --noheadings 2>/dev/null');
-              final stillActive = (zramNow.stdout as String).trim().contains('zram');
-              if (!stillActive) {
+              final nowR =
+                  await _run('swapon --show=NAME --noheadings 2>/dev/null');
+              final nowDevs = (nowR.stdout as String)
+                  .split('\n')
+                  .map((s) => s.trim())
+                  .where((s) => s.isNotEmpty)
+                  .toSet();
+              final missing =
+                  beforeDevs.where((d) => !nowDevs.contains(d)).toList();
+              if (missing.isNotEmpty) {
+                final names = missing.join(' ');
+                final restoreCmd = 'for d in $names; do '
+                    'case "\$d" in '
+                    '*zram*) swapon -p 100 "\$d" 2>/dev/null || '
+                    '{ mkswap "\$d" 2>/dev/null && swapon -p 100 "\$d" 2>/dev/null; } ;; '
+                    '*) swapon "\$d" 2>/dev/null || '
+                    '{ mkswap "\$d" 2>/dev/null && swapon "\$d" 2>/dev/null; } ;; '
+                    'esac; done';
                 if (hasSudo) {
-                  await _runSudoCommand('systemctl start zramswap 2>/dev/null || true');
+                  await _runSudoCommand(restoreCmd);
                 } else {
-                  await _run('systemctl start zramswap 2>/dev/null || true');
+                  await _run(restoreCmd);
                 }
-                stepsDone.add('zram restored');
+                // Fallback zram: riavvia il servizio. NB: «systemctl start» è
+                // un no-op se il unit è già "active (exited)" (il caso tipico
+                // di zramswap): serve RESTART, altrimenti zram resta spento.
+                if (zramWasActive) {
+                  final check = await _run(
+                      'swapon --show=NAME --noheadings 2>/dev/null');
+                  if (!(check.stdout as String).contains('zram')) {
+                    final svc = 'systemctl restart zramswap 2>/dev/null || '
+                        '{ modprobe zram 2>/dev/null; '
+                        'for z in /dev/zram*; do [ -b "\$z" ] && '
+                        'mkswap "\$z" 2>/dev/null && swapon -p 100 "\$z" 2>/dev/null; done; }';
+                    if (hasSudo) {
+                      await _runSudoCommand(svc);
+                    } else {
+                      await _run(svc);
+                    }
+                  }
+                }
+                // Esito: tutti i device precedenti devono essere di nuovo attivi.
+                final finalR =
+                    await _run('swapon --show=NAME --noheadings 2>/dev/null');
+                final finalDevs = (finalR.stdout as String)
+                    .split('\n')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty)
+                    .toSet();
+                final stillMissing =
+                    beforeDevs.where((d) => !finalDevs.contains(d)).toList();
+                if (stillMissing.isEmpty) {
+                  stepsDone.add(zramWasActive ? 'zram restored' : 'swap devices restored');
+                } else {
+                  stepsFailed.add('swap restore (${stillMissing.join(', ')})');
+                }
               }
             } catch (_) {}
           }

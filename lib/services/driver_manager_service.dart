@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'password_storage.dart';
+import '../utils/process_utils.dart';
 
 enum DriverStatus { installed, available, missing, firmwareUpdate, unknown }
 
@@ -78,6 +79,22 @@ class DriverScanResult {
     required this.firmwareUpdates,
     this.error,
     this.kernelInfo = '',
+  });
+}
+
+/// Stato del pacchetto firmware linux (linux-firmware e varianti):
+/// non installato / installato ma con aggiornamento / installato e aggiornato.
+class LinuxFirmwareStatus {
+  final bool installed;
+  final bool updateAvailable;
+  final List<String> installedPackages;
+  final List<String> updatablePackages;
+
+  const LinuxFirmwareStatus({
+    required this.installed,
+    required this.updateAvailable,
+    this.installedPackages = const [],
+    this.updatablePackages = const [],
   });
 }
 
@@ -209,7 +226,10 @@ class DriverManagerService {
       },
       driver: 'iwlwifi',
       category: 'Network',
-      name: 'Intel Wi-Fi 6E AX211',
+      // NOTA: PCI 8086:2725 = AX210 (Typhoon Peak). L'AX211 esiste ma è solo
+      // CNVio2 (non PCIe) e ha ID diversi — non usare AX211 qui per coerenza
+      // con device_manager_service.
+      name: 'Intel Wi-Fi 6E AX210',
     ),
   };
 
@@ -308,7 +328,7 @@ class DriverManagerService {
         .replaceAll("'", r"\'");
     final full =
         'printf "%s\\n" "$escaped" | sudo -S bash -c ${_shellQuote(command)} 2>&1';
-    return Process.run('bash', ['-c', full], runInShell: true);
+    return runProcess('bash', ['-c', full], runInShell: true, timeout: const Duration(seconds: 180));
   }
 
   static String _shellQuote(String s) {
@@ -318,7 +338,7 @@ class DriverManagerService {
 
   static Future<String> _run(String cmd) async {
     try {
-      final r = await Process.run('bash', ['-c', cmd], runInShell: true);
+      final r = await runProcess('bash', ['-c', cmd], runInShell: true, timeout: const Duration(seconds: 20));
       return ((r.stdout as String?) ?? '').trim();
     } catch (_) {
       return '';
@@ -409,7 +429,22 @@ class DriverManagerService {
     final fullKey = '$vid:$pid';
 
     if (_chipsetDb.containsKey(fullKey)) return _chipsetDb[fullKey];
-    if (_chipsetDb.containsKey(vid)) return _chipsetDb[vid];
+    if (_chipsetDb.containsKey(vid)) {
+      final base = _chipsetDb[vid]!;
+      // FALLBACK VENDOR-LEVEL (es. '10de'): matcha anche la funzione HDMI audio
+      // della GPU (es. "00.1 Audio device" [10de:228e]) → ricategorizzala,
+      // altrimenti la schermata Driver la raggruppa sotto "Graphics".
+      final lowerName = (device['name'] ?? '').toLowerCase();
+      if (base.category == 'Graphics' && lowerName.contains('audio')) {
+        return _ChipsetEntry(
+          packages: base.packages,
+          driver: base.driver,
+          category: 'Audio (GPU HDMI)',
+          name: base.name,
+        );
+      }
+      return base;
+    }
     return null;
   }
 
@@ -650,26 +685,201 @@ class DriverManagerService {
     return r.stdout.toString().trim();
   }
 
-  /// Install linux-firmware package (covers most firmware blobs).
-  static Future<String> installLinuxFirmware() async {
-    final pm = await _detectPackageManager();
-    List<String> candidates;
+  /// Pacchetti firmware candidati per il package manager corrente.
+  static List<String> _firmwareCandidates(String pm) {
     switch (pm) {
       case 'apt':
-        candidates = ['linux-firmware', 'firmware-linux-free', 'firmware-misc-nonfree'];
+        // Ubuntu/Zorin/Mint: linux-firmware; Debian: firmware-linux-*.
+        return [
+          'linux-firmware',
+          'firmware-linux-nonfree',
+          'firmware-linux-free',
+          'firmware-misc-nonfree',
+        ];
+      case 'dnf':
+      case 'pacman':
+      case 'zypper':
+        return ['linux-firmware'];
+      default:
+        return ['linux-firmware'];
+    }
+  }
+
+  /// Stato attuale del pacchetto firmware: installato? aggiornamento pronto?
+  static Future<LinuxFirmwareStatus> getLinuxFirmwareStatus() async {
+    final pm = await _detectPackageManager();
+    final candidates = _firmwareCandidates(pm);
+    final installed = <String>[];
+    for (final pkg in candidates) {
+      if (await _isPackageInstalled(pkg)) installed.add(pkg);
+    }
+    if (installed.isEmpty) {
+      return const LinuxFirmwareStatus(
+          installed: false, updateAvailable: false);
+    }
+
+    final updatable = <String>[];
+    switch (pm) {
+      case 'apt':
+        final r = await Process.run(
+          'bash',
+          [
+            '-c',
+            'LC_ALL=C apt-cache policy ${installed.join(' ')} 2>/dev/null'
+          ],
+          runInShell: false,
+        );
+        if (r.exitCode == 0) {
+          updatable
+              .addAll(parseAptPolicyUpdatable(r.stdout.toString(), installed));
+        }
         break;
       case 'dnf':
-        candidates = ['linux-firmware'];
+        // exit 100 = aggiornamenti disponibili (dnf check-update convention).
+        final r = await Process.run(
+          'bash',
+          [
+            '-c',
+            'LC_ALL=C dnf check-update -q ${installed.join(' ')} 2>/dev/null'
+          ],
+          runInShell: false,
+        );
+        if (r.exitCode == 100) updatable.addAll(installed);
         break;
       case 'pacman':
-        candidates = ['linux-firmware'];
+        final r = await Process.run(
+          'bash',
+          [
+            '-c',
+            'LC_ALL=C pacman -Qu ${installed.join(' ')} 2>/dev/null'
+          ],
+          runInShell: false,
+        );
+        final out = r.stdout.toString();
+        for (final pkg in installed) {
+          if (out.contains(pkg)) updatable.add(pkg);
+        }
         break;
       case 'zypper':
-        candidates = ['linux-firmware'];
+        final r = await Process.run(
+          'bash',
+          [
+            '-c',
+            'LC_ALL=C zypper --non-interactive list-updates 2>/dev/null '
+                '| grep -E "linux-firmware|firmware-linux"'
+          ],
+          runInShell: false,
+        );
+        if (r.stdout.toString().trim().isNotEmpty) updatable.addAll(installed);
+        break;
+    }
+    return LinuxFirmwareStatus(
+      installed: true,
+      updateAvailable: updatable.isNotEmpty,
+      installedPackages: installed,
+      updatablePackages: updatable,
+    );
+  }
+
+  /// Parsifica l'output di `apt-cache policy` e ritorna i pacchetti per cui
+  /// Candidate differisce da Installed (aggiornamento disponibile).
+  static List<String> parseAptPolicyUpdatable(
+      String output, List<String> packages) {
+    final updatable = <String>[];
+    String? current;
+    String? installed;
+    String? candidate;
+
+    void flush() {
+      if (current != null &&
+          installed != null &&
+          candidate != null &&
+          installed != '(none)' &&
+          candidate != '(none)' &&
+          candidate != installed) {
+        updatable.add(current!);
+      }
+      current = null;
+      installed = null;
+      candidate = null;
+    }
+
+    for (final line in output.split('\n')) {
+      if (line.isEmpty) continue;
+      // Intestazione del pacchetto: "linux-firmware:" (colonna 0).
+      if (!line.startsWith(' ') && line.trimRight().endsWith(':')) {
+        flush();
+        current = line.trimRight();
+        current = current!.substring(0, current!.length - 1);
+        continue;
+      }
+      final i = RegExp(r'^\s+Installed:\s*(.+)$').firstMatch(line);
+      if (i != null) {
+        installed = i.group(1)!.trim();
+        continue;
+      }
+      final c = RegExp(r'^\s+Candidate:\s*(.+)$').firstMatch(line);
+      if (c != null) {
+        candidate = c.group(1)!.trim();
+        continue;
+      }
+    }
+    flush();
+    // Mantiene solo i pacchetti richiesti (l'output può contenere altri).
+    return updatable.where((p) => packages.contains(p)).toList();
+  }
+
+  /// Installa da zero oppure aggiorna, a seconda dello stato rilevato.
+  static Future<String> installOrUpdateLinuxFirmware(
+      LinuxFirmwareStatus status) async {
+    if (!status.installed) return installLinuxFirmware();
+    if (!status.updateAvailable) return 'ok';
+    return updateLinuxFirmware(status);
+  }
+
+  /// Aggiorna i pacchetti firmware già installati alla versione disponibile.
+  static Future<String> updateLinuxFirmware(LinuxFirmwareStatus status) async {
+    final pm = await _detectPackageManager();
+    final pkgs = status.updatablePackages.isNotEmpty
+        ? status.updatablePackages
+        : status.installedPackages;
+    if (pkgs.isEmpty) return 'ok';
+    final names = pkgs.join(' ');
+    String cmd;
+    switch (pm) {
+      case 'apt':
+        cmd = 'apt-get update -qq && '
+            'DEBIAN_FRONTEND=noninteractive '
+            'apt-get install -y --only-upgrade $names';
+        break;
+      case 'dnf':
+        cmd = 'dnf upgrade -y $names';
+        break;
+      case 'pacman':
+        // Su Arch un upgrade parziale non è supportato: -Syu è il modo corretto.
+        cmd = 'pacman -Syu --noconfirm $names';
+        break;
+      case 'zypper':
+        cmd = 'zypper --non-interactive update $names';
         break;
       default:
         return 'Unsupported package manager.';
     }
+    try {
+      final r = await _runSudo(cmd);
+      if (r.exitCode == 0) return 'ok';
+      final out = r.stdout.toString().trim();
+      return out.isNotEmpty ? out : 'firmware update failed';
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  /// Install linux-firmware package (covers most firmware blobs).
+  static Future<String> installLinuxFirmware() async {
+    final pm = await _detectPackageManager();
+    final candidates = _firmwareCandidates(pm);
+    if (candidates.isEmpty) return 'Unsupported package manager.';
 
     for (final pkg in candidates) {
       final installed = await _isPackageInstalled(pkg);
@@ -682,7 +892,9 @@ class DriverManagerService {
 
     final cmd = _buildInstallCmd(pm, candidates.last);
     final r = await _runSudo(cmd);
-    return r.exitCode == 0 ? 'ok' : r.stdout.toString().trim();
+    if (r.exitCode == 0) return 'ok';
+    final out = r.stdout.toString().trim();
+    return out.isNotEmpty ? out : 'firmware install failed';
   }
 
   /// Reload a kernel module (requires root).

@@ -3,6 +3,8 @@ enum PackageManager {
   snap,
   flatpak,
   gnome,
+  pacman,
+  dnf,
 }
 
 class InstalledApp {
@@ -12,6 +14,8 @@ class InstalledApp {
   final PackageManager packageManager;
   final int? size; // Dimensione in bytes
   final bool isSystemPackage; // Se è un pacchetto di sistema
+  final String? desktopFile; // Solo gnome: percorso completo del file .desktop
+  final String? installation; // Solo flatpak: 'user' | 'system' | 'both'
   List<String> dependencies; // Dipendenze del pacchetto
   List<String> reverseDependencies; // Pacchetti che dipendono da questo
 
@@ -22,6 +26,8 @@ class InstalledApp {
     required this.packageManager,
     this.size,
     this.isSystemPackage = false,
+    this.desktopFile,
+    this.installation,
     List<String>? dependencies,
     List<String>? reverseDependencies,
   })  : dependencies = dependencies ?? [],
@@ -36,17 +42,6 @@ class InstalledApp {
     return true;
   }
 
-  /// Ottiene un messaggio di avviso se il pacchetto non può essere rimosso in sicurezza
-  String? get warningMessage {
-    if (isSystemPackage) {
-      return 'Questo è un pacchetto di sistema. Rimuoverlo potrebbe compromettere il funzionamento del sistema.';
-    }
-    if (reverseDependencies.isNotEmpty) {
-      return 'Altri ${reverseDependencies.length} pacchetto/i dipendono da questo: ${reverseDependencies.take(3).join(", ")}${reverseDependencies.length > 3 ? "..." : ""}';
-    }
-    return null;
-  }
-
   Map<String, dynamic> toJson() => {
         'name': name,
         'version': version,
@@ -54,8 +49,9 @@ class InstalledApp {
         'packageManager': packageManager.toString(),
         'size': size,
         'isSystemPackage': isSystemPackage,
+        'desktopFile': desktopFile,
+        'installation': installation,
         'dependencies': dependencies,
         'reverseDependencies': reverseDependencies,
       };
 }
-

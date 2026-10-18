@@ -2,8 +2,17 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Secret used for HMAC (must match tools/license_key_generator.dart).
-const String _kLicenseSecret = 'SLU-License-2025-Secret-Key-Change-In-Production';
+/// Secret HMAC per licenze.
+///
+/// NON è più hardcodato nel repo (sorgente pubblica!): arriva in compile-time
+/// via `--dart-define=SLU_LICENSE_SECRET=<valore>` injettato da script di build
+/// (`build_appimage.sh`, `build_arch.sh`, `build_deb.sh`, `build_rpm.sh`) che lo
+/// leggono da `$HOME/.config/slu/license_secret` (file git-ignored, host di
+/// build/uttente). Il generatore `tools/license_key_generator.dart` legge lo
+/// STESSO file → i codici emessi corrispondono sempre a quelli verificati.
+/// Se la define manca (es. `flutter build linux` manuale), il secret è vuoto:
+/// la verifica fallisce per ogni codice (nessun crash) — 表 build avanzate.
+const String _kLicenseSecret = String.fromEnvironment('SLU_LICENSE_SECRET');
 
 const String _keyActivated = 'license_activated';
 const String _keyLicensedTo = 'licensed_to';

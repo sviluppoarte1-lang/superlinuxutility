@@ -31,7 +31,12 @@ flutter clean
 
 # Compila l'applicazione
 echo "📦 Building Flutter application..."
-flutter build linux --release
+if [ -n "$LICENSE_SECRET" ]; then
+    flutter build linux --release --dart-define=SLU_LICENSE_SECRET="${LICENSE_SECRET}"
+else
+    echo "⚠️  License secret mancante: build senza attivazione licenze."
+    flutter build linux --release
+fi
 
 if [ ! -d "$BUILD_DIR" ]; then
     echo "❌ Error: Build directory not found: $BUILD_DIR"
@@ -50,6 +55,23 @@ cp -r $BUILD_DIR/* $SOURCE_DIR/
 # Crea lo script wrapper
 cat > $SOURCE_DIR/${APP_NAME}.sh << 'WRAPPER_EOF'
 #!/bin/bash
+
+# ---- Secret licenza (git-ignored, fuori dal repo) ----
+# Legge $SLU_LICENSE_SECRET_FILE (default: $HOME/.config/slu/license_secret).
+# Il valore viene passato via --dart-define al build: le licenze già vendute
+# restano valide finché il file non cambia. Se manca, il build va avanti SENZA
+# il secret (attivazione impossibile in Advanced) con un warning.
+read_license_secret() {
+    local f="${SLU_LICENSE_SECRET_FILE:-$HOME/.config/slu/license_secret}"
+    if [ -n "${SLU_LICENSE_SECRET:-}" ]; then
+        echo "${SLU_LICENSE_SECRET}"
+    elif [ -f "$f" ]; then
+        tr -d "[:space:]" < "$f"
+    else
+        echo ""
+    fi
+}
+
 # Wrapper script per Super Linux Utility
 APP_DIR="/usr/share/super-linux-utility"
 EXECUTABLE="$APP_DIR/super_linux_utility"

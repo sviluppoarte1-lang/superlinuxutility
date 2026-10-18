@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import '../utils/process_utils.dart';
 import 'password_storage.dart';
 import 'repository_manager.dart';
 import 'system_detector.dart';
@@ -25,11 +26,21 @@ class RecoveryService {
     final fullCommand =
         'printf "%s\\n" "$escapedPassword" | sudo -S bash -c ${shellQuote(command)}';
     
-    return await Process.run(
-      'bash',
-      ['-c', fullCommand],
-      runInShell: true,
-    );
+    try {
+      try {
+      return await runProcess(
+        'bash',
+        ['-c', fullCommand],
+        runInShell: true,
+        timeout: const Duration(seconds: 180),
+      );
+    } on ProcessException {
+      return ProcessResult(-1, 124, '', 'Timeout (180s): sudo non ha terminato il comando.');
+    }
+    } on ProcessException {
+      // Timeout: restituisci un risultato fallito invece di bloccare l'app.
+      return ProcessResult(-1, 124, '', 'Timeout (180s): sudo non ha terminato il comando.');
+    }
   }
 
   static String shellQuote(String s) {
@@ -53,10 +64,11 @@ class RecoveryService {
       String output = '';
       
       try {
-        final result = await Process.run(
+        final result = await runProcess(
           'bash',
           ['-c', command],
           runInShell: true,
+          timeout: const Duration(seconds: 30),
         );
         
         output = result.stdout.toString();
@@ -216,10 +228,11 @@ class RecoveryService {
       
       // Rimuovi il repository Flathub se esiste già
       try {
-        final removeResult = await Process.run(
+        final removeResult = await runProcess(
           'flatpak',
           ['remote-delete', 'flathub'],
           runInShell: false,
+          timeout: const Duration(seconds: 90),
         );
         // Ignora errori se il remote non esiste
       } catch (e) {
@@ -227,10 +240,11 @@ class RecoveryService {
       }
 
       // Aggiungi il repository Flathub
-      final addResult = await Process.run(
+      final addResult = await runProcess(
         'flatpak',
         ['remote-add', '--if-not-exists', 'flathub', 'https://flathub.org/repo/flathub.flatpakrepo'],
         runInShell: false,
+        timeout: const Duration(seconds: 90),
       );
 
       output = addResult.stdout.toString();
@@ -245,10 +259,11 @@ class RecoveryService {
       }
 
       // Aggiorna i repository
-      final updateResult = await Process.run(
+      final updateResult = await runProcess(
         'flatpak',
         ['update', '--appstream'],
         runInShell: false,
+        timeout: const Duration(seconds: 180),
       );
 
       output += '\n${updateResult.stdout}';
@@ -649,10 +664,11 @@ class RecoveryService {
         }
       }
 
-      final simResult = await Process.run(
+      final simResult = await runProcess(
         'bash',
         ['-c', 'apt-get -s -y upgrade 2>&1'],
         runInShell: false,
+        timeout: const Duration(seconds: 60),
       );
       final simOutput = '${simResult.stdout}\n${simResult.stderr}'.trim();
       if (simOutput.isEmpty) {
@@ -773,10 +789,11 @@ class RecoveryService {
       };
     } catch (e) {
       try {
-        final result = await Process.run(
+        final result = await runProcess(
           'apt',
           ['list', '--upgradable'],
           runInShell: false,
+          timeout: const Duration(seconds: 60),
         );
         final aptOutput = result.stdout.toString();
         final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+/[^\s,]+');
@@ -922,10 +939,11 @@ class RecoveryService {
       // Flatpak può avere installazioni "user" e "system": gli aggiornamenti tipo
       // Freedesktop Platform spesso sono a livello system, quindi controlliamo entrambi.
       try {
-        final userRes = await Process.run(
+        final userRes = await runProcess(
           'bash',
           ['-c', 'flatpak --user remote-ls --updates --columns=ref 2>&1'],
           runInShell: false,
+          timeout: const Duration(seconds: 90),
         );
         parseOutput('${userRes.stdout}\n${userRes.stderr}');
       } catch (_) {}
@@ -964,25 +982,43 @@ class RecoveryService {
     Process process, {
     required void Function(String chunk) onChunk,
     void Function(String line)? onLine,
+    Duration idleTimeout = const Duration(minutes: 6),
   }) async {
-    final buf = StringBuffer();
-    await for (final chunk in process.stdout.transform(utf8.decoder)) {
-      onChunk(chunk);
-      buf.write(chunk);
-      var str = buf.toString();
-      var nl = str.indexOf('\n');
-      while (nl >= 0) {
-        onLine?.call(str.substring(0, nl));
-        str = str.substring(nl + 1);
-        nl = str.indexOf('\n');
+    // WATCHDOG su inattività: se il processo (spesso `printf … | sudo -S`)
+    // resta ≥ idleTimeout senza produrre output (es. prompt fermo, apt lock),
+    // killa SIGKILL e chiude lo stream invece di bloccare l'app per sempre.
+    var lastActivity = DateTime.now();
+    final watchdog = Timer.periodic(const Duration(seconds: 5), (t) {
+      final idle = DateTime.now().difference(lastActivity);
+      if (idle > idleTimeout) {
+        t.cancel();
+        onChunk('\n[SLU] Timeout inattività (${idleTimeout.inMinutes} min) — processo terminato.\n');
+        process.kill(ProcessSignal.sigkill);
       }
-      buf.clear();
-      buf.write(str);
+    });
+    try {
+      final buf = StringBuffer();
+      await for (final chunk in process.stdout.transform(utf8.decoder)) {
+        lastActivity = DateTime.now();
+        onChunk(chunk);
+        buf.write(chunk);
+        var str = buf.toString();
+        var nl = str.indexOf('\n');
+        while (nl >= 0) {
+          onLine?.call(str.substring(0, nl));
+          str = str.substring(nl + 1);
+          nl = str.indexOf('\n');
+        }
+        buf.clear();
+        buf.write(str);
+      }
+      final tail = buf.toString();
+      if (tail.isNotEmpty) onLine?.call(tail);
+      await process.stderr.drain();
+      return await process.exitCode;
+    } finally {
+      watchdog.cancel();
     }
-    final tail = buf.toString();
-    if (tail.isNotEmpty) onLine?.call(tail);
-    await process.stderr.drain();
-    return await process.exitCode;
   }
 
   static String _sudoBashCommand(String escapedPassword, String remoteCommand) {

@@ -283,6 +283,27 @@ class AppLocalizationsIt extends AppLocalizations {
   String get devKernelHeaders => 'Vecchi kernel (headers + immagini)';
 
   @override
+  String get devPkgCache => 'Cache package manager';
+
+  @override
+  String get devElectronCache => 'Cache app Electron';
+
+  @override
+  String get devOpencodeData => 'Dati OpenCode (log + snapshot)';
+
+  @override
+  String get devCudaRepo => 'Repository installer CUDA';
+
+  @override
+  String get devCudaDup => 'Installazioni CUDA duplicate';
+
+  @override
+  String get devSnapOld => 'Revisioni snap vecchie';
+
+  @override
+  String get devFlatpakUnused => 'Runtime flatpak inutilizzati';
+
+  @override
   String get advEmpty => 'Nessuna cache di sviluppo rilevata.';
 
   @override
@@ -675,6 +696,36 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get settingsTrayDisabled =>
       'System tray disabilitato. Riavvia l\'app per applicare.';
+
+  @override
+  String settingsTrayInitFailed(String error) {
+    return 'Impossibile attivare la system tray. Dettagli: $error';
+  }
+
+  @override
+  String get settingsTrayInstallOk =>
+      'Dipendenze del system tray installate correttamente.';
+
+  @override
+  String get settingsTrayInstallUnsupported =>
+      'Installazione automatica non disponibile per questa distribuzione. Usa la versione AppImage: le librerie della system tray sono già incluse.';
+
+  @override
+  String get settingsTrayInstallNoPassword =>
+      'Salva la password nelle Impostazioni per consentire l\'installazione.';
+
+  @override
+  String get settingsTrayInstallWrongPassword =>
+      'Password non corretta. Verifica la password nelle Impostazioni.';
+
+  @override
+  String get settingsTrayInstallLocked =>
+      'Un altro processo sta usando i repository. Riprova tra qualche secondo.';
+
+  @override
+  String settingsTrayInstallFailed(String detail) {
+    return 'Installazione non riuscita: $detail';
+  }
 
   @override
   String get settingsStartMinimized => 'Avvia l\'app ridotta a icona';
@@ -1108,7 +1159,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get purchaseLicenseViaPaypal =>
-      'La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email. Senza un pagamento valido l\'app non può essere attivata.';
+      'La versione Advanced costa 19,99 €. Per acquistare una licenza paga tramite PayPal. Dopo il pagamento andato a buon fine riceverai il codice licenza via email.';
 
   @override
   String get languageSelectionTitle => 'Selezione Lingua';
@@ -2137,7 +2188,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get infoInstalledAppsManagementDesc =>
-      'Visualizza app installate tramite APT, Snap, Flatpak e GNOME';
+      'Visualizza app installate tramite APT, Snap, Flatpak, GNOME, Pacman e DNF';
 
   @override
   String get infoInstalledAppsDependencies => 'Controllo dipendenze';
@@ -2152,6 +2203,25 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get infoInstalledAppsWarningsDesc =>
       'Avvisa quando un pacchetto è utilizzato da altri software o dal sistema';
+
+  @override
+  String installedAppsLoading(int count) {
+    return 'Caricamento app installate...\n$count app trovate';
+  }
+
+  @override
+  String installedAppsManagedBy(String manager) {
+    return 'Gestore: $manager';
+  }
+
+  @override
+  String get installedAppsSystemWarning =>
+      'Questo è un pacchetto di sistema. Rimuoverlo potrebbe compromettere il funzionamento del sistema.';
+
+  @override
+  String installedAppsReverseWarning(int count) {
+    return 'Altri $count pacchetto/i dipendono da questo';
+  }
 
   @override
   String get infoMonitor => 'Monitor Sistema';
@@ -2606,7 +2676,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get licenseActivateCardDesc =>
-      'La versione Advanced costa 19,99 €. Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery. Senza un pagamento valido l\'app non può essere attivata.';
+      'Inserisci i tuoi dati e il codice licenza ricevuto dopo il pagamento andato a buon fine per sbloccare GRUB, Kernel e Recovery.';
 
   @override
   String get noSmartDisksFound => 'Nessun disco con supporto SMART trovato.';
@@ -3369,4 +3439,220 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get driverManagerLinuxFirmwareDesc =>
       'Pacchetto firmware completo per GPU, Wi-Fi, Bluetooth e altri dispositivi';
+
+  @override
+  String get driverManagerFirmwareNotInstalled => 'Non installato';
+
+  @override
+  String get driverManagerFirmwareUpToDate => 'Aggiornato';
+
+  @override
+  String get driverManagerFirmwareUpdateAvailable =>
+      'Aggiornamento disponibile';
+
+  @override
+  String get driverManagerFirmwareInstallSuccess =>
+      'linux-firmware installato con successo';
+
+  @override
+  String get driverManagerFirmwareUpdateSuccess =>
+      'linux-firmware aggiornato. Riavvia il PC.';
+
+  @override
+  String get driverManagerFirmwareFailed => 'Operazione firmware fallita:';
+
+  @override
+  String get tweaksSystemMemory => 'Memoria di sistema';
+
+  @override
+  String get tweaksSwapTotalLabel => 'Swap totale';
+
+  @override
+  String get tweaksSwapNone => 'Nessuno';
+
+  @override
+  String get tweaksSwapUsedLabel => 'Swap usato';
+
+  @override
+  String get tweaksSwapDeviceLabel => 'Dispositivo swap';
+
+  @override
+  String get tweaksZswapLabel => 'Zswap';
+
+  @override
+  String get tweaksStatusActive => 'Attivo';
+
+  @override
+  String get tweaksStatusInactive => 'Disattivo';
+
+  @override
+  String get tweaksStatusUnavailable => 'Non disponibile';
+
+  @override
+  String get tweaksRestartRequired => 'Riavvio richiesto';
+
+  @override
+  String swapAdjustLowTitle(String current, String ideal) {
+    return 'Regola swappiness ($current → $ideal)';
+  }
+
+  @override
+  String swapAdjustLowDesc(String ram) {
+    return 'Con $ram GB di RAM, uno swappiness di 60 garantisce swap sufficiente per la stabilità.';
+  }
+
+  @override
+  String swapAdjustMidTitle(String current, String ideal) {
+    return 'Regola swappiness ($current → $ideal)';
+  }
+
+  @override
+  String swapAdjustMidDesc(String ram) {
+    return 'Con $ram GB di RAM, uno swappiness di 40 bilancia l\'uso della RAM e dello swap.';
+  }
+
+  @override
+  String swapAdjustHighTitle(String current, String ideal) {
+    return 'Regola swappiness ($current → $ideal)';
+  }
+
+  @override
+  String swapAdjustHighDesc(String ram) {
+    return 'Con $ram GB di RAM, uno swappiness di 20 minimizza l\'uso non necessario dello swap.';
+  }
+
+  @override
+  String swapOptimalTitle(String value) {
+    return 'Swappiness ottimale ($value)';
+  }
+
+  @override
+  String swapOptimalDesc(String ram) {
+    return 'Lo swappiness attuale corrisponde al valore consigliato per i tuoi $ram GB di RAM.';
+  }
+
+  @override
+  String swapCreateTitle(String size) {
+    return 'Crea file swap ($size GB)';
+  }
+
+  @override
+  String get swapCreateDesc =>
+      'Nessuno swap rilevato. Creare un file swap migliora la stabilità in caso di pressione di memoria.';
+
+  @override
+  String get zramBootTitle => 'Abilita ZRAM all\'avvio';
+
+  @override
+  String get zramBootDesc =>
+      'ZRAM è attivo ora, ma il servizio non è abilitato all\'avvio: verrebbe perso al prossimo riavvio.';
+
+  @override
+  String get zramActiveTitle => 'ZRAM è attivo';
+
+  @override
+  String get zramActiveDesc =>
+      'Lo swap compresso in RAM è in esecuzione e parte automaticamente all\'avvio. Offre swap più veloce e riduce l\'I/O del disco.';
+
+  @override
+  String get zramStartTitle => 'Avvia servizio ZRAM';
+
+  @override
+  String get zramStartDesc =>
+      'I tool ZRAM sono installati ma il servizio non è in esecuzione.';
+
+  @override
+  String get zramInstallTitle => 'Abilita ZRAM (swap compresso in RAM)';
+
+  @override
+  String get zramInstallDesc =>
+      'ZRAM comprime i dati di swap nella RAM, offrendo swap più veloce e riducendo l\'I/O del disco.';
+
+  @override
+  String get homeUpdateAction => 'Aggiorna';
+
+  @override
+  String get homeCheckingUpdates => 'Ricerca aggiornamenti in corso...';
+
+  @override
+  String homeNewVersionAvailable(String version) {
+    return 'Nuova versione $version disponibile!';
+  }
+
+  @override
+  String get homeRestoringRepositories => 'Ripristino dei repository...';
+
+  @override
+  String get homeKernelUpdateTitle => 'Aggiornamento kernel';
+
+  @override
+  String get homeKernelUpdateBody =>
+      'L\'aggiornamento del kernel richiede un riavvio del sistema. Proseguire?';
+
+  @override
+  String get grubUnsavedBanner =>
+      'Hai modifiche non salvate. Ricorda di salvare e aggiornare GRUB per applicare le modifiche.';
+
+  @override
+  String get grubContentHint => 'Contenuto del file GRUB...';
+
+  @override
+  String get updateReleaseNotes => 'Note di rilascio';
+
+  @override
+  String get updateDownloadAndInstall => 'Scarica e installa';
+
+  @override
+  String updateInstalledOk(String version) {
+    return 'Versione $version installata con successo.';
+  }
+
+  @override
+  String get updateDownloading => 'Download in corso...';
+
+  @override
+  String get languageSelectionSave => 'Salva';
+
+  @override
+  String get searchHint => 'Cerca funzioni e schede...';
+
+  @override
+  String get searchNoResults => 'Nessun risultato';
+
+  @override
+  String get undo => 'Annulla';
+
+  @override
+  String get undoDone => 'Operazione annullata';
+
+  @override
+  String get undoFailed => 'Impossibile annullare l\'operazione';
+
+  @override
+  String get onboardingContinue => 'Avanti';
+
+  @override
+  String get warningSystemCard => 'Sistema rilevato';
+
+  @override
+  String get warningOsLabel => 'Sistema operativo';
+
+  @override
+  String get warningDesktopLabel => 'Ambiente desktop';
+
+  @override
+  String get warningGrubCommand => 'Comando GRUB';
+
+  @override
+  String get settingsMinimizeToTray => 'Riduci a icona nel tray';
+
+  @override
+  String get settingsMinimizeToTrayDesc =>
+      'Quando la finestra è ridotta a icona si nasconde nel vassoio di sistema (altrimenti resta nella barra delle applicazioni)';
+
+  @override
+  String get settingsMinimizeToTrayOn => 'Riduci a icona nel tray attivato';
+
+  @override
+  String get settingsMinimizeToTrayOff => 'Riduci a icona nel tray disattivato';
 }
