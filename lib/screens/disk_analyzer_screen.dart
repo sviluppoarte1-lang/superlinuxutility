@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:process_run/process_run.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/disk_analyzer_service.dart';
@@ -34,7 +35,18 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   // Navigazione
   final List<String> _pathHistory = [];
   int _historyIndex = -1;
-  bool _showHiddenFiles = false;
+
+  /// File/cartelle nascosti (nome che inizia con '.'): visibili di default.
+  /// L'analisi dischi deve mostrare l'occupazione REALE: le cartelle più
+  /// grosse sono spesso nascoste (.cache, .local, .snapshots, docker...).
+  /// Persistito in `disk_analyzer_show_hidden`.
+  static const String _prefKeyShowHidden = 'disk_analyzer_show_hidden';
+  bool _showHiddenFiles = true;
+
+  /// Tutto l'elenco (compresi i nascosti) dell'ultima listDirectory/cache:
+  /// serve per aggiornare le dimensioni e persistere la cache SENZA perdere
+  /// le voci filtrate dalla UI (prima il filtro distruggeva i dati cached).
+  List<FileSystemItem> _lastListedItems = const [];
   
   // Ordinamento
   SortType _currentSort = SortType.sizeDescending;
@@ -60,6 +72,15 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   void initState() {
     super.initState();
     _loadMountedDisks();
+    _loadShowHiddenFilesPref();
+  }
+
+  Future<void> _loadShowHiddenFilesPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _showHiddenFiles = prefs.getBool(_prefKeyShowHidden) ?? true;
+    });
   }
 
   Future<void> _loadMountedDisks() async {
@@ -118,6 +139,8 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
               mimeType: item['mimeType'] as String?,
             );
           }).toList();
+          // Elenco MASTER non filtrato della cache (nascosti inclusi).
+          _lastListedItems = List.of(items);
           
           // Se abbiamo caricato dalla cache, aggiorna l'UI e calcola le dimensioni in background
           final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp'];
@@ -170,6 +193,10 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
 
       // Se non c'è cache: prima volta, carica dal filesystem e genera il file di cache
       items = await DiskAnalyzerService.listDirectory(path, calculateSizes: calculateSizes);
+      // Elenco MASTER non filtrato (nascosti inclusi): le dimensioni calcolate
+      // in background vanno aggiornate qui e persistete in cache, altrimenti
+      // una navigazione col filtro attivo cancellea i nascosti dalla cache.
+      _lastListedItems = List.of(items);
       
       // Directory virtuali da escludere (filesystem virtuali che non hanno dimensioni reali)
       final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp'];
@@ -310,19 +337,179 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     required String diskPath,
     required String listPath,
   }) async {
+    final normListPath = DiskCacheService.normalizeListedDirectoryPath(listPath);
+
+    // UN solo `du -sb -d1` per l'intera directory: una singola traversata
+    // dell'albero al posto di N processi du concorrenti (uno per
+    // sottocartella), ognuno dei quali riattraversava l'intero sottoalbero.
+    // Output streaming → la lista si popola progressivamente.
+    final streamed = await _streamChildSizesFromDu(normListPath);
+    if (streamed) {
+      await _persistChildSizesToCache(diskPath, normListPath);
+      return;
+    }
+    await _calculateSizesWithPerDirectoryDu(
+      items,
+      diskPath: diskPath,
+      listPath: listPath,
+      normListPath: normListPath,
+    );
+  }
+
+  /// Dimensiona TUTTE le directory figlie con un solo `du -b -d1` (output in
+  /// bytes apparenti, aggiornamenti progressivi). True se du ha prodotto
+  /// almeno una riga. NB: `-b`+`-d1` (NON `-sb`, che confligge con
+  /// `--max-depth` e dá ERRORE).
+  /// aggiornamenti progressivi). True se du ha prodotto almeno una riga.
+  Future<bool> _streamChildSizesFromDu(String dirPath) async {
+    if (dirPath.isEmpty || !dirPath.startsWith('/')) return false;
+    final escaped = dirPath.replaceAll("'", "'\\''");
+    // Per la root stesse esclusioni della scansione a grafico (SOLO montaggi
+    // virtuali/loop): /var/cache, docker e simili restano e vengono mostrati.
+    const rootExcludes = '--exclude=/proc --exclude=/sys --exclude=/dev '
+        '--exclude=/run --exclude=/tmp --exclude=/snap --exclude=/boot '
+        '--exclude=/boot/efi --exclude=/lost+found --exclude=/sysroot ';
+    final isRoot = dirPath == '/';
+    final inner =
+        'timeout 45 du -b -d1 ${isRoot ? '-x $rootExcludes' : ''} \'$escaped\' 2>/dev/null';
+    Process? proc;
+    try {
+      proc = await Process.start('bash', ['-c', inner], runInShell: true);
+    } catch (_) {
+      return false;
+    }
+    final p = proc;
+
+    final sw = Stopwatch()..start();
+    var remainder = '';
+    var sawRows = false;
+    var needsRepaint = false;
+
+    void flush() {
+      if (!mounted) return;
+      if (needsRepaint) {
+        setState(() {
+          _sortItems();
+          _rebuildChartFromCurrentItems();
+        });
+      }
+      needsRepaint = false;
+    }
+
+    try {
+      await for (final chunk in p.stdout.transform(const Utf8Decoder(allowMalformed: true))) {
+        if (sw.elapsed > const Duration(seconds: 45)) {
+          p.kill(ProcessSignal.sigterm);
+          break;
+        }
+        remainder += chunk;
+        final parts = remainder.split('\n');
+        remainder = parts.isNotEmpty ? parts.removeLast() : '';
+        for (final rawLine in parts) {
+          final row = _parseDuSbLine(rawLine, dirPath);
+          if (row == null) continue;
+          sawRows = true;
+          if (row.$2 > 0 && _applyChildSize(row.$1, row.$2)) {
+            needsRepaint = true;
+          }
+        }
+        flush();
+      }
+      final last = _parseDuSbLine(remainder, dirPath);
+      if (last != null) {
+        sawRows = true;
+        if (last.$2 > 0 && _applyChildSize(last.$1, last.$2)) needsRepaint = true;
+      }
+      flush();
+    } catch (_) {
+      // Fallback gestito dal valore di ritorno
+    } finally {
+      try {
+        await p.exitCode.timeout(const Duration(seconds: 2));
+      } catch (_) {
+        try {
+          p.kill(ProcessSignal.sigkill);
+        } catch (_) {}
+      }
+    }
+    return sawRows;
+  }
+
+  /// Righe di `du -sb -d1`: "size`<TAB>`percorso" (TAB: i percorsi possono
+  /// contenere spazi). La riga di totale della directory scansionata è scartata.
+  (String, int)? _parseDuSbLine(String line, String rootPath) {
+    final trimmed = line.trimRight();
+    if (trimmed.isEmpty) return null;
+    final tab = trimmed.indexOf('\t');
+    if (tab <= 0) return null;
+    final size = int.tryParse(trimmed.substring(0, tab));
+    final path = trimmed.substring(tab + 1).trim();
+    if (size == null || path.isEmpty) return null;
+    if (path == rootPath) return null;
+    return (path, size);
+  }
+
+  /// Applica la dimensione a entrambe le liste (master non filtrato per la
+  /// cache + corrente per la UI). Solo directory senza dimensione: i file
+  /// hanno già la loro size dalla listing; true se qualcosa è aggiornato.
+  bool _applyChildSize(String path, int size) {
+    var changed = false;
+    void updateInList(List<FileSystemItem> list) {
+      final idx = list.indexWhere((el) => el.path == path);
+      if (idx < 0) return;
+      final it = list[idx];
+      if (!it.isDirectory || it.size != 0) return;
+      list[idx] = FileSystemItem(
+        path: it.path,
+        name: it.name,
+        size: size,
+        isDirectory: it.isDirectory,
+        modified: it.modified,
+        mimeType: it.mimeType,
+      );
+      changed = true;
+    }
+
+    updateInList(_lastListedItems);
+    updateInList(_currentItems);
+    return changed;
+  }
+
+  Future<void> _persistChildSizesToCache(String diskPath, String normListPath) async {
+    if (!mounted) return;
+    final stillSameDir =
+        DiskCacheService.normalizeListedDirectoryPath(_currentPath) == normListPath;
+    if (!stillSameDir) return;
+    try {
+      // Persiste l'elenco MASTER (nascosti inclusi): altrimenti aggiornare
+      // la cache durante una navigazione col filtro attivo cancellava per
+      // sempre le dimensioni delle voci nascoste (e la cache finiva filtrata).
+      await DiskCacheService.updateDirectoryListSizes(
+        diskPath,
+        normListPath,
+        _fileSystemItemsToMaps(
+            _lastListedItems.isNotEmpty ? _lastListedItems : _currentItems),
+      );
+    } catch (_) {}
+  }
+
+  /// Fallback (stesso comportamento precedente): un processo du per ogni
+  /// sottocartella, in batch concorrenti. Usato solo se `du -sb -d1` non
+  /// ha prodotto righe (bash/du assenti, errori di esecuzione).
+  Future<void> _calculateSizesWithPerDirectoryDu(
+    List<FileSystemItem> items, {
+    required String diskPath,
+    required String listPath,
+    required String normListPath,
+  }) async {
     // Filtra solo le directory che necessitano del calcolo della dimensione
     final directoriesToCalculate = items.where((item) {
-      if (!_showHiddenFiles && item.name.startsWith('.')) {
-        return false;
-      }
       return item.isDirectory && item.size == 0;
     }).toList();
 
     if (directoriesToCalculate.isEmpty) {
       return;
     }
-
-    final normListPath = DiskCacheService.normalizeListedDirectoryPath(listPath);
 
     // Calcola le dimensioni in parallelo (max 10 alla volta per sfruttare meglio I/O)
     const maxConcurrent = 10;
@@ -374,19 +561,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       }
     }
 
-    if (mounted) {
-      final stillSameDir =
-          DiskCacheService.normalizeListedDirectoryPath(_currentPath) == normListPath;
-      if (stillSameDir) {
-        try {
-          await DiskCacheService.updateDirectoryListSizes(
-            diskPath,
-            normListPath,
-            _fileSystemItemsToMaps(_currentItems),
-          );
-        } catch (_) {}
-      }
-    }
+    await _persistChildSizesToCache(diskPath, normListPath);
   }
 
   void _selectBasePath(String path) async {
@@ -1064,6 +1239,8 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                         setState(() {
                           _showHiddenFiles = !_showHiddenFiles;
                         });
+                        SharedPreferences.getInstance()
+                            .then((p) => p.setBool(_prefKeyShowHidden, _showHiddenFiles));
                         _loadDirectory(_currentPath, skipHistory: true);
                       }
                     },
@@ -1337,10 +1514,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           '--exclude=/boot/efi '
           '--exclude=/lost+found '
           '--exclude=/sysroot '
-          '--exclude=/var/lib/docker '
-          '--exclude=/var/lib/containers '
-          '--exclude=/var/cache '
-          '--exclude=/var/tmp '
           '2>/dev/null';
     }
     final escapedPath = normRoot.replaceAll("'", "'\\''");
@@ -1459,16 +1632,36 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           : normalizedPath;
 
       final inner = _duStreamingInnerCommand(normRoot);
-      // Timeout progressivo: tentativi più brevi senza privilegi, più lunghi con sudo / root.
-      final stages = normRoot == '/'
-          ? const [
-              (sudo: false, max: Duration(seconds: 25)),
-              (sudo: true, max: Duration(seconds: 90)),
-            ]
-          : const [
-              (sudo: false, max: Duration(seconds: 18)),
-              (sudo: true, max: Duration(seconds: 40)),
-            ];
+      // Con la password già salvata si va DIRETTAMENTE con sudo: un solo
+      // passaggio completo (senza would saltare le cartelle con permessi
+      // restrittivi, che il passaggio utente tralascia e che l'early-return
+      // su risultato parziale non recuperava mai). Senza password salvata:
+      // prima il passaggio utente (risultato parziale immediato), poi sudo
+      // (con eventuale dialog password).
+      final savedPassword = await PasswordStorage.getPassword();
+      final hasPassword = savedPassword != null && savedPassword.isNotEmpty;
+      final List<({bool sudo, Duration max})> stages;
+      if (hasPassword) {
+        stages = normRoot == '/'
+            ? const [
+                (sudo: true, max: Duration(seconds: 90)),
+                (sudo: false, max: Duration(seconds: 25)),
+              ]
+            : const [
+                (sudo: true, max: Duration(seconds: 40)),
+                (sudo: false, max: Duration(seconds: 18)),
+              ];
+      } else {
+        stages = normRoot == '/'
+            ? const [
+                (sudo: false, max: Duration(seconds: 25)),
+                (sudo: true, max: Duration(seconds: 90)),
+              ]
+            : const [
+                (sudo: false, max: Duration(seconds: 18)),
+                (sudo: true, max: Duration(seconds: 40)),
+              ];
+      }
 
       for (final stage in stages) {
         final proc = await _spawnDuShell(useSudo: stage.sudo, inner: inner);
@@ -1584,8 +1777,16 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     final dirName = pathParts.isNotEmpty ? pathParts.last : cleanPath;
 
     final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp', 'snap', 'lost+found', 'sysroot'];
-    if (virtualDirs.contains(dirName.toLowerCase())) {
-      return null;
+    // Le directory virtuali vanno escluse solo come figlie DIRETTE della root
+    // scansionata (du -d1 emette comunque solo quelle): una directory 'tmp' o
+    // 'proc' annidata nell'albero (es. dentro /var o /usr) è REALE e deve
+    // restare visibile.
+    if (fullPath != basePath) {
+      final baseNoSlash = basePath == '/' ? '' : basePath;
+      final parentDir = fullPath.substring(0, fullPath.lastIndexOf('/'));
+      if (parentDir == baseNoSlash && virtualDirs.contains(dirName.toLowerCase())) {
+        return null;
+      }
     }
 
     if (fullPath == '/' ||
@@ -1593,11 +1794,8 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
         fullPath == '/run' || fullPath == '/tmp' ||
         fullPath == '/snap' || fullPath == '/boot' || fullPath == '/boot/efi' ||
         fullPath == '/lost+found' || fullPath == '/sysroot' ||
-        fullPath == '/var/lib/docker' || fullPath == '/var/lib/containers' ||
-        fullPath == '/var/cache' || fullPath == '/var/tmp' ||
         fullPath.startsWith('/proc/') || fullPath.startsWith('/sys/') ||
         fullPath.startsWith('/dev/') || fullPath.startsWith('/run/') ||
-        fullPath.startsWith('/tmp/') ||
         fullPath.startsWith('/snap/') || fullPath.startsWith('/boot/')) {
       return null;
     }
