@@ -6178,6 +6178,12 @@ abstract class AppLocalizations {
   /// **'Pacchetto'**
   String get driverManagerPackage;
 
+  /// Versione del driver/pacchetto effettivamente installato
+  ///
+  /// In it, this message translates to:
+  /// **'Installato di sistema'**
+  String get driverManagerInstalled;
+
   /// No description provided for @driverManagerInstall.
   ///
   /// In it, this message translates to:

@@ -13,6 +13,7 @@ class DriverInfo {
   final String? recommendedDriver;
   final DriverStatus status;
   final String? version;
+  final String? installedPackageName;
   final String? vendorId;
   final String? productId;
   final bool dkmsWarning;
@@ -26,6 +27,7 @@ class DriverInfo {
     this.recommendedDriver,
     this.status = DriverStatus.unknown,
     this.version,
+    this.installedPackageName,
     this.vendorId,
     this.productId,
     this.dkmsWarning = false,
@@ -34,6 +36,7 @@ class DriverInfo {
   DriverInfo copyWith({
     DriverStatus? status,
     String? version,
+    String? installedPackageName,
     bool? dkmsWarning,
     List<String>? candidatePackages,
   }) =>
@@ -46,6 +49,7 @@ class DriverInfo {
         recommendedDriver: recommendedDriver,
         status: status ?? this.status,
         version: version ?? this.version,
+        installedPackageName: installedPackageName ?? this.installedPackageName,
         vendorId: vendorId,
         productId: productId,
         dkmsWarning: dkmsWarning ?? this.dkmsWarning,
@@ -103,20 +107,40 @@ class _ChipsetEntry {
   final String? driver;
   final String category;
   final String? name;
+  /// Pattern (regex, case-insensitive) dei nomi di pacchetto che implementano
+  /// questo chipset su QUALSIASI PM. Serve per leggere la VERSIONE realmente
+  /// installata dal database pacchetti (dpkg/rpm/pacman), indipendente dai
+  /// candidati suggeriti (che possono essere datati).
+  final List<String> installedPatterns;
 
   const _ChipsetEntry({
     required this.packages,
     this.driver,
     required this.category,
     this.name,
+    this.installedPatterns = const [],
   });
 }
 
 class DriverManagerService {
   static const _chipsetDb = <String, _ChipsetEntry>{
     '10de': _ChipsetEntry(
+      installedPatterns: [
+        r'^nvidia-driver-[0-9]+$', r'^libnvidia-',
+        r'^xorg-x11-drv-nvidia($|-cuda)?$', r'^akmod-nvidia$', r'^nvidia-(dkms|open|utils)?$', r'^nvidia-glG06$',
+      ],
       packages: {
-        'apt': ['nvidia-driver-535', 'nvidia-driver-530', 'nvidia-driver-525'],
+        // Fallback statico SOLO se l'interrogazione dinamica di apt-cache
+        // fallisce; preferiti nvidia-driver-580+ in modo che l'elenco non
+        // appaia "fermo a 535" su sistemi con driver più nuovi.
+        'apt': [
+          'nvidia-driver-580',
+          'nvidia-driver-575',
+          'nvidia-driver-570',
+          'nvidia-driver-560',
+          'nvidia-driver-550',
+          'nvidia-driver-535',
+        ],
         'dnf': ['xorg-x11-drv-nvidia-cuda', 'xorg-x11-drv-nvidia'],
         'pacman': ['nvidia-dkms', 'nvidia'],
         'zypper': ['nvidia-glG06'],
@@ -125,6 +149,10 @@ class DriverManagerService {
       category: 'Graphics',
     ),
     '1002': _ChipsetEntry(
+      installedPatterns: [
+        r'^xserver-xorg-video-amdgpu$', r'^firmware-amd-graphics$',
+        r'^xorg-x11-drv-amdgpu$', r'^mesa-dri-drivers$', r'^xf86-video-amdgpu$', r'^mesa$',
+      ],
       packages: {
         'apt': ['firmware-amd-graphics', 'xserver-xorg-video-amdgpu'],
         'dnf': ['xorg-x11-drv-amdgpu', 'mesa-dri-drivers'],
@@ -135,6 +163,7 @@ class DriverManagerService {
       category: 'Graphics',
     ),
     '10ec:8812': _ChipsetEntry(
+      installedPatterns: [r'^rtl8812au'],
       packages: {
         'apt': ['rtl8812au-dkms'],
         'dnf': ['rtl8812au-dkms'],
@@ -146,12 +175,14 @@ class DriverManagerService {
       name: 'Realtek RTL8812AU Wi-Fi',
     ),
     '10ec:8168': _ChipsetEntry(
+      installedPatterns: [r'^r8169$'],
       packages: {},
       driver: 'r8169',
       category: 'Network',
       name: 'Realtek RTL8168 Ethernet',
     ),
     '10ec:8821': _ChipsetEntry(
+      installedPatterns: [r'^rtl8821ce'],
       packages: {
         'apt': ['rtl8821ce-dkms'],
         'dnf': ['rtl8821ce-dkms'],
@@ -163,6 +194,7 @@ class DriverManagerService {
       name: 'Realtek RTL8821CE Wi-Fi',
     ),
     '10ec:b822': _ChipsetEntry(
+      installedPatterns: [r'^rtl8822be'],
       packages: {
         'apt': ['rtl8822be-dkms'],
         'dnf': ['rtl8822be-dkms'],
@@ -174,6 +206,7 @@ class DriverManagerService {
       name: 'Realtek RTL8822BE Wi-Fi',
     ),
     '14e4:43a0': _ChipsetEntry(
+      installedPatterns: [r'^broadcom-sta', r'^broadcom-wl', r'^wl-kmod$', r'^firmware-brcm80211$'],
       packages: {
         'apt': ['firmware-brcm80211', 'broadcom-sta-dkms'],
         'dnf': ['broadcom-wl'],
@@ -185,6 +218,7 @@ class DriverManagerService {
       name: 'Broadcom Wi-Fi',
     ),
     '14e4:4343': _ChipsetEntry(
+      installedPatterns: [r'^broadcom-sta', r'^broadcom-wl', r'^wl-kmod$', r'^firmware-brcm80211$'],
       packages: {
         'apt': ['firmware-brcm80211', 'broadcom-sta-dkms'],
         'dnf': ['broadcom-wl'],
@@ -196,6 +230,7 @@ class DriverManagerService {
       name: 'Broadcom Wi-Fi',
     ),
     '8086:0a2e': _ChipsetEntry(
+      installedPatterns: [r'^firmware-iwlwifi$', r'^iwlwifi-firmware$', r'^linux-firmware$'],
       packages: {
         'apt': ['firmware-iwlwifi'],
         'dnf': ['iwlwifi-firmware'],
@@ -207,6 +242,7 @@ class DriverManagerService {
       name: 'Intel Wi-Fi',
     ),
     '8086:2723': _ChipsetEntry(
+      installedPatterns: [r'^firmware-iwlwifi$', r'^iwlwifi-firmware$', r'^linux-firmware$'],
       packages: {
         'apt': ['firmware-iwlwifi'],
         'dnf': ['iwlwifi-firmware'],
@@ -218,6 +254,7 @@ class DriverManagerService {
       name: 'Intel Wi-Fi 6 AX200',
     ),
     '8086:2725': _ChipsetEntry(
+      installedPatterns: [r'^firmware-iwlwifi$', r'^iwlwifi-firmware$', r'^linux-firmware$'],
       packages: {
         'apt': ['firmware-iwlwifi'],
         'dnf': ['iwlwifi-firmware'],
@@ -355,24 +392,51 @@ class DriverManagerService {
       final allDevices = [...pciDevices, ...usbDevices];
 
       final drivers = <DriverInfo>[];
+      final installedDb = await _installedPackages();
+      final dynamicAptNvidia = pm == 'apt'
+          ? await _queryAptNvidiaDrivers()
+          : null;
       for (final d in allDevices) {
         final entry = _lookupChipset(d);
         if (entry == null) continue;
 
-        final candidates = entry.packages[pm] ?? [];
+        var candidates = entry.packages[pm] ?? [];
+        if (d['vendorId'] == '10de' && pm == 'apt' && dynamicAptNvidia != null) {
+          candidates = dynamicAptNvidia;
+        }
         final isLoaded = entry.driver != null
             ? await _isModuleLoaded(entry.driver!)
             : false;
 
+        // Versioni reali dal database pacchetti: match con i pattern della
+        // famiglia chipset + per-occupazione dei candidati.
         String? firstAvailable;
-        bool firstIsInstalled = false;
-        for (final c in candidates) {
-          if (await _isPackageInstalled(c)) {
-            firstAvailable = c;
-            firstIsInstalled = true;
-            break;
-          }
+        final matchedInstalled =
+            matchInstalledPackages(installedDb, entry.installedPatterns);
+        final matchedByName = {
+          for (final m in matchedInstalled) m.key: m.value,
+        };
+        final candidateInstalled =
+            candidates.any((c) => installedDb.containsKey(c));
+        final hasInstalled = matchedInstalled.isNotEmpty || candidateInstalled;
+
+        String? installedName;
+        String? installedVer;
+        if (matchedByName.isNotEmpty) {
+          installedName = candidates.firstWhere(
+            (c) => matchedByName.containsKey(c),
+            orElse: () => matchedInstalled.first.key,
+          );
+          installedVer = matchedByName[installedName];
         }
+
+        // GPU NVIDIA: la versione driver ESATTA viene da nvidia-smi
+        // (indipendente dal packaging della distro).
+        if (entry.category == 'Graphics' && d['vendorId'] == '10de') {
+          final smi = await _queryNvidiaSmiDriverVersion();
+          if (smi != null) installedVer = smi;
+        }
+
         firstAvailable ??= candidates.isNotEmpty ? candidates.first : null;
 
         bool dkmsWarn = false;
@@ -383,7 +447,7 @@ class DriverManagerService {
         }
 
         DriverStatus status;
-        if (isLoaded || firstIsInstalled) {
+        if (isLoaded || hasInstalled) {
           status = DriverStatus.installed;
         } else if (firstAvailable != null && !dkmsWarn) {
           status = DriverStatus.available;
@@ -401,6 +465,8 @@ class DriverManagerService {
           candidatePackages: candidates,
           recommendedDriver: entry.driver,
           status: status,
+          version: installedVer,
+          installedPackageName: hasInstalled ? installedName : null,
           vendorId: d['vendorId'],
           productId: d['productId'],
           dkmsWarning: dkmsWarn,
@@ -545,6 +611,166 @@ class DriverManagerService {
   static Future<bool> _isModuleLoaded(String module) async {
     final r = await _run('lsmod 2>/dev/null | grep -w $module');
     return r.isNotEmpty;
+  }
+
+  // ─── Versioni realmente installate (tutte le PM) ───────────────────────────
+  static Map<String, String>? _installedPkgCache;
+  static DateTime? _installedPkgCacheTs;
+
+  /// Database "pacchetto → versione" installato. Un solo comando per scan,
+  /// cache statica (TTL 2 min).
+  static Future<Map<String, String>> _installedPackages() async {
+    if (_installedPkgCache != null &&
+        _installedPkgCacheTs != null &&
+        DateTime.now().difference(_installedPkgCacheTs!) <
+            const Duration(minutes: 2)) {
+      return _installedPkgCache!;
+    }
+    final pm = await _detectPackageManager();
+    String cmd;
+    switch (pm) {
+      case 'apt':
+        cmd = r"LC_ALL=C dpkg-query -W -f='${Package}\t${Version}\t${db:Status-Status}\n' 2>/dev/null";
+        break;
+      case 'dnf':
+      case 'zypper':
+        cmd = r"LC_ALL=C rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}\n'";
+        break;
+      case 'pacman':
+        cmd = 'LC_ALL=C pacman -Q';
+        break;
+      default:
+        return const {};
+    }
+    final out = await _run(cmd);
+    final parsed = parseInstalledPackages(out, pm);
+    _installedPkgCache = parsed;
+    _installedPkgCacheTs = DateTime.now();
+    return parsed;
+  }
+
+  /// Parser puro dell'output del database pacchetti per PM:
+  /// - apt:  `name<TAB>version<TAB>status`
+  /// - dnf/zypper: `name<TAB>version-release` (rpm -qa --qf)
+  /// - pacman: `name version`
+  /// Testato in driver_manager_test.
+  static Map<String, String> parseInstalledPackages(String output, String pm) {
+    final map = <String, String>{};
+    for (final line in output.split('\n')) {
+      if (line.trim().isEmpty) continue;
+      final cols = line.split('\t');
+      switch (pm) {
+        case 'apt':
+          if (cols.length >= 2 && cols[0].trim().isNotEmpty) {
+            final status = cols.length >= 3 ? cols[2].trim() : 'installed';
+            if (status == 'installed' || status == 'half-installed') {
+              map[cols[0].trim()] = cols[1].trim();
+            }
+          }
+          break;
+        case 'dnf':
+        case 'zypper':
+          if (cols.length >= 2 && cols[0].trim().isNotEmpty) {
+            map[cols[0].trim()] = cols[1].trim();
+          }
+          break;
+        case 'pacman':
+          final parts = line.trim().split(RegExp(r'\s+'));
+          if (parts.length >= 2) map[parts[0]] = parts[1];
+          break;
+      }
+    }
+    return map;
+  }
+
+  /// Pacchetti installati che matchano i pattern della famiglia chipset.
+  /// Puro e testato; pattern regex case-insensitive, pattern invalidi ignorati.
+  static List<MapEntry<String, String>> matchInstalledPackages(
+      Map<String, String> db, List<String> patterns) {
+    final out = <MapEntry<String, String>>[];
+    for (final e in db.entries) {
+      for (final p in patterns) {
+        RegExp? re;
+        try {
+          re = RegExp(p, caseSensitive: false);
+        } catch (_) {
+          re = null;
+        }
+        if (re != null && re.hasMatch(e.key)) {
+          out.add(MapEntry(e.key, e.value));
+          break;
+        }
+      }
+    }
+    return out;
+  }
+
+  /// Versione driver NVIDIA dall'hardware (nvidia-smi), es. "580.105.08":
+  /// valida su QUALSIASI distro indipendentemente dal packaging.
+  static String? _nvidiaDriverVersionCache;
+  static DateTime? _nvidiaDriverVersionTs;
+
+  static Future<String?> _queryNvidiaSmiDriverVersion() async {
+    if (_nvidiaDriverVersionCache != null &&
+        _nvidiaDriverVersionTs != null &&
+        DateTime.now().difference(_nvidiaDriverVersionTs!) <
+            const Duration(minutes: 5)) {
+      return _nvidiaDriverVersionCache;
+    }
+    String? ver;
+    try {
+      final r = await runProcess('nvidia-smi',
+          ['--query-gpu=driver_version', '--format=csv,noheader'],
+          timeout: const Duration(seconds: 8));
+      final out = ((r.stdout as String?) ?? '').trim();
+      if (RegExp(r'^\d{3,4}\.\d+(\.\d+)?$').hasMatch(out.split('\n').first)) {
+        ver = out.split('\n').first.trim();
+      }
+    } catch (_) {
+      ver = null;
+    }
+    if (ver != null) {
+      _nvidiaDriverVersionCache = ver;
+      _nvidiaDriverVersionTs = DateTime.now();
+    }
+    return ver;
+  }
+
+  /// Versioni dei driver NVIDIA di Ubuntu/Debian disponibili nei repository
+  /// (`apt-cache search --names-only '^nvidia-driver-[0-9]+$'`), ordinate
+  /// dalla più recente. Fallback: lista statica nel DB. Cache statica 10 min.
+  static List<String>? _aptNvidiaCache;
+  static DateTime? _aptNvidiaTs;
+
+  static Future<List<String>?> _queryAptNvidiaDrivers() async {
+    if (_aptNvidiaCache != null &&
+        _aptNvidiaTs != null &&
+        DateTime.now().difference(_aptNvidiaTs!) < const Duration(minutes: 10)) {
+      return _aptNvidiaCache;
+    }
+    List<String>? result;
+    try {
+      final out = await _run(
+          r"LC_ALL=C apt-cache search --names-only '^nvidia-driver-[0-9]+$' 2>/dev/null");
+      final versions = <int>[];
+      for (final line in out.split('\n')) {
+        final m = RegExp(r'^nvidia-driver-(\d+)\b').firstMatch(line.trim());
+        if (m != null && !versions.contains(int.parse(m.group(1)!))) {
+          versions.add(int.parse(m.group(1)!));
+        }
+      }
+      versions.sort((a, b) => b - a);
+      if (versions.isNotEmpty) {
+        result = versions.take(3).map((v) => 'nvidia-driver-$v').toList();
+      }
+    } catch (_) {
+      result = null;
+    }
+    if (result != null) {
+      _aptNvidiaCache = result;
+      _aptNvidiaTs = DateTime.now();
+    }
+    return result;
   }
 
   /// Install the driver package for a given device, trying fallback candidates.

@@ -1443,6 +1443,10 @@
   "driverManagerNoDriversInstalled": "Aucun pilote installé",
   "driverManagerCurrentDriver": "Pilote actuel",
   "driverManagerPackage": "Paquet",
+  "driverManagerInstalled": "Installé sur le système",
+  "@driverManagerInstalled": {
+    "description": "Version réellement installée du paquet/pilote"
+  },
   "driverManagerInstall": "Installer",
   "driverManagerUpdate": "Mettre à jour",
   "driverManagerRebootRequired": "Redémarrage requis après la mise à jour",

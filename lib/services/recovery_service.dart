@@ -835,27 +835,110 @@ class RecoveryService {
     }
   }
 
+  /// Parser puro dell'output di `dnf check-update` (dnf4 e dnf5):
+  /// ritorna le righe aggiornamento "name.arch   version   repo".
+  /// Ignora rumore (metadata, errori localizzati, sezioni di testo).
+  /// Testato in dnf_updates_parse_test.dart.
+  static List<String> parseDnfUpdateLines(String output) {
+    final packageRegex =
+        RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\.[a-zA-Z0-9_]+\s+');
+    const noise = [
+      'Last metadata',
+      'Obsoleting Packages',
+      'Reinstalling:',
+      'Removing:',
+      'Upgrading:',
+      'Downloading Packages:',
+      'Running transaction',
+      'Transaction Summary',
+      'Dependencies resolved',
+      'Complete!',
+      'No updates',
+      'error:',
+      'Error',
+      'Verifying',
+      'Is this ok',
+    ];
+    final lines = <String>[];
+    for (final l in output.split('\n')) {
+      final trimmed = l.trim();
+      if (trimmed.isEmpty) continue;
+      final low = trimmed.toLowerCase();
+      var isNoise = false;
+      for (final n in noise) {
+        if (low.contains(n.toLowerCase())) {
+          isNoise = true;
+          break;
+        }
+      }
+      if (isNoise) continue;
+      if (packageRegex.hasMatch(trimmed)) lines.add(trimmed);
+    }
+    return lines;
+  }
+
+  /// Estrae il nome pacchetto da una riga DNF "name.arch version repo"
+  /// (o "name.arch" nuda). Null se la riga non è paragonabile.
+  static String? dnfPackageNameFromLine(String raw) {
+    final tok = raw.trim().split(RegExp(r'\s+')).first;
+    final m = RegExp(r'^(.+?)\.([a-zA-Z0-9_]+)$').firstMatch(tok);
+    if (m == null) return tok;
+    final arch = m.group(2)!;
+    // Arch RFC-ben formato: x86_64, i686, noarch, aarch64, ppc64le, s390x, riscv64
+    if (RegExp(r'^(x86|i|no|aarch|ppc|s390|riscv)[0-9a-z_.]*$', caseSensitive: false)
+        .hasMatch(arch)) {
+      return m.group(1);
+    }
+    return tok;
+  }
+
   static Future<Map<String, dynamic>> _checkDnfUpdatesReport(List<String> updatesOut) async {
     try {
-      final result = await _runSudoCommand(r"dnf check-update --quiet 2>&1 | grep -v '^$' || true");
-      final dnfOutput = result.stdout.toString();
-      if (dnfOutput.isNotEmpty && !dnfOutput.contains('No updates')) {
-        final packageRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]+\.[a-zA-Z0-9]+\s+');
-        final lines = dnfOutput
-            .split('\n')
-            .where((line) {
-              final trimmed = line.trim();
-              return trimmed.isNotEmpty &&
-                  !trimmed.contains('Last metadata') &&
-                  !trimmed.contains('Last metadata expiration') &&
-                  !trimmed.contains('Error') &&
-                  packageRegex.hasMatch(trimmed);
-            })
-            .toList();
+      // NOTA dnf4/dnf5: check-update esce 0 senza aggiornamenti, 100 quando
+      // ci sono. Gestiamo ESPLICITAMENTE exit-code oltre al parsing stdout.
+      final res = await _runSudoCommand(
+          r'LC_ALL=C dnf check-update -q 2>&1; echo __DNF_RC__:$?');
+      final out = res.stdout.toString();
+      int dnfRc = -1;
+      final rcMatch =
+          RegExp(r'__DNF_RC__:(\d+)').allMatches(out).toList();
+      if (rcMatch.isNotEmpty) {
+        dnfRc = int.tryParse(rcMatch.last.group(1)!) ?? -1;
+      }
+      // Corpo: rimuovi SOLO il token marker (non l'intera riga — l'ultima
+      // riga DNF può combinarci se stdout non termina con newline).
+      final body = out
+          .split('\n')
+          .map((line) => line.replaceAll(RegExp(r'__DNF_RC__:\d+'), ''))
+          .join('\n');
+      final lines = parseDnfUpdateLines(body);
+      if (lines.isNotEmpty) {
         updatesOut.addAll(lines);
         return {'mode': 'installable', 'count': lines.length};
       }
-      return {'mode': 'none', 'count': 0};
+      if (dnfRc == -1 && out.contains('Timeout')) {
+        return {
+          'mode': 'error',
+          'count': 0,
+          'errorMessage': 'timeout',
+        };
+      }
+      if (dnfRc == 0 || dnfRc == 100) {
+        return {'mode': 'none', 'count': 0};
+      }
+      // Falisco senza righe paraggiate (dnf5 con formati diversi): prova
+      // `dnf list updates` come interpretazione alternativa.
+      try {
+        final r2 = await _runSudoCommand(r'LC_ALL=C dnf list updates -q 2>&1');
+        final lines2 = parseDnfUpdateLines(r2.stdout.toString());
+        if (lines2.isNotEmpty) {
+          updatesOut.addAll(lines2);
+          return {'mode': 'installable', 'count': lines2.length};
+        }
+        return {'mode': 'none', 'count': 0};
+      } catch (_) {
+        return {'mode': 'error', 'count': 0, 'errorMessage': 'dnf exit $dnfRc'};
+      }
     } catch (e) {
       return {'mode': 'error', 'count': 0, 'errorMessage': e.toString()};
     }
@@ -1152,7 +1235,27 @@ class RecoveryService {
         try {
           onProgress?.call(a, 'DNF: update');
           var dnfLines = 0;
-          final cmd = _sudoBashCommand(escapedPassword, 'dnf update -y 2>&1');
+          // dnf5: `update` è alias deprecato di `upgrade`; selettivo = pacchetti
+          // scelti dall'utente (raw "name.arch ...") → nome senza suffisso arch.
+          String dnfCmd;
+          final selPkgs = <String>[];
+          if (selectedUpdates != null) {
+            for (final s in selectedUpdates) {
+              final p = dnfPackageNameFromLine(s);
+              // Solo nomi "sicuri" (charset restrittivo, anti-injection — i
+              // nomi arrivano dal parser, ma si valida comunque).
+              if (p != null &&
+                  p.isNotEmpty &&
+                  RegExp(r'^[A-Za-z0-9+._-]+$').hasMatch(p) &&
+                  !selPkgs.contains(p)) {
+                selPkgs.add(p);
+              }
+            }
+          }
+          dnfCmd = selPkgs.isNotEmpty
+              ? 'LC_ALL=C dnf -y upgrade ${selPkgs.join(' ')} 2>&1'
+              : 'LC_ALL=C dnf -y upgrade 2>&1';
+          final cmd = _sudoBashCommand(escapedPassword, dnfCmd);
           final process = await Process.start('bash', ['-c', cmd], runInShell: true);
           final code = await _pumpStdoutLines(
             process,
@@ -1163,10 +1266,15 @@ class RecoveryService {
             onLine: (line) {
               final t = line.trim();
               if (t.isEmpty) return;
-              if (t.startsWith('Last metadata') ||
-                  t.startsWith('Dependencies resolved') ||
-                  t.startsWith('Transaction Summary') ||
-                  t.startsWith('Complete!')) {
+              final low = t.toLowerCase();
+              if (low.startsWith('last metadata') ||
+                  low.startsWith('dependencies resolved') ||
+                  low.startsWith('transaction summary') ||
+                  low.startsWith('complete!') ||
+                  low.startsWith('downloading packages:') ||
+                  low.startsWith('running transaction') ||
+                  low.startsWith('verifying') ||
+                  low.startsWith('is this ok')) {
                 return;
               }
               dnfLines++;

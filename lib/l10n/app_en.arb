@@ -1389,6 +1389,10 @@
   "driverManagerNoDriversInstalled": "No managed drivers installed",
   "driverManagerCurrentDriver": "Current driver",
   "driverManagerPackage": "Package",
+  "driverManagerInstalled": "System installed",
+  "@driverManagerInstalled": {
+    "description": "Effectively installed driver package version"
+  },
   "driverManagerInstall": "Install",
   "driverManagerUpdate": "Update",
   "driverManagerRebootRequired": "Reboot required after update",

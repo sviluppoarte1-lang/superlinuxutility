@@ -1443,6 +1443,10 @@
   "driverManagerNoDriversInstalled": "Ningún controlador instalado",
   "driverManagerCurrentDriver": "Controlador actual",
   "driverManagerPackage": "Paquete",
+  "driverManagerInstalled": "Instalado en el sistema",
+  "@driverManagerInstalled": {
+    "description": "Versión realmente instalada del paquete/driver"
+  },
   "driverManagerInstall": "Instalar",
   "driverManagerUpdate": "Actualizar",
   "driverManagerRebootRequired": "Reinicio necesario tras la actualización",

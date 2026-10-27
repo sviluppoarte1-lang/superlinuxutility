@@ -1022,8 +1022,8 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
     final raw = _rawUpdates[i];
     // Flatpak ref: app/org.name/x86_64/stable
     if (raw.startsWith('app/') || raw.startsWith('runtime/') || raw.startsWith('system/')) return 'Flatpak';
-    // DNF: package.arch  version  repo
-    if (RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]*\.[a-zA-Z]+\s+').hasMatch(raw)) return 'DNF';
+    // DNF: package.arch  version  repo (arch può essere x86_64/noarch/aarch64)
+    if (RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9+\-._]*\.[a-zA-Z0-9_]+\s+').hasMatch(raw)) return 'DNF';
     // Pacman: package-name  version -> version (Arch/Manjaro/EndeavourOS)
     if (raw.contains(RegExp(r'\s+\S+\s+->\s+'))) return 'Pacman';
     // APT: simple name or name/repo version

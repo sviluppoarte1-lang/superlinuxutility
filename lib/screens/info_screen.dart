@@ -396,7 +396,9 @@ class _InfoScreenState extends State<InfoScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ChangelogView(sections: _changelogSections, maxSections: 1),
+                    ChangelogView(
+                        sections: releasedChangelogSections(_changelogSections),
+                        maxSections: 1),
                     const SizedBox(height: 4),
                     Align(
                       alignment: Alignment.centerRight,

@@ -376,7 +376,18 @@ class _DriverManagerScreenState extends State<DriverManagerScreen> {
                           ?.copyWith(color: theme.colorScheme.outline),
                     ),
                   ],
-                  if (driver.candidatePackages.isNotEmpty) ...[
+                  if (driver.version != null ||
+                      driver.installedPackageName != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${l10n.driverManagerInstalled}'
+                      '${driver.installedPackageName != null ? ': ${driver.installedPackageName}' : ''}'
+                      '${driver.version != null ? ' (${driver.version})' : ''}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ] else if (driver.candidatePackages.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       '${l10n.driverManagerPackage}: ${driver.candidatePackages.first}',

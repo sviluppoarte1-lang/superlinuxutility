@@ -174,12 +174,31 @@ class RepositoryService {
 
   static Future<List<SystemRepository>> _loadDnfRepos() async {
     final repos = <SystemRepository>[];
-    final dir = Directory('/etc/yum.repos.d');
-    if (!await dir.exists()) return repos;
-
-    await for (final f in dir.list()) {
-      if (f is File && f.path.endsWith('.repo')) {
-        await _parseDnfFile(f, repos);
+    final seenPaths = <String>{};
+    // Percorso standard + eventuali reposdir personalizzati in /etc/dnf/dnf.conf
+    final dirs = <String>['/etc/yum.repos.d'];
+    try {
+      final confLines = await File('/etc/dnf/dnf.conf').readAsLines();
+      for (final l in confLines) {
+        if (l.trim().startsWith('reposdir=')) {
+          for (final d
+              in l.trim().substring(9).trim().split(RegExp(r'[,:\s]+'))) {
+            if (d.trim().isNotEmpty && !dirs.contains(d.trim())) {
+              dirs.add(d.trim());
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    for (final dirPath in dirs) {
+      final dir = Directory(dirPath);
+      if (!await dir.exists()) continue;
+      await for (final f in dir.list()) {
+        if (f is File &&
+            f.path.endsWith('.repo') &&
+            seenPaths.add(f.path)) {
+          await _parseDnfFile(f, repos);
+        }
       }
     }
     return repos;
@@ -216,8 +235,16 @@ class RepositoryService {
           startLine = i;
         } else if (line.startsWith('baseurl=')) {
           currentBaseurl = line.substring(8).trim();
+        } else if (line.startsWith('metalink=') ||
+            line.startsWith('mirrorlist=')) {
+          // Fedora standard usa metalink invece di baseurl — mostra comunque
+          // un URI utile quando baseurl è assente (setup dnf5 senza baseurl).
+          final sep = line.indexOf('=') + 1;
+          currentBaseurl ??= line.substring(sep).trim();
         } else if (line.startsWith('enabled=')) {
-          currentEnabled = line.substring(8).trim() == '1';
+          // dnf5 accetta anche 'true'/'false' oltre a 0/1.
+          final v = line.substring(8).trim().toLowerCase();
+          currentEnabled = v == '1' || v == 'true';
         }
       }
       if (currentName != null) {

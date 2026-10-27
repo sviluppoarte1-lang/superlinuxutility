@@ -35,6 +35,16 @@ List<ChangelogSection> parseChangelog(String markdown) {
   return sections;
 }
 
+/// Sezioni delle release PUBBLICATE: esclude le sezioni "Unreleased"
+/// (ancora in sviluppo). Usata dalla card "ultima release" in InfoScreen;
+/// la lista completa resta disponibile per la vista estesa.
+List<ChangelogSection> releasedChangelogSections(
+    List<ChangelogSection> sections) {
+  return sections
+      .where((s) => !s.title.trim().toLowerCase().startsWith('unreleased'))
+      .toList();
+}
+
 /// Renders parsed changelog markdown: `### ` subsections, bullets,
 /// numbered items and `**bold**` inline text.
 class ChangelogView extends StatelessWidget {

@@ -1443,6 +1443,10 @@
   "driverManagerNoDriversInstalled": "Keine verwalteten Treiber installiert",
   "driverManagerCurrentDriver": "Aktueller Treiber",
   "driverManagerPackage": "Paket",
+  "driverManagerInstalled": "Im System installiert",
+  "@driverManagerInstalled": {
+    "description": "Tatsächlich installierte Paket-/Treiberversion"
+  },
   "driverManagerInstall": "Installieren",
   "driverManagerUpdate": "Aktualisieren",
   "driverManagerRebootRequired": "Neustart nach Update erforderlich",

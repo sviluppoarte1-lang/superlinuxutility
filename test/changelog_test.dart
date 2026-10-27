@@ -34,7 +34,12 @@ void main() {
     final markdown = await rootBundle.loadString('CHANGELOG.md');
     final sections = parseChangelog(markdown);
     expect(sections, isNotEmpty);
-    expect(sections.first.title, startsWith('2.1.0'));
+    // La card inline di Info mostra l'ultima RELEASE PUBLISHED: la sezione
+    // "Unreleased" in via di sviluppo non deve prima comparire (vedi
+    // releasedChangelogSections).
+    final released = releasedChangelogSections(sections);
+    expect(released, isNotEmpty);
+    expect(released.first.title, startsWith('2.1.0'));
     expect(sections.last.title, startsWith('1.8.6'));
 
     await tester.pumpWidget(

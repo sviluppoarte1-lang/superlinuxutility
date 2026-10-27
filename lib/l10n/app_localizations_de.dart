@@ -3427,6 +3427,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get driverManagerPackage => 'Paket';
 
   @override
+  String get driverManagerInstalled => 'Im System installiert';
+
+  @override
   String get driverManagerInstall => 'Installieren';
 
   @override

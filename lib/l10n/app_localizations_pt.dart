@@ -3428,6 +3428,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get driverManagerPackage => 'Pacote';
 
   @override
+  String get driverManagerInstalled => 'Instalado no sistema';
+
+  @override
   String get driverManagerInstall => 'Instalar';
 
   @override
