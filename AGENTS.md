@@ -177,7 +177,7 @@ flutter build linux
 - **Perf**: `_isPackageInstalled` rimane (firmware/install); il vecchio loop per-candidato (dpkg/rpm per OGNI candidato per OGNI device) è stato sostituito dal DB unico in cache — non reintrodurre N query per candidato.
 - RepositoriesService lettura DNF: `enabled=true/false` (dnf5) accettato; `metalink=`/`mirrorlist=` mostrati come URI se baseurl assente; supporto `reposdir=` personalizzato da `/etc/dnf/dnf.conf` (dirs multiple, dedup per path). RepositoryManager resta write-only.
 - **CHANGELOG "Unreleased"**: la card "ultima release" di InfoScreen usa `releasedChangelogSections()` (nuovo in changelog_view.dart) che esclude le sezioni che iniziano con "Unreleased"; il dialog completo mostra tutto. Test changelog aggiornato.
-- l10n: +1 chiave `driverManagerInstalled` ×6 arb; NELL'ATTRIBUTO @ usa la MAPPA con "description" (una stringa piana fa fallire gen-l10n con "not a properly formatted Map"). Nuovi test `test/dnf_updates_parse_test.dart` (15). Verifica: analyze **177 (== baseline HG, 0 errori)**, test **134/134**, build release OK.
+- l10n: +1 chiave `driverManagerInstalled` ×6 arb; NELL'ATTRIBUTO @ usa la MAPPA con "description" (una stringa piana fa fallire gen-l10n con "not a properly formatted Map"). Nuovi test `test/dnf_updates_parse_test.dart` (15). Verifica: analyze **177 (== baseline HEAD, 0 errori)**, test **134/134**, build release OK.
 - ⚠️ La baseline analyze è ora 177 (non più 164) — issue preesistenti a HEAD; aggiornare riferimenti vecchi.
 
 ## Tray menu
