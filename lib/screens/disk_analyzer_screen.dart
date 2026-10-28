@@ -143,7 +143,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           _lastListedItems = List.of(items);
           
           // Se abbiamo caricato dalla cache, aggiorna l'UI e calcola le dimensioni in background
-          final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp'];
+          final virtualDirs = ['proc', 'sys', 'dev', 'run'];
           final filteredItems = items.where((item) {
             if (!_showHiddenFiles && item.name.startsWith('.')) {
               return false;
@@ -154,10 +154,9 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                 return false;
               }
               if (item.path == '/proc' || item.path == '/sys' || item.path == '/dev' || 
-                  item.path == '/run' || item.path == '/tmp' ||
+                  item.path == '/run' ||
                   item.path.startsWith('/proc/') || item.path.startsWith('/sys/') ||
-                  item.path.startsWith('/dev/') || item.path.startsWith('/run/') ||
-                  item.path.startsWith('/tmp/')) {
+                  item.path.startsWith('/dev/') || item.path.startsWith('/run/')) {
                 return false;
               }
             }
@@ -199,7 +198,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       _lastListedItems = List.of(items);
       
       // Directory virtuali da escludere (filesystem virtuali che non hanno dimensioni reali)
-      final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp'];
+      final virtualDirs = ['proc', 'sys', 'dev', 'run'];
       
       // Filtra file nascosti e directory virtuali
       final filteredItems = items.where((item) {
@@ -217,10 +216,9 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           
           // Escludi anche se il percorso completo contiene queste directory
           if (item.path == '/proc' || item.path == '/sys' || item.path == '/dev' || 
-              item.path == '/run' || item.path == '/tmp' ||
+              item.path == '/run' ||
               item.path.startsWith('/proc/') || item.path.startsWith('/sys/') ||
-              item.path.startsWith('/dev/') || item.path.startsWith('/run/') ||
-              item.path.startsWith('/tmp/')) {
+              item.path.startsWith('/dev/') || item.path.startsWith('/run/')) {
             return false;
           }
         }
@@ -356,22 +354,35 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     );
   }
 
+  /// Toggle "mostra file nascosti": persiste la preferenza e ricarica la
+  /// directory corrente (il filtro è applicato al listing, serve un reload).
+  /// Usato da ENTRAMBE le vie: pulsante icona della toolbar e popup menu.
+  void _toggleHiddenFiles() {
+    setState(() {
+      _showHiddenFiles = !_showHiddenFiles;
+    });
+    SharedPreferences.getInstance()
+        .then((p) => p.setBool(_prefKeyShowHidden, _showHiddenFiles));
+    _loadDirectory(_currentPath, skipHistory: true);
+  }
+
   /// Dimensiona TUTTE le directory figlie con un solo `du -b -d1` (output in
   /// bytes apparenti, aggiornamenti progressivi). True se du ha prodotto
   /// almeno una riga. NB: `-b`+`-d1` (NON `-sb`, che confligge con
   /// `--max-depth` e dá ERRORE).
-  /// aggiornamenti progressivi). True se du ha prodotto almeno una riga.
+  /// NON si ferma mai su directory grandi: nessun timeout fisso corto, solo
+  /// un watchdog di inattività (nessun output per 2 min → kill) e un tetto
+  /// totale (45 min) per casi degenerati.
   Future<bool> _streamChildSizesFromDu(String dirPath) async {
     if (dirPath.isEmpty || !dirPath.startsWith('/')) return false;
     final escaped = dirPath.replaceAll("'", "'\\''");
     // Per la root stesse esclusioni della scansione a grafico (SOLO montaggi
-    // virtuali/loop): /var/cache, docker e simili restano e vengono mostrati.
+    // virtuali/loop): /var/cache, docker, /tmp e simili restano e vengono mostrati.
     const rootExcludes = '--exclude=/proc --exclude=/sys --exclude=/dev '
-        '--exclude=/run --exclude=/tmp --exclude=/snap --exclude=/boot '
-        '--exclude=/boot/efi --exclude=/lost+found --exclude=/sysroot ';
+        '--exclude=/run ';
     final isRoot = dirPath == '/';
     final inner =
-        'timeout 45 du -b -d1 ${isRoot ? '-x $rootExcludes' : ''} \'$escaped\' 2>/dev/null';
+        'du -b -d1 ${isRoot ? '-x $rootExcludes' : ''} \'$escaped\' 2>/dev/null';
     Process? proc;
     try {
       proc = await Process.start('bash', ['-c', inner], runInShell: true);
@@ -381,9 +392,31 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     final p = proc;
 
     final sw = Stopwatch()..start();
+    var lastDataAt = DateTime.now();
     var remainder = '';
     var sawRows = false;
     var needsRepaint = false;
+    // Watchdog di inattività: du produce righe a ogni directory completata;
+    // 2 min senza NESSUN byte (fs appesi/NFS morti) → SIGTERM.
+    const idleLimit = Duration(minutes: 2);
+    final totalLimit = Duration(minutes: 45);
+    // Assicura l'arresto del processo se riguardiamo un ciclo lungo
+    Timer? watchdog;
+    void watch() {
+      watchdog = Timer.periodic(const Duration(seconds: 10), (t) {
+        final idle = DateTime.now().difference(lastDataAt);
+        if (idle > idleLimit || sw.elapsed > totalLimit) {
+          p.kill(ProcessSignal.sigterm);
+          t.cancel();
+        }
+        if (!mounted) {
+          p.kill(ProcessSignal.sigterm);
+          t.cancel();
+        }
+      });
+    }
+
+    watch();
 
     void flush() {
       if (!mounted) return;
@@ -398,10 +431,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
 
     try {
       await for (final chunk in p.stdout.transform(const Utf8Decoder(allowMalformed: true))) {
-        if (sw.elapsed > const Duration(seconds: 45)) {
-          p.kill(ProcessSignal.sigterm);
-          break;
-        }
+        lastDataAt = DateTime.now();
         remainder += chunk;
         final parts = remainder.split('\n');
         remainder = parts.isNotEmpty ? parts.removeLast() : '';
@@ -409,6 +439,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           final row = _parseDuSbLine(rawLine, dirPath);
           if (row == null) continue;
           sawRows = true;
+          lastDataAt = DateTime.now();
           if (row.$2 > 0 && _applyChildSize(row.$1, row.$2)) {
             needsRepaint = true;
           }
@@ -424,6 +455,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     } catch (_) {
       // Fallback gestito dal valore di ritorno
     } finally {
+      watchdog?.cancel();
       try {
         await p.exitCode.timeout(const Duration(seconds: 2));
       } catch (_) {
@@ -1200,8 +1232,23 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                   // Pulsanti di ordinamento
                   IconButton(
                     icon: Icon(
-                      _currentSort == SortType.sizeDescending 
-                          ? Icons.arrow_downward 
+                      _showHiddenFiles ? Icons.visibility : Icons.visibility_off,
+                      size: 20,
+                    ),
+                    onPressed: _toggleHiddenFiles,
+                    tooltip: _showHiddenFiles
+                        ? AppLocalizations.of(context)!.hideSystemFiles
+                        : AppLocalizations.of(context)!.showSystemFiles,
+                    style: IconButton.styleFrom(
+                      foregroundColor: _showHiddenFiles
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _currentSort == SortType.sizeDescending
+                          ? Icons.arrow_downward
                           : Icons.arrow_upward,
                       size: 20,
                     ),
@@ -1236,12 +1283,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                     color: Theme.of(context).colorScheme.surface,
                     onSelected: (value) {
                       if (value == 'toggle_hidden') {
-                        setState(() {
-                          _showHiddenFiles = !_showHiddenFiles;
-                        });
-                        SharedPreferences.getInstance()
-                            .then((p) => p.setBool(_prefKeyShowHidden, _showHiddenFiles));
-                        _loadDirectory(_currentPath, skipHistory: true);
+                        _toggleHiddenFiles();
                       }
                     },
                     itemBuilder: (context) => [
@@ -1501,6 +1543,10 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   }
 
   /// Comando du senza `sort` nel pipe (così l'output arriva a chunk utilizzabili per il grafico).
+  /// Esclusioni SOLO per montaggi virtuali (/proc /sys /dev /run): `-x` evita
+  /// comunque il cross-filesystem, quindi /tmp /snap /boot /lost+found e
+  /// simili NON sono più escluse — l'utente vuole vedere TUTTE le cartelle di
+  /// sistema (incluso /tmp) con le loro dimensioni reali.
   String _duStreamingInnerCommand(String normRoot) {
     if (normRoot == '/') {
       return 'du -h -d1 -x / '
@@ -1508,12 +1554,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           '--exclude=/sys '
           '--exclude=/dev '
           '--exclude=/run '
-          '--exclude=/tmp '
-          '--exclude=/snap '
-          '--exclude=/boot '
-          '--exclude=/boot/efi '
-          '--exclude=/lost+found '
-          '--exclude=/sysroot '
           '2>/dev/null';
     }
     final escapedPath = normRoot.replaceAll("'", "'\\''");
@@ -1551,7 +1591,9 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     return Process.start('bash', ['-c', cmd], runInShell: true);
   }
 
-  /// Legge stdout a chunk, emette risultati parziali (periodico), rispetta [maxDuration] poi termina il processo.
+  /// Legge stdout a chunk, emette risultati parziali (periodico), rispetta
+  /// [maxDuration] poi termina il processo. Il watchdog di inattività è
+  /// gestito qui (3 min di silenzio → SIGTERM: stallo reale, non lentezza).
   Future<List<Map<String, dynamic>>> _drainDuStdoutToMaps(
     Process process,
     String normRoot, {
@@ -1562,6 +1604,21 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   }) async {
     var remainder = '';
     final sw = Stopwatch()..start();
+    var lastDataAt = DateTime.now();
+    Timer? idleWatch;
+    // Watchdog di inattività: 3 min senza NESSUN byte di output (fs appesi,
+    // NFS morti, mount auto-sync appesi) → SIGTERM e si passa oltre.
+    // `du` su file normali produce righe in continuo: 3 min di silenzio sono
+    // un segnale univoco di stallo, non di scansione lenta.
+    idleWatch = Timer.periodic(const Duration(seconds: 10), (t) {
+      final idle = DateTime.now().difference(lastDataAt);
+      if (!mounted ||
+          (chartToken != null && chartToken != _chartScanToken) ||
+          idle > const Duration(minutes: 3)) {
+        process.kill(ProcessSignal.sigterm);
+        t.cancel();
+      }
+    });
     Timer? periodic;
 
     if (onPartial != null) {
@@ -1577,6 +1634,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
 
     try {
       await for (final chunk in process.stdout.transform(utf8.decoder)) {
+        lastDataAt = DateTime.now();
         if (sw.elapsed > maxDuration) {
           process.kill(ProcessSignal.sigterm);
           break;
@@ -1596,6 +1654,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
         if (row != null) byPath[row['path'] as String] = row;
       }
     } finally {
+      idleWatch.cancel();
       periodic?.cancel();
       try {
         await process.exitCode.timeout(const Duration(seconds: 2));
@@ -1634,40 +1693,37 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       final inner = _duStreamingInnerCommand(normRoot);
       // Con la password già salvata si va DIRETTAMENTE con sudo: un solo
       // passaggio completo (senza would saltare le cartelle con permessi
-      // restrittivi, che il passaggio utente tralascia e che l'early-return
+      // restrittive, che il passaggio utente tralascia e che l'early-return
       // su risultato parziale non recuperava mai). Senza password salvata:
       // prima il passaggio utente (risultato parziale immediato), poi sudo
       // (con eventuale dialog password).
+      //
+        // ⚠️ NON fermarsi mai per directory con permessi restrittivi:
+        // le righe da sudo (fase 2) completano quelle del passaggio utente.
       final savedPassword = await PasswordStorage.getPassword();
       final hasPassword = savedPassword != null && savedPassword.isNotEmpty;
       final List<({bool sudo, Duration max})> stages;
       if (hasPassword) {
-        stages = normRoot == '/'
-            ? const [
-                (sudo: true, max: Duration(seconds: 90)),
-                (sudo: false, max: Duration(seconds: 25)),
-              ]
-            : const [
-                (sudo: true, max: Duration(seconds: 40)),
-                (sudo: false, max: Duration(seconds: 18)),
-              ];
+        stages = const [
+          (sudo: true, max: Duration(minutes: 30)),
+          (sudo: false, max: Duration(minutes: 2)),
+        ];
       } else {
-        stages = normRoot == '/'
-            ? const [
-                (sudo: false, max: Duration(seconds: 25)),
-                (sudo: true, max: Duration(seconds: 90)),
-              ]
-            : const [
-                (sudo: false, max: Duration(seconds: 18)),
-                (sudo: true, max: Duration(seconds: 40)),
-              ];
+        stages = const [
+          (sudo: false, max: Duration(seconds: 60)),
+          (sudo: true, max: Duration(minutes: 30)),
+        ];
       }
 
+      // Accumulo UNICO tra le fasi del grafico corrente.
+      final byPath = <String, Map<String, dynamic>>{};
+      // Il fallback "Files" serve solo se NESSUNA fase ha prodotto nulla:
+      // (le righe du delle fasi successive arricchiscono/soprascrivono).
       for (final stage in stages) {
+        if (!mounted) break;
         final proc = await _spawnDuShell(useSudo: stage.sudo, inner: inner);
         if (proc == null) continue;
-        final byPath = <String, Map<String, dynamic>>{};
-        final got = await _drainDuStdoutToMaps(
+        await _drainDuStdoutToMaps(
           proc,
           normRoot,
           byPath: byPath,
@@ -1675,8 +1731,10 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           onPartial: onPartial,
           maxDuration: stage.max,
         );
-        if (got.isNotEmpty) return got;
       }
+
+      final got = _sortedDirectoryMapsFromAccum(byPath);
+      if (got.isNotEmpty) return got;
 
       final totalFilesSize = _currentItems
           .where((it) => !it.isDirectory)
@@ -1776,11 +1834,13 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     final pathParts = fullPath.split('/').where((p) => p.isNotEmpty).toList();
     final dirName = pathParts.isNotEmpty ? pathParts.last : cleanPath;
 
-    final virtualDirs = ['proc', 'sys', 'dev', 'run', 'tmp', 'snap', 'lost+found', 'sysroot'];
+    final virtualDirs = ['proc', 'sys', 'dev', 'run'];
     // Le directory virtuali vanno escluse solo come figlie DIRETTE della root
     // scansionata (du -d1 emette comunque solo quelle): una directory 'tmp' o
     // 'proc' annidata nell'albero (es. dentro /var o /usr) è REALE e deve
-    // restare visibile.
+    // restare visibile. /tmp, /snap, /boot, /lost+found e simili sono cartelle
+    // di sistema REALI e vanno mostrate (-x nel comando du esclude comunque i
+    // filesystem virtuali/esterni).
     if (fullPath != basePath) {
       final baseNoSlash = basePath == '/' ? '' : basePath;
       final parentDir = fullPath.substring(0, fullPath.lastIndexOf('/'));
@@ -1791,12 +1851,9 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
 
     if (fullPath == '/' ||
         fullPath == '/proc' || fullPath == '/sys' || fullPath == '/dev' ||
-        fullPath == '/run' || fullPath == '/tmp' ||
-        fullPath == '/snap' || fullPath == '/boot' || fullPath == '/boot/efi' ||
-        fullPath == '/lost+found' || fullPath == '/sysroot' ||
+        fullPath == '/run' ||
         fullPath.startsWith('/proc/') || fullPath.startsWith('/sys/') ||
-        fullPath.startsWith('/dev/') || fullPath.startsWith('/run/') ||
-        fullPath.startsWith('/snap/') || fullPath.startsWith('/boot/')) {
+        fullPath.startsWith('/dev/') || fullPath.startsWith('/run/')) {
       return null;
     }
 
