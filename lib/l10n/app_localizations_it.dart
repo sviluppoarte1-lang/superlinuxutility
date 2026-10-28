@@ -1923,6 +1923,14 @@ class AppLocalizationsIt extends AppLocalizations {
   String get details => 'Dettagli';
 
   @override
+  String get showFolder => 'Mostra cartella';
+
+  @override
+  String showFolderError(String path) {
+    return 'Impossibile aprire la cartella: $path';
+  }
+
+  @override
   String get renamedSuccessfully => 'Rinominato con successo';
 
   @override

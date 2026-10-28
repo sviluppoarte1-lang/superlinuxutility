@@ -942,6 +942,18 @@
   "rename": "Renombrar",
   "newName": "Nuevo nombre",
   "details": "Detalles",
+
+  "showFolder": "Mostrar carpeta",
+  "@showFolder": {
+    "description": "Abre la carpeta en el gestor de archivos del sistema (para un archivo, abre la carpeta que lo contiene)."
+  },
+  "showFolderError": "No se pudo abrir la carpeta: {path}",
+  "@showFolderError": {
+    "description": "Error cuando el sistema no puede abrir la carpeta en el gestor de archivos.",
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "renamedSuccessfully": "Renombrado exitosamente",
   "renameError": "Error al renombrar",
   "type": "Tipo",

@@ -942,6 +942,18 @@
   "rename": "Renommer",
   "newName": "Nouveau nom",
   "details": "Détails",
+
+  "showFolder": "Afficher le dossier",
+  "@showFolder": {
+    "description": "Ouvre le dossier dans le gestionnaire de fichiers du système (pour un fichier, ouvre le dossier qui le contient)."
+  },
+  "showFolderError": "Impossible d'ouvrir le dossier : {path}",
+  "@showFolderError": {
+    "description": "Erreur quand le système ne peut pas ouvrir le dossier dans le gestionnaire de fichiers.",
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "renamedSuccessfully": "Renommé avec succès",
   "renameError": "Erreur lors du renommage",
   "type": "Type",

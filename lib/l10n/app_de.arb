@@ -942,6 +942,18 @@
   "rename": "Umbenennen",
   "newName": "Neuer Name",
   "details": "Details",
+
+  "showFolder": "Ordner anzeigen",
+  "@showFolder": {
+    "description": "Öffnet den Ordner im Dateimanager des Systems (bei einer Datei den übergeordneten Ordner)."
+  },
+  "showFolderError": "Ordner konnte nicht geöffnet werden: {path}",
+  "@showFolderError": {
+    "description": "Fehler, wenn das System den Ordner nicht im Dateimanager öffnen kann.",
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "renamedSuccessfully": "Erfolgreich umbenannt",
   "renameError": "Fehler beim Umbenennen",
   "type": "Typ",

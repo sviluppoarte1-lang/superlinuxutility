@@ -942,6 +942,18 @@
   "rename": "Renomear",
   "newName": "Novo nome",
   "details": "Detalhes",
+
+  "showFolder": "Mostrar pasta",
+  "@showFolder": {
+    "description": "Abre a pasta no gerenciador de arquivos do sistema (para um arquivo, abre a pasta que o contém)."
+  },
+  "showFolderError": "Não foi possível abrir a pasta: {path}",
+  "@showFolderError": {
+    "description": "Erro quando o sistema não consegue abrir a pasta no gerenciador de arquivos.",
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "renamedSuccessfully": "Renomeado com sucesso",
   "renameError": "Erro ao renomear",
   "type": "Tipo",

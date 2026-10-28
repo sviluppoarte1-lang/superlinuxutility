@@ -1922,6 +1922,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get details => 'Detalhes';
 
   @override
+  String get showFolder => 'Mostrar pasta';
+
+  @override
+  String showFolderError(String path) {
+    return 'Não foi possível abrir a pasta: $path';
+  }
+
+  @override
   String get renamedSuccessfully => 'Renomeado com sucesso';
 
   @override

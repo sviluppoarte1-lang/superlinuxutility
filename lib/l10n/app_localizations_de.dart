@@ -1922,6 +1922,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get details => 'Details';
 
   @override
+  String get showFolder => 'Ordner anzeigen';
+
+  @override
+  String showFolderError(String path) {
+    return 'Ordner konnte nicht geöffnet werden: $path';
+  }
+
+  @override
   String get renamedSuccessfully => 'Erfolgreich umbenannt';
 
   @override

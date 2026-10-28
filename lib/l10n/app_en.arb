@@ -798,7 +798,18 @@
   "rename": "Rename",
   "newName": "New name",
   "details": "Details",
-  "close": "Close",
+
+  "showFolder": "Show folder",
+  "@showFolder": {
+    "description": "Opens the folder in the system file manager (for a file, opens the folder that contains it)."
+  },
+  "showFolderError": "Could not open the folder: {path}",
+  "@showFolderError": {
+    "description": "Error when the system cannot open the folder in the file manager.",
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },  "close": "Close",
   "renamedSuccessfully": "Renamed successfully",
   "renameError": "Error renaming",
   "type": "Type",

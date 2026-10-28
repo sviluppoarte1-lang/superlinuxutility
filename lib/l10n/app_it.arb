@@ -845,6 +845,18 @@
   "rename": "Rinomina",
   "newName": "Nuovo nome",
   "details": "Dettagli",
+
+  "showFolder": "Mostra cartella",
+  "@showFolder": {
+    "description": "Apre la cartella nel file manager di sistema (per un file apre la cartella che lo contiene)."
+  },
+  "showFolderError": "Impossibile aprire la cartella: {path}",
+  "@showFolderError": {
+    "description": "Errore quando il sistema non riesce ad aprire la cartella nel file manager.",
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "renamedSuccessfully": "Rinominato con successo",
   "renameError": "Errore durante la rinomina",
   "type": "Tipo",

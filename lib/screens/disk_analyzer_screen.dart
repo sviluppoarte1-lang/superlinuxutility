@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:process_run/process_run.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_linux_utility/l10n/app_localizations.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/disk_analyzer_service.dart';
@@ -39,9 +38,9 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   /// File/cartelle nascosti (nome che inizia con '.'): visibili di default.
   /// L'analisi dischi deve mostrare l'occupazione REALE: le cartelle più
   /// grosse sono spesso nascoste (.cache, .local, .snapshots, docker...).
-  /// Persistito in `disk_analyzer_show_hidden`.
-  static const String _prefKeyShowHidden = 'disk_analyzer_show_hidden';
-  bool _showHiddenFiles = true;
+  /// NB: i file/cartelle nascosti (.*?) sono SEMPRE visibili, sia su
+  /// Filesystem che su Home: le cartelle piu' grosse (.cache, .local, docker)
+  /// devono restare a vista, nessuna preferenza di filtro.
 
   /// Tutto l'elenco (compresi i nascosti) dell'ultima listDirectory/cache:
   /// serve per aggiornare le dimensioni e persistere la cache SENZA perdere
@@ -72,15 +71,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
   void initState() {
     super.initState();
     _loadMountedDisks();
-    _loadShowHiddenFilesPref();
-  }
-
-  Future<void> _loadShowHiddenFilesPref() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _showHiddenFiles = prefs.getBool(_prefKeyShowHidden) ?? true;
-    });
   }
 
   Future<void> _loadMountedDisks() async {
@@ -145,9 +135,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
           // Se abbiamo caricato dalla cache, aggiorna l'UI e calcola le dimensioni in background
           final virtualDirs = ['proc', 'sys', 'dev', 'run'];
           final filteredItems = items.where((item) {
-            if (!_showHiddenFiles && item.name.startsWith('.')) {
-              return false;
-            }
             if (item.isDirectory) {
               final dirName = item.name.toLowerCase();
               if (virtualDirs.contains(dirName)) {
@@ -200,14 +187,8 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       // Directory virtuali da escludere (filesystem virtuali che non hanno dimensioni reali)
       final virtualDirs = ['proc', 'sys', 'dev', 'run'];
       
-      // Filtra file nascosti e directory virtuali
+      // Filtra directory virtuali (i file nascosti sono SEMPRE visibili)
       final filteredItems = items.where((item) {
-        // Filtra file nascosti se necessario
-        if (!_showHiddenFiles && item.name.startsWith('.')) {
-          return false;
-        }
-        
-        // Escludi directory virtuali
         if (item.isDirectory) {
           final dirName = item.name.toLowerCase();
           if (virtualDirs.contains(dirName)) {
@@ -352,18 +333,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
       listPath: listPath,
       normListPath: normListPath,
     );
-  }
-
-  /// Toggle "mostra file nascosti": persiste la preferenza e ricarica la
-  /// directory corrente (il filtro è applicato al listing, serve un reload).
-  /// Usato da ENTRAMBE le vie: pulsante icona della toolbar e popup menu.
-  void _toggleHiddenFiles() {
-    setState(() {
-      _showHiddenFiles = !_showHiddenFiles;
-    });
-    SharedPreferences.getInstance()
-        .then((p) => p.setBool(_prefKeyShowHidden, _showHiddenFiles));
-    _loadDirectory(_currentPath, skipHistory: true);
   }
 
   /// Dimensiona TUTTE le directory figlie con un solo `du -b -d1` (output in
@@ -777,6 +746,39 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
     if (_selectedBasePath.isNotEmpty) {
       _loadDirectory(_selectedBasePath);
       _loadDirectorySizesAsync(_selectedBasePath);
+    }
+  }
+
+  /// Apre la cartella dell'item nel file manager di sistema: per una
+  /// directory apre la directory stessa, per un file apre la cartella che lo
+  /// contiene. In questo modo l'utente vede la cartella che sta osservando
+  /// nel sistema e decide cosa fare direttamente lì.
+  void _openInFileManager(FileSystemItem item) async {
+    final target = item.isDirectory
+        ? item.path
+        : File(item.path).parent.path;
+    final l10n = AppLocalizations.of(context)!;
+    var launched = false;
+    try {
+      final r = await Process.run('xdg-open', [target]);
+      launched = r.exitCode == 0;
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched) {
+      // Fallback: gio open (ambiente GNOME/spiaggie senza xdg-open)
+      try {
+        await Process.run('gio', ['open', target]);
+        launched = true;
+      } catch (_) {}
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.showFolderError(target)),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -1232,21 +1234,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                   // Pulsanti di ordinamento
                   IconButton(
                     icon: Icon(
-                      _showHiddenFiles ? Icons.visibility : Icons.visibility_off,
-                      size: 20,
-                    ),
-                    onPressed: _toggleHiddenFiles,
-                    tooltip: _showHiddenFiles
-                        ? AppLocalizations.of(context)!.hideSystemFiles
-                        : AppLocalizations.of(context)!.showSystemFiles,
-                    style: IconButton.styleFrom(
-                      foregroundColor: _showHiddenFiles
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
                       _currentSort == SortType.sizeDescending
                           ? Icons.arrow_downward
                           : Icons.arrow_upward,
@@ -1277,34 +1264,6 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
                     ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, size: 20),
-                    color: Theme.of(context).colorScheme.surface,
-                    onSelected: (value) {
-                      if (value == 'toggle_hidden') {
-                        _toggleHiddenFiles();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'toggle_hidden',
-                        child: Row(
-                          children: [
-                            Icon(
-                              _showHiddenFiles ? Icons.visibility_off : Icons.visibility,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _showHiddenFiles
-                                  ? AppLocalizations.of(context)!.hideSystemFiles
-                                  : AppLocalizations.of(context)!.showSystemFiles,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -1426,6 +1385,7 @@ class _DiskAnalyzerScreenState extends State<DiskAnalyzerScreen> {
                                 onMoveToTrash: () => _moveToTrash(item),
                                 onRename: () => _showRenameDialog(item),
                                 onShowDetails: () => _showDetailsDialog(item),
+                                onShowFolder: () => _openInFileManager(item),
                               );
                             },
                           )
@@ -2025,6 +1985,7 @@ class _FileSystemItemListTile extends StatelessWidget {
   final VoidCallback onMoveToTrash;
   final VoidCallback onRename;
   final VoidCallback onShowDetails;
+  final VoidCallback onShowFolder;
 
   const _FileSystemItemListTile({
     required this.item,
@@ -2032,6 +1993,7 @@ class _FileSystemItemListTile extends StatelessWidget {
     required this.onMoveToTrash,
     required this.onRename,
     required this.onShowDetails,
+    required this.onShowFolder,
   });
 
   void _showContextMenu(BuildContext context) {
@@ -2042,6 +2004,14 @@ class _FileSystemItemListTile extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.folder_open),
+              title: Text(AppLocalizations.of(context)!.showFolder),
+              onTap: () {
+                Navigator.pop(context);
+                onShowFolder();
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.delete),
               title: Text(AppLocalizations.of(context)!.moveToTrash),

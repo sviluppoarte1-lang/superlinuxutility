@@ -1933,6 +1933,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get details => 'Détails';
 
   @override
+  String get showFolder => 'Afficher le dossier';
+
+  @override
+  String showFolderError(String path) {
+    return 'Impossible d\'ouvrir le dossier : $path';
+  }
+
+  @override
   String get renamedSuccessfully => 'Renommé avec succès';
 
   @override

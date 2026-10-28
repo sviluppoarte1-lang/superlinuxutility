@@ -1928,6 +1928,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get details => 'Detalles';
 
   @override
+  String get showFolder => 'Mostrar carpeta';
+
+  @override
+  String showFolderError(String path) {
+    return 'No se pudo abrir la carpeta: $path';
+  }
+
+  @override
   String get renamedSuccessfully => 'Renombrado exitosamente';
 
   @override

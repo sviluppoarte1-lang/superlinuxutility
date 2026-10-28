@@ -3520,6 +3520,18 @@ abstract class AppLocalizations {
   /// **'Dettagli'**
   String get details;
 
+  /// Apre la cartella nel file manager di sistema (per un file apre la cartella che lo contiene).
+  ///
+  /// In it, this message translates to:
+  /// **'Mostra cartella'**
+  String get showFolder;
+
+  /// Errore quando il sistema non riesce ad aprire la cartella nel file manager.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile aprire la cartella: {path}'**
+  String showFolderError(String path);
+
   /// No description provided for @renamedSuccessfully.
   ///
   /// In it, this message translates to:
