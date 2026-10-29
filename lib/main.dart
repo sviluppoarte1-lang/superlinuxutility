@@ -420,17 +420,34 @@ class _StandaloneApp extends StatelessWidget {
     required this.mode,
   });
 
+  /// Tema delle finestre standalone (dialog dal tray). Lo sfondo dello
+  /// Scaffold e il colore delle dialog sono lo STESSO colore (la card M3):
+  /// la finestra non decorata è quindi un'unica card senza margini di colore
+  /// diverso né sfondo nero attorno alla dialog.
+  static ThemeData _standaloneTheme(Brightness brightness) {
+    final base = ThemeData(useMaterial3: true, brightness: brightness);
+    final card = base.colorScheme.surfaceContainerHigh;
+    return base.copyWith(
+      scrollbarTheme: buildAppScrollbarTheme(brightness),
+      scaffoldBackgroundColor: card,
+      // Elevazione 0: niente ombra/elevazione attorno alla dialog, così la
+      // finestra (senza decorazioni) è UNA card uniforme senza contorni.
+      dialogTheme: DialogThemeData(
+        backgroundColor: card,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Super Linux Utility',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.light(useMaterial3: true).copyWith(
-        scrollbarTheme: buildAppScrollbarTheme(Brightness.light),
-      ),
-      darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
-        scrollbarTheme: buildAppScrollbarTheme(Brightness.dark),
-      ),
+      theme: _standaloneTheme(Brightness.light),
+      darkTheme: _standaloneTheme(Brightness.dark),
       themeMode: themeMode,
       locale: locale,
       localizationsDelegates: const [
@@ -473,6 +490,9 @@ class _StandaloneScreenState extends State<_StandaloneScreen> {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
+        // Barriera trasparente: il default (black54) scuriva tutto lo sfondo
+        // della finestra standalone facendolo sembrare nero.
+        barrierColor: Colors.transparent,
         builder: (_) => dialog,
       ).then((_) {
         if (mounted) SystemNavigator.pop();

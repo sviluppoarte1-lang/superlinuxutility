@@ -109,7 +109,17 @@ static void my_application_activate(GApplication* application) {
     }
   }
 #endif
-  if (use_header_bar) {
+  // Modalità standalone (gestore processi / aggiornamenti / appunti dal tray):
+  // la dialog È la finestra. Niente header bar né decorazioni del WM: il
+  // "contorno con titlebar" attorno alla card non serve e rende la finestra
+  // diversa dalle dialog in-app. Il titolo resta per la window list del WM.
+  const gchar* standalone_mode_env = g_getenv("SUPER_LINUX_UTILITY_MODE");
+  const gboolean standalone_mode =
+      (standalone_mode_env != nullptr && standalone_mode_env[0] != '\0');
+  if (standalone_mode) {
+    gtk_window_set_decorated(window, FALSE);
+    gtk_window_set_title(window, "Super Linux Utility");
+  } else if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
     gtk_header_bar_set_title(header_bar, "Super Linux Utility");
@@ -127,18 +137,25 @@ static void my_application_activate(GApplication* application) {
 
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
-  gdk_rgba_parse(&background_color, "#FFFFFF");
+  // Standalone: pre-frame nello stesso colore della card delle dialog (M3
+  // dark surfaceContainerHigh) per non far lampeggiare bianco prima del
+  // primo frame Flutter; la finestra resta coerente con la card.
+  const gchar* bg_hex = standalone_mode ? "#2B2930" : "#FFFFFF";
+  gdk_rgba_parse(&background_color, bg_hex);
   fl_view_set_background_color(view, &background_color);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 
-  // Forza sfondo bianco per evitare che il tema GTK (es. Mint-Y su Cinnamon)
+  // Forza lo sfondo (bianco per la finestra principale, colore card per le
+  // finestre standalone) per evitare che il tema GTK (es. Mint-Y su Cinnamon)
   // mostri uno sfondo celestino.
   GtkCssProvider* css_provider = gtk_css_provider_new();
-  gtk_css_provider_load_from_data(css_provider,
-      "window { background-color: #FFFFFF; }"
-      "flutter_view { background-color: #FFFFFF; }",
-      -1, NULL);
+  gchar css[256];
+  g_snprintf(css, sizeof(css),
+      "window { background-color: %s; }"
+      "flutter_view { background-color: %s; }",
+      bg_hex, bg_hex);
+  gtk_css_provider_load_from_data(css_provider, css, -1, NULL);
   gtk_style_context_add_provider_for_screen(
       gtk_widget_get_screen(GTK_WIDGET(window)),
       GTK_STYLE_PROVIDER(css_provider),
