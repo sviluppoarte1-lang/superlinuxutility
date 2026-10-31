@@ -55,12 +55,24 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
     super.dispose();
   }
 
+  /// Refresh silenzioso del timer (5s): processi + system info, senza
+  /// spinner. Le percentuali CPU sono istantanee (come gnome-system-monitor)
+  /// e quindi vanno aggiornate periodicamente, non solo all'apertura.
   Future<void> _refreshSystemInfo() async {
     if (_isRefreshing) return;
     _isRefreshing = true;
     try {
-      final info = await SystemMonitor.getSystemInfo();
-      if (mounted) setState(() { _systemInfo = info; });
+      final results = await Future.wait([
+        SystemMonitor.getProcesses(),
+        SystemMonitor.getSystemInfo(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _processes = results[0] as List<SystemProcess>;
+          _systemInfo = results[1] as SystemInfo;
+          _invalidateCache();
+        });
+      }
     } catch (_) {}
     finally {
       _isRefreshing = false;

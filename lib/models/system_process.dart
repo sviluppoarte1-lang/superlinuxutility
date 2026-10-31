@@ -19,15 +19,17 @@ class SystemProcess {
     this.parentPid,
   });
 
+  /// Formattazione decimale (base 1000) come g_format_size_full di GLib:
+  /// e' la stessa usata da gnome-system-monitor per la colonna Memoria.
   String get memoryFormatted {
-    if (memoryBytes < 1024) {
+    if (memoryBytes < 1000) {
       return '$memoryBytes B';
-    } else if (memoryBytes < 1024 * 1024) {
-      return '${(memoryBytes / 1024).toStringAsFixed(1)} KB';
-    } else if (memoryBytes < 1024 * 1024 * 1024) {
-      return '${(memoryBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } else if (memoryBytes < 1000 * 1000) {
+      return '${(memoryBytes / 1000).toStringAsFixed(1)} kB';
+    } else if (memoryBytes < 1000 * 1000 * 1000) {
+      return '${(memoryBytes / (1000 * 1000)).toStringAsFixed(1)} MB';
     } else {
-      return '${(memoryBytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+      return '${(memoryBytes / (1000 * 1000 * 1000)).toStringAsFixed(1)} GB';
     }
   }
 

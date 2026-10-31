@@ -9,6 +9,24 @@ class _CpuCorePrev {
   _CpuCorePrev(this.total, this.idle);
 }
 
+/// Identita' di un processo da ps: solo user + command (il resto viene da /proc).
+class PsIdentity {
+  final String user;
+  final String command;
+  PsIdentity(this.user, this.command);
+}
+
+/// Campione /proc di un processo: tempo CPU totale (utime+stime in jiffies),
+/// memoria residente non condivisa e campi identita'.
+class _ProcCpuSample {
+  final int rtime; // utime + stime (jiffies)
+  final int memoryBytes; // (resident - shared) * pagesize = RssAnon
+  final String name;
+  final String state;
+  final int? parentPid;
+  _ProcCpuSample(this.rtime, this.memoryBytes, this.name, this.state, this.parentPid);
+}
+
 class SystemMonitor {
   static int? _dmidecodeInstalledRamBytesCache;
   static DateTime? _dmidecodeInstalledRamBytesCacheAt;
@@ -34,26 +52,197 @@ class SystemMonitor {
     );
   }
 
+  static Map<int, int> _prevProcRtimes = {};
+  static int? _prevTotalCpuJiffies;
+  static int? _pageSizeBytesCache;
+
+  /// Legge i processi direttamente da /proc con le stesse formule di
+  /// gnome-system-monitor (Zorin OS, solaris-mode=true):
+  /// - CPU% = delta(utime+stime) x 100 / delta(jiffies totali di TUTTI i core
+  ///   da /proc/stat) -> campione istantaneo, 100% = macchina intera.
+  /// - Memoria = (resident - shared) x pagesize da `/proc/<pid>/statm`
+  ///   (RssAnon: esclude il file/mmap condiviso, come la colonna Memoria di Zorin).
   static Future<List<SystemProcess>> getProcesses() async {
     try {
-      // Usa formato esplicito per evitare problemi di parsing con ps aux
-      // Formato: pid, comm (nome eseguibile), %cpu, rss (resident set in KB), user, stat, args
-      final result = await Process.run(
-        'ps',
-        ['-e', '-o', 'pid,comm,%cpu,rss,user,stat,args', '--sort=-%cpu'],
-      );
-
+      // Identita' (user + command) da ps; nome, stato, ppid, tempi CPU e
+      // memoria arrivano da /proc (comm non troncato, valori come glibtop).
+      final result = await Process.run('ps', ['-e', '-o', 'pid=,user=,args=']);
       if (result.exitCode != 0) {
         return [];
       }
+      final identity = parsePsIdentityLines(result.stdout as String);
+      if (identity.isEmpty) return [];
 
+      final pageSize = await _pageSizeBytes();
+      final pids = identity.keys.toList();
+
+      var prevRtimes = _prevProcRtimes;
+      var prevTotal = _prevTotalCpuJiffies;
+
+      var current = await _readProcSamples(pids, pageSize);
+      var totalNow = _readTotalCpuJiffies();
+
+      if (prevTotal == null || prevRtimes.isEmpty) {
+        // Primo campione della sessione: seconda lettura rapida (~350ms) per
+        // mostrare percentuali reali gia' al primo rendering.
+        final baseline = current;
+        final baselineTotal = totalNow;
+        await Future.delayed(const Duration(milliseconds: 350));
+        current = await _readProcSamples(pids, pageSize);
+        totalNow = _readTotalCpuJiffies();
+        prevRtimes = {for (final e in baseline.entries) e.key: e.value.rtime};
+        prevTotal = baselineTotal;
+      }
+
+      final deltaTotal = totalNow - prevTotal;
       final selfPid = pid; // PID del processo corrente (dart:io)
-      final allProcesses = _parsePsOutput(result.stdout as String);
-      // Filtra processi di sistema transienti e il processo corrente
-      return allProcesses.where((p) => p.pid != selfPid && !_isTransientProcess(p)).toList();
+      final processes = <SystemProcess>[];
+      for (final entry in identity.entries) {
+        final p = entry.key;
+        if (p == selfPid) continue;
+        final sample = current[p];
+        if (sample == null) continue; // uscito durante la scansione
+
+        final proc = SystemProcess(
+          pid: p,
+          name: sample.name,
+          user: entry.value.user,
+          cpuPercent: processCpuPercent(
+              sample.rtime, prevRtimes[p], deltaTotal),
+          memoryBytes: sample.memoryBytes,
+          command: entry.value.command.isEmpty
+              ? sample.name
+              : entry.value.command,
+          state: sample.state,
+          parentPid: sample.parentPid,
+        );
+        // Filtra processi di sistema transienti e il processo corrente
+        if (_isTransientProcess(proc)) continue;
+        processes.add(proc);
+      }
+
+      _prevProcRtimes = {for (final e in current.entries) e.key: e.value.rtime};
+      _prevTotalCpuJiffies = totalNow;
+
+      processes.sort((a, b) => b.cpuPercent.compareTo(a.cpuPercent));
+      return processes;
     } catch (e) {
       return [];
     }
+  }
+
+  /// Percentuale CPU istantanea come gnome-system-monitor (solaris-mode):
+  /// delta rtime x 100 / delta jiffies totali, fermata a 100 (capacita' macchina).
+  static double processCpuPercent(
+      int rtime, int? prevRtime, int deltaTotalJiffies) {
+    if (prevRtime == null || deltaTotalJiffies <= 0 || rtime < prevRtime) {
+      return 0.0;
+    }
+    final cpu = ((rtime - prevRtime) * 100) / deltaTotalJiffies;
+    if (cpu > 100.0) return 100.0;
+    if (cpu < 0.0) return 0.0;
+    return cpu;
+  }
+
+  /// Parsing di `ps -e -o pid=,user=,args=`: mappa pid -> (user, command).
+  static Map<int, PsIdentity> parsePsIdentityLines(String output) {
+    final out = <int, PsIdentity>{};
+    for (final line in output.split('\n')) {
+      if (line.trim().isEmpty) continue;
+      final parts = line.trim().split(RegExp(r'\s+'));
+      if (parts.length < 2) continue;
+      final p = int.tryParse(parts[0]);
+      if (p == null) continue;
+      final user = parts[1];
+      final command = parts.length > 2 ? parts.sublist(2).join(' ') : '';
+      out[p] = PsIdentity(user, command);
+    }
+    return out;
+  }
+
+  /// Jiffies totali di TUTTI i core: somma dei campi della prima riga di
+  /// /proc/stat (user+nice+system+idle+iowait+irq+softirq+steal...).
+  static int _readTotalCpuJiffies() {
+    try {
+      final content = File('/proc/stat').readAsStringSync();
+      final nl = content.indexOf('\n');
+      final first =
+          (nl >= 0 ? content.substring(0, nl) : content).split(RegExp(r'\s+'));
+      var total = 0;
+      for (var i = 1; i < first.length; i++) {
+        total += int.tryParse(first[i]) ?? 0;
+      }
+      return total;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static Future<Map<int, _ProcCpuSample>> _readProcSamples(
+      List<int> pids, int pageSize) async {
+    final out = <int, _ProcCpuSample>{};
+    const chunkSize = 48;
+    for (var i = 0; i < pids.length; i += chunkSize) {
+      final end = (i + chunkSize < pids.length) ? i + chunkSize : pids.length;
+      final chunk = pids.sublist(i, end);
+      final samples =
+          await Future.wait(chunk.map((p) => _readProcSample(p, pageSize)));
+      for (var j = 0; j < chunk.length; j++) {
+        final s = samples[j];
+        if (s != null) out[chunk[j]] = s;
+      }
+    }
+    return out;
+  }
+
+  static Future<_ProcCpuSample?> _readProcSample(int p, int pageSize) async {
+    try {
+      final stat = await File('/proc/$p/stat').readAsString();
+      final statm = await File('/proc/$p/statm').readAsString();
+      // Il campo comm (field 2) e' tra parentesi e puo' contenere spazi:
+      // tutto dopo l'ultima ')' e' allineato ai field fissi.
+      final close = stat.lastIndexOf(')');
+      if (close < 0) return null;
+      // Dopo ") ": [0]=stato (field 3), [1]=ppid (4), [11]=utime (14),
+      // [12]=stime (15).
+      final fields = stat.substring(close + 2).split(' ');
+      if (fields.length < 13) return null;
+      final utime = int.tryParse(fields[11]);
+      final stime = int.tryParse(fields[12]);
+      if (utime == null || stime == null) return null;
+      final open = stat.indexOf('(');
+      final name =
+          (open >= 0 && open < close) ? stat.substring(open + 1, close) : '';
+      // statm: [1]=resident, [2]=shared (in pagine) -> come glibtop
+      // (gnome-system-monitor): memres - memshared.
+      final m = statm.split(' ');
+      final resident = m.length > 1 ? (int.tryParse(m[1]) ?? 0) : 0;
+      final shared = m.length > 2 ? (int.tryParse(m[2]) ?? 0) : 0;
+      final memPages = resident - shared;
+      return _ProcCpuSample(
+        utime + stime,
+        memPages > 0 ? memPages * pageSize : 0,
+        name,
+        fields[0],
+        int.tryParse(fields[1]),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<int> _pageSizeBytes() async {
+    final cached = _pageSizeBytesCache;
+    if (cached != null) return cached;
+    var size = 4096;
+    try {
+      final r = await Process.run('getconf', ['PAGESIZE']);
+      if (r.exitCode == 0) {
+        size = int.tryParse((r.stdout as String).trim()) ?? 4096;
+      }
+    } catch (_) {}
+    _pageSizeBytesCache = size;
+    return size;
   }
 
   /// Processi transienti di sistema da filtrare dalla lista processi
@@ -84,48 +273,6 @@ class SystemMonitor {
         name.startsWith('rcu') || name.startsWith('migration')) return true;
 
     return false;
-  }
-
-  static List<SystemProcess> _parsePsOutput(String output) {
-    final processes = <SystemProcess>[];
-    final lines = output.split('\n');
-
-    for (var i = 1; i < lines.length; i++) {
-      final line = lines[i].trim();
-      if (line.isEmpty) continue;
-
-      final parts = line.split(RegExp(r'\s+'));
-      if (parts.length < 6) continue;
-
-      try {
-        final pid = int.parse(parts[0]);
-        final name = parts[1];
-        final cpuPercent = double.tryParse(parts[2]) ?? 0.0;
-        final rss = int.tryParse(parts[3]) ?? 0;
-        final user = parts[4];
-        final stat = parts[5];
-        final command = parts.length > 6
-            ? parts.sublist(6).join(' ')
-            : name;
-
-        // Salta processi kernel (pid < 2) opzionale
-        final memoryBytes = rss * 1024;
-
-        processes.add(SystemProcess(
-          pid: pid,
-          name: name,
-          user: user,
-          cpuPercent: cpuPercent,
-          memoryBytes: memoryBytes,
-          command: command,
-          state: stat,
-        ));
-      } catch (e) {
-        continue;
-      }
-    }
-
-    return processes;
   }
 
   static Future<bool> killProcess(int pid, {bool force = false}) async {
