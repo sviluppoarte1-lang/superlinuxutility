@@ -433,9 +433,13 @@ class _TrayTaskManagerDialogState extends State<TrayTaskManagerDialog> {
           Text(l10n.processes),
         ],
       ),
+      // Dimensioni FISSE (prima derivate da MediaQuery della finestra):
+      // con la finestra standalone ridimensionata sulla card dal sizer in
+      // main.dart, i percentuali creerebbero un feedback loop (la card
+      // dipende dalla finestra e la finestra dalla card).
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.75,
-        height: MediaQuery.of(context).size.height * 0.7,
+        width: 512,
+        height: 420,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

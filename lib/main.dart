@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -336,11 +338,13 @@ Future<void> _runStandalone(String mode) async {
   }
 
   final title = _standaloneTitle(mode, localeStr);
+  // Dimensioni INIZIALI (poi la _StandaloneDialogSizer rimpicciolisce la
+  // finestra sul contenuto reale della dialog, evitando fasce vuote).
   final size = isTaskManager
-      ? const Size(900, 600)
+      ? const Size(600, 600)
       : isClipboard
-          ? const Size(680, 600)
-          : const Size(560, 640);
+          ? const Size(688, 608)
+          : const Size(560, 420);
 
   // Legge preferenza tema (chiave 'theme_mode' come il resto dell'app;
   // 'themeMode' è la vecchia chiave, mantenuta come fallback)
@@ -432,11 +436,15 @@ class _StandaloneApp extends StatelessWidget {
       scaffoldBackgroundColor: card,
       // Elevazione 0: niente ombra/elevazione attorno alla dialog, così la
       // finestra (senza decorazioni) è UNA card uniforme senza contorni.
+      // insetPadding 0: la card occupa TUTTA la finestra (nessuna fascia
+      // vuota ai lati); la finestra viene poi ridimensionata sul contenuto
+      // dalla _StandaloneDialogSizer.
       dialogTheme: DialogThemeData(
         backgroundColor: card,
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
       ),
     );
   }
@@ -493,7 +501,13 @@ class _StandaloneScreenState extends State<_StandaloneScreen> {
         // Barriera trasparente: il default (black54) scuriva tutto lo sfondo
         // della finestra standalone facendolo sembrare nero.
         barrierColor: Colors.transparent,
-        builder: (_) => dialog,
+        // La sizer adatta la finestra alla card: niente spazio inutilizzato.
+        // NB: la clipboard ha una ListView con figli flessibili (gli intrinsechi
+        // ne ignorano l'altezza → restringerebbe la finestra a soli ~150px):
+        // per quella modalità la finestra resta alla dimensione progettata.
+        builder: (_) => widget.mode == 'clipboard'
+            ? dialog
+            : _StandaloneDialogSizer(mode: widget.mode, child: dialog),
       ).then((_) {
         if (mounted) SystemNavigator.pop();
       });
@@ -505,6 +519,137 @@ class _StandaloneScreenState extends State<_StandaloneScreen> {
     return const Scaffold(
       body: Center(child: CircularProgressIndicator()),
     );
+  }
+}
+
+/// Adatta la dimensione della finestra standalone (non decorata) alla card
+/// della dialog: senza questo passaggio la finestra resta alla dimensione
+/// iniziale e restano ampie fasce vuote ai lati (spazio inutile).
+/// Controlla la size reale della card ogni 600ms e ridimensiona la finestra
+/// (max 12 volte, con tolleranza di 4px per evitare micro-correzioni).
+class _StandaloneDialogSizer extends StatefulWidget {
+  final String mode;
+  final Widget child;
+  const _StandaloneDialogSizer({required this.mode, required this.child});
+
+  @override
+  State<_StandaloneDialogSizer> createState() => _StandaloneDialogSizerState();
+}
+
+class _StandaloneDialogSizerState extends State<_StandaloneDialogSizer> {
+  final GlobalKey _cardKey = GlobalKey();
+  Timer? _timer;
+  bool _busy = false;
+  int _resizes = 0;
+  static const int _maxResizes = 12;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 600), (_) => _sync());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
+  }
+
+  Future<void> _sync() async {
+    if (!mounted || _busy || _resizes >= _maxResizes) return;
+    final ro = _cardKey.currentContext?.findRenderObject();
+    if (ro is! RenderBox || !ro.hasSize) return;
+    // La misurazione va fatta sugli INTRINSECHI: il primo RenderObject della
+    // dialog è un Align che si espande a TUTTA la finestra (il card è il suo
+    // figlio, centrato), quindi la size di layout darebbe la finestra stessa.
+    // Gli intrinsechi delegano al contenuto reale (testo + padding della
+    // dialog compresi), ottenendo la dimensione "huggata" della card.
+    double w;
+    double h;
+    try {
+      w = ro.getMaxIntrinsicWidth(double.infinity);
+      h = ro.getMaxIntrinsicHeight(w);
+    } catch (e) {
+      _diag('sizer: intrinsechi non calcolabili: $e');
+      return;
+    }
+    if (!w.isFinite || !h.isFinite || w < 100 || h < 60) return;
+    // Clamp allo schermo: mai una finestra più grande del display. La
+    // dimensione va presa dalla display fisica (PlatformDispatcher), NON da
+    // View.of(context): quella è la view della finestra standalone e al suo
+    // interno il clamp restringerebbe la finestra a ogni tick (loop di
+    // rimpicciolimento fino a 0). displays[0] è la display primaria.
+    final displays = ui.PlatformDispatcher.instance.displays;
+    double sw = 1920, sh = 1080;
+    if (displays.isNotEmpty) {
+      final dpr = ui.PlatformDispatcher.instance.views.isNotEmpty
+          ? ui.PlatformDispatcher.instance.views.first.devicePixelRatio
+          : 1.0;
+      sw = displays.first.size.width / dpr;
+      sh = displays.first.size.height / dpr;
+    }
+    final target = Size(
+      math.min(w, sw - 80),
+      math.min(h, sh - 80),
+    );
+    _busy = true;
+    try {
+      // Confronto con la dimensione REALE della finestra: se un setSize non
+      // viene applicato dal WM il prossimo tick riprova (niente assunzioni).
+      final current = await windowManager.getSize();
+      if ((current.width - target.width).abs() < 4 &&
+          (current.height - target.height).abs() < 4) {
+        return;
+      }
+      _resizes++;
+      _diag('sizer: intrinsechi=${w.toStringAsFixed(0)}x${h.toStringAsFixed(0)} '
+          'finestra=${current.width.toStringAsFixed(0)}x${current.height.toStringAsFixed(0)} '
+          '-> target=${target.width.toStringAsFixed(0)}x${target.height.toStringAsFixed(0)}');
+      await windowManager.setSize(target, animate: false);
+      final after = await windowManager.getSize();
+      _diag('sizer dopo setSize: ${after.width.toStringAsFixed(0)}x'
+          '${after.height.toStringAsFixed(0)} (resizes=$_resizes)');
+      await windowManager.center();
+    } catch (e) {
+      _diag('sizer setSize fallito: $e');
+    } finally {
+      _busy = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // _CardMeasurer hugga il figlio e ne misura la size REALE: il primo
+    // RenderObject di una Dialog è un Align non-posizionato che si espande a
+    // tutta la finestra, quindi senza questo wrapper la misurazione restituiva
+    // la finestra stessa e il resize non partiva mai.
+    return _CardMeasurer(key: _cardKey, child: widget.child);
+  }
+}
+
+/// RenderBox che si dimensiona come il figlio (hug) e ne espone la size:
+/// serve a misurare la card reale della dialog dentro la finestra standalone.
+class _CardMeasurer extends SingleChildRenderObjectWidget {
+  const _CardMeasurer({super.key, required Widget child}) : super(child: child);
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderCardMeasurer();
+}
+
+class _RenderCardMeasurer extends RenderShiftedBox {
+  _RenderCardMeasurer() : super(null);
+
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = constraints.smallest;
+      return;
+    }
+    child.layout(constraints, parentUsesSize: true);
+    size = constraints.constrain(child.size);
   }
 }
 
