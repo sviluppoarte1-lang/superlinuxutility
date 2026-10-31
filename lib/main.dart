@@ -477,6 +477,13 @@ class _StandaloneApp extends StatelessWidget {
   }
 }
 
+/// Channel nativo (linux/runner/my_application.cc) per spostare con il
+/// mouse le finestre standalone non decorate: `gtk_window_begin_move_drag`
+/// con GDK_CURRENT_TIME, piu' affidabile del startDragging del plugin
+/// window_manager su X11.
+const MethodChannel _windowDragChannel =
+    MethodChannel('com.superlinux.utility/window');
+
 class _StandaloneScreen extends StatefulWidget {
   final String mode;
   const _StandaloneScreen({required this.mode});
@@ -485,6 +492,9 @@ class _StandaloneScreen extends StatefulWidget {
 }
 
 class _StandaloneScreenState extends State<_StandaloneScreen> {
+  /// Puntatore globale a inizio trascinamento (per i delta del drag).
+  Offset _dragOrigin = Offset.zero;
+
   @override
   void initState() {
     super.initState();
@@ -495,6 +505,39 @@ class _StandaloneScreenState extends State<_StandaloneScreen> {
           : widget.mode == 'clipboard'
               ? const ClipboardHistoryDialog()
               : const TrayCheckUpdatesDialog();
+      // Le finestre standalone non hanno decorazioni/titlebar: l'unico modo
+      // di spostarle e' trascinare con il mouse da un'area non interattiva
+      // (header, sfondo, padding della card). I figli interattivi (liste,
+      // bottoni, campi) entrano per primi nel gesture arena e vincono i
+      // loro gesti: scroll e click restano invariati. startDragging() del
+      // plugin window_manager chiama gtk_window_begin_move_drag (l'app gira
+      // su X11: backend forzato in linux/runner/main.cc).
+      // HitTestBehavior.opaque: il detector partecipa ai hit test anche sulle
+      // aree di solo testo (header); i figli restano hit-testati per primi e
+      // vincono comunque i loro gesti (scroll, click, selezione testo).
+      // HitTestBehavior.opaque: il detector partecipa ai hit test anche sulle
+      // aree di solo testo (header); i figli restano hit-testati per primi e
+      // vincono comunque i loro gesti (scroll, click, selezione testo).
+      // Il drag va al channel nativo (my_application.cc): il plugin
+      // window_manager usa un timestamp non valido su X11 e mutter ignorava
+      // la richiesta di move.
+      final draggableDialog = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanStart: (d) {
+          _dragOrigin = d.globalPosition;
+          _windowDragChannel.invokeMethod('startDragging');
+        },
+        onPanUpdate: (d) {
+          // Delta cumulati dal punto di inizio: il lato nativo prova prima il
+          // move-grab del WM e, se la finestra non segue, muove la finestra
+          // direttamente (fallback).
+          _windowDragChannel.invokeMethod('dragMove', [
+            d.globalPosition.dx - _dragOrigin.dx,
+            d.globalPosition.dy - _dragOrigin.dy,
+          ]);
+        },
+        child: dialog,
+      );
       showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -506,8 +549,9 @@ class _StandaloneScreenState extends State<_StandaloneScreen> {
         // ne ignorano l'altezza → restringerebbe la finestra a soli ~150px):
         // per quella modalità la finestra resta alla dimensione progettata.
         builder: (_) => widget.mode == 'clipboard'
-            ? dialog
-            : _StandaloneDialogSizer(mode: widget.mode, child: dialog),
+            ? draggableDialog
+            : _StandaloneDialogSizer(
+                mode: widget.mode, child: draggableDialog),
       ).then((_) {
         if (mounted) SystemNavigator.pop();
       });

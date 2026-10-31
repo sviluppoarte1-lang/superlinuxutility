@@ -13,6 +13,7 @@
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
+  FlMethodChannel* slu_window_channel;
 };
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
@@ -94,6 +95,72 @@ static void first_frame_cb(MyApplication* self, FlView* view) {
 }
 
 // Implements GApplication::activate.
+// Stato del trascinamento ibrido: si prova prima il move-grab del WM
+// (begin_move_drag, comportamento nativo con snapping e senza lag); se il WM
+// non segue la finestra nonostante il puntore si muova (grab ignorato, come
+// con alcuni compositor/XWayland o input sintetici), dopo 5 update si passa
+// al movimento manuale con gtk_window_move. Un solo window per processo:
+// lo stato statico e' sufficiente.
+typedef struct {
+  gint origin_x, origin_y;   // posizione della finestra a inizio drag
+  guint unchanged_updates;   // update consecutive senza movimento della finestra
+  gboolean manual;           // attivo il fallback manuale
+  gboolean wm_taken;         // il WM sta muovendo la finestra: non toccare
+} SluDragState;
+static SluDragState slu_drag_state = {0, 0, 0, FALSE, FALSE};
+
+// Handler del channel "com.superlinux.utility/window": trascinamento delle
+// finestre standalone non decorate (non hanno titlebar). Il timestamp va
+// passato come GDK_CURRENT_TIME: window_manager usava i microsecondi
+// monotonic (troncati a 32 bit) che i WM scartano come evento "stale" e la
+// finestra non si muoveva.
+static void slu_window_method_call_cb(FlMethodChannel* channel,
+                                      FlMethodCall* method_call,
+                                      gpointer user_data) {
+  GtkWindow* window = GTK_WINDOW(user_data);
+  const gchar* method = fl_method_call_get_name(method_call);
+  g_autoptr(FlMethodResponse) response = nullptr;
+  if (strcmp(method, "startDragging") == 0) {
+    GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(window));
+    GdkSeat* seat = gdk_display_get_default_seat(display);
+    GdkDevice* pointer = seat != nullptr ? gdk_seat_get_pointer(seat) : nullptr;
+    gint root_x = 0, root_y = 0;
+    if (pointer != nullptr)
+      gdk_device_get_position(pointer, nullptr, &root_x, &root_y);
+    gint win_x = 0, win_y = 0;
+    gtk_window_get_position(window, &win_x, &win_y);
+    slu_drag_state.origin_x = win_x;
+    slu_drag_state.origin_y = win_y;
+    slu_drag_state.unchanged_updates = 0;
+    slu_drag_state.manual = FALSE;
+    slu_drag_state.wm_taken = FALSE;
+    gtk_window_begin_move_drag(window, 1, root_x, root_y, GDK_CURRENT_TIME);
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  } else if (strcmp(method, "dragMove") == 0) {
+    FlValue* args = fl_method_call_get_args(method_call);
+    const gdouble dx = fl_value_get_float(fl_value_get_list_value(args, 0));
+    const gdouble dy = fl_value_get_float(fl_value_get_list_value(args, 1));
+    if (slu_drag_state.manual) {
+      gtk_window_move(window, (gint)(slu_drag_state.origin_x + dx),
+                      (gint)(slu_drag_state.origin_y + dy));
+    } else if (!slu_drag_state.wm_taken) {
+      gint cx = 0, cy = 0;
+      gtk_window_get_position(window, &cx, &cy);
+      if (cx != slu_drag_state.origin_x || cy != slu_drag_state.origin_y) {
+        // Il WM ha preso il move-grab: la finestra la muove lui.
+        slu_drag_state.wm_taken = TRUE;
+      } else if (++slu_drag_state.unchanged_updates >= 5) {
+        // Nessun effetto nonostante il puntore si muova: fallback manuale.
+        slu_drag_state.manual = TRUE;
+      }
+    }
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  } else {
+    response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+  }
+  fl_method_call_respond(method_call, response, nullptr);
+}
+
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
   GtkWindow* window =
@@ -167,6 +234,22 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_realize(GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+
+  // Channel per spostare con il mouse le finestre standalone (drag da ogni
+  // area non interattiva, gestito in Flutter da main.dart).
+  if (self->slu_window_channel == nullptr) {
+    g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+    g_autoptr(FlPluginRegistrar) registrar =
+        fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(view),
+                                                    "slu_window");
+    self->slu_window_channel = fl_method_channel_new(
+        fl_plugin_registrar_get_messenger(registrar),
+        "com.superlinux.utility/window", FL_METHOD_CODEC(codec));
+    fl_method_channel_set_method_call_handler(self->slu_window_channel,
+                                              slu_window_method_call_cb,
+                                              g_object_ref(window),
+                                              g_object_unref);
+  }
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
@@ -256,6 +339,7 @@ static void my_application_shutdown(GApplication* application) {
 // Implements GObject::dispose.
 static void my_application_dispose(GObject* object) {
   MyApplication* self = MY_APPLICATION(object);
+  g_clear_object(&self->slu_window_channel);
   g_clear_pointer(&self->dart_entrypoint_arguments, g_strfreev);
   G_OBJECT_CLASS(my_application_parent_class)->dispose(object);
 }
