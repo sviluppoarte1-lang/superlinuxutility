@@ -69,6 +69,7 @@ class StartupAppsAnalyzer {
       String? comment;
       bool hidden = false;
       bool xgnomeEnabled = true;
+      bool noDisplay = false;
 
       for (final line in content.split('\n')) {
         final trimmed = line.trim();
@@ -82,6 +83,8 @@ class StartupAppsAnalyzer {
           hidden = trimmed.substring(7).trim().toLowerCase() == 'true';
         } else if (trimmed.startsWith('X-GNOME-Autostart-enabled=')) {
           xgnomeEnabled = trimmed.substring(28).trim().toLowerCase() == 'true';
+        } else if (trimmed.startsWith('NoDisplay=')) {
+          noDisplay = trimmed.substring(10).trim().toLowerCase() == 'true';
         }
       }
 
@@ -108,6 +111,7 @@ class StartupAppsAnalyzer {
         isEnabled: isEnabled,
         desktopFile: file.path,
         isProtected: isProtected,
+        noDisplay: noDisplay,
       );
     } catch (e) {
       // Ignora file non validi

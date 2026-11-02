@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:super_linux_utility/l10n/app_localizations.dart';
+import 'package:super_linux_utility/models/startup_app.dart';
 import 'package:super_linux_utility/screens/optimizer_wizard_screen.dart';
 import 'package:super_linux_utility/services/system_optimizer_service.dart';
 
@@ -245,6 +248,190 @@ ActiveEnterTimestamp=
 
     test('comando vuoto → null', () {
       expect(SystemOptimizerService.extractExecutable('  '), isNull);
+    });
+  });
+
+  group('executableExists (regressione comandi in PATH)', () {
+    test('percorso assoluto: controllo diretto', () {
+      expect(SystemOptimizerService.executableExists('/bin/sh'), isTrue);
+      expect(SystemOptimizerService.executableExists('/nonexistent/slu-nope-xyz'),
+          isFalse);
+    });
+
+    test('nome in PATH non è "mancante" (caso xdg-* / flatpak / orca)', () {
+      // I .desktop usano spesso il NOME in PATH: il vecchio check
+      // `File(exe).existsSync()` risolveva un nome relativo contro la cwd →
+      // SEMPRE false → app preselezionate a torto con "eseguibile mancante".
+      expect(SystemOptimizerService.executableExists('sh'), isTrue);
+      expect(
+          SystemOptimizerService.executableExists('slu-no-such-binary-xyz'),
+          isFalse);
+      // xdg-user-dirs-update è il caso reale segnalato; assert solo se
+      // installato (il test deve restare verde anche senza xdg-user-dirs).
+      if (File('/usr/bin/xdg-user-dirs-update').existsSync()) {
+        expect(
+            SystemOptimizerService.executableExists('xdg-user-dirs-update'),
+            isTrue);
+      }
+      if (File('/usr/bin/xdg-user-dirs-gtk-update').existsSync()) {
+        expect(
+            SystemOptimizerService.executableExists('xdg-user-dirs-gtk-update'),
+            isTrue);
+      }
+    });
+
+    test('stringa vuota → false', () {
+      expect(SystemOptimizerService.executableExists(''), isFalse);
+    });
+  });
+
+  group('evaluateStartupApp (voci NoDisplay / abitudini)', () {
+    final now = DateTime(2026, 11, 2);
+    final empty = OptimizerUsage(count30d: const {}, lastUsed: const {});
+
+    StartupApp app({
+      required String command,
+      bool enabled = true,
+      bool protected = false,
+      bool noDisplay = false,
+      String? file = '/etc/xdg/autostart/demo.desktop',
+      String name = 'Demo App',
+    }) =>
+        StartupApp(
+          name: name,
+          command: command,
+          isEnabled: enabled,
+          desktopFile: file,
+          isProtected: protected,
+          noDisplay: noDisplay,
+        );
+
+    test('voce NoDisplay non è MAI proposta sull\'uso (xdg, nm-applet)',
+        () {
+      // Lo storico recently-used.xbel registra i file aperti: un semaforo
+      // di sistema non apre file → zero record SEMPRE → veniva preselezionato
+      // a torto come "non utilizzata".
+      final c = SystemOptimizerService.evaluateStartupApp(
+        app(command: r"/bin/sh -c 'nm-applet'", noDisplay: true,
+            name: 'NetworkManager Applet',
+            file: '/etc/xdg/autostart/nm-applet.desktop'),
+        empty,
+        usageAvailable: true,
+        now: now,
+      );
+      expect(c, isNull,
+          reason: 'NoDisplay=true: nessun record di uso non prova nulla');
+    });
+
+    test('voce NoDisplay con binario MANCANTE resta proponibile', () {
+      final c = SystemOptimizerService.evaluateStartupApp(
+        app(command: '/nonexistent/slu-notifier', noDisplay: true),
+        empty,
+        usageAvailable: true,
+        now: now,
+      );
+      expect(c, isNotNull);
+      expect(c!.evidence, ['missingBinary']);
+      expect(c.preselected, isTrue);
+    });
+
+    test('exe sotto /usr/lib (componente di sistema) → non proposta', () {
+      // Caso reale: xapp-sn-watcher (watcher della tray) non dichiara
+      // NoDisplay ma è un agente di background in /usr/lib.
+      final c = SystemOptimizerService.evaluateStartupApp(
+        app(
+            command:
+                '/usr/lib/x86_64-linux-gnu/xapps/xapp-sn-watcher --foo',
+            name: 'xapp-sn-watcher',
+            file: '/etc/xdg/autostart/xapp-sn-watcher.desktop'),
+        empty,
+        usageAvailable: true,
+        now: now,
+      );
+      expect(c, isNull,
+          reason: 'un eseguibile in /usr/lib è un componente di sistema');
+    });
+
+    test('componente di sistema con binario mancante → comunque proposto', () {
+      final c = SystemOptimizerService.evaluateStartupApp(
+        app(command: '/usr/lib/x86_64-linux-gnu/libexec/slu-notifier',
+            noDisplay: true),
+        empty,
+        usageAvailable: true,
+        now: now,
+      );
+      expect(c, isNotNull);
+      expect(c!.evidence, ['missingBinary']);
+      expect(c.preselected, isTrue);
+    });
+
+    test('app visibile mai vista nello storico → preselezionata', () {
+      final c = SystemOptimizerService.evaluateStartupApp(
+        app(command: r"/bin/sh -c 'mychat'"),
+        empty,
+        usageAvailable: true,
+        now: now,
+      );
+      expect(c, isNotNull);
+      expect(c!.evidence, ['unusedApp']);
+      expect(c.preselected, isTrue);
+      expect(c.risk, OptimizerRisk.safe);
+    });
+
+    test('app visibile usata ieri → non toccata', () {
+      // usageFor cerca per nome app (minuscolo) e basename comando: qui la
+      // chiave è il nome display ("Demo App" → "demo app").
+      final usage = OptimizerUsage(
+        count30d: const {'demo app': 4},
+        lastUsed: {'demo app': now.subtract(const Duration(days: 1))},
+      );
+      expect(
+        SystemOptimizerService.evaluateStartupApp(
+            app(command: r"/bin/sh -c 'mychat'"), usage,
+            usageAvailable: true, now: now),
+        isNull,
+      );
+    });
+
+    test('app visibile usata 40gg fa → preselezionata come inutilizzata', () {
+      final usage = OptimizerUsage(
+        count30d: const {},
+        lastUsed: {'demo app': now.subtract(const Duration(days: 40))},
+      );
+      final c = SystemOptimizerService.evaluateStartupApp(
+          app(command: r"/bin/sh -c 'mychat'"), usage,
+          usageAvailable: true, now: now);
+      expect(c, isNotNull);
+      expect(c!.preselected, isTrue);
+      expect(c.uses30d, 0);
+    });
+
+    test('senza storico abitudini → nessuna proposta per app normali', () {
+      expect(
+        SystemOptimizerService.evaluateStartupApp(
+            app(command: r"/bin/sh -c 'mychat'"), empty,
+            usageAvailable: false, now: now),
+        isNull,
+      );
+    });
+
+    test('disabilitata / protetta / senza .desktop → sempre null', () {
+      final base = OptimizerUsage(count30d: const {}, lastUsed: const {});
+      expect(
+          SystemOptimizerService.evaluateStartupApp(
+              app(command: 'sh', enabled: false), base,
+              usageAvailable: true, now: now),
+          isNull);
+      expect(
+          SystemOptimizerService.evaluateStartupApp(
+              app(command: 'sh', protected: true), base,
+              usageAvailable: true, now: now),
+          isNull);
+      expect(
+          SystemOptimizerService.evaluateStartupApp(
+              app(command: 'sh', file: null), base,
+              usageAvailable: true, now: now),
+          isNull);
     });
   });
 

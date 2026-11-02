@@ -176,6 +176,13 @@ class SystemOptimizerService {
       r'teamviewer|anydesk|rustdesk|tailscale|docker|containerd|libvirt|mysql|mariadb|postgres|openvpn|zerotier',
       caseSensitive: false);
 
+  /// Eseguibili tipici dei componenti di sistema (`/usr/lib/...`,
+  /// `/lib/...`, `/usr/libexec/...`): non sono app lanciate dall'utente, ma
+  /// semafori/agenti di background (es. `xapp-sn-watcher`) → lo storico dei
+  /// file recenti non dice nulla su di loro.
+  static final RegExp _systemLibExe =
+      RegExp(r'^/(usr/)?lib(64|exec)?(/|$)', caseSensitive: false);
+
   /// Le unit con queste sottostringhe NON vengono mai proposte (ramo
   /// "sconosciute"): sicurezza, sessioni, cron, hardware critico.
   static final List<String> _neverPropose = [
@@ -710,61 +717,91 @@ class SystemOptimizerService {
 
     final out = <StartupCandidate>[];
     final now = DateTime.now();
-    final cutoff7 = now.subtract(const Duration(days: 7));
-    final cutoff30 = now.subtract(const Duration(days: 30));
-
     for (final app in apps) {
-      if (!app.isEnabled) continue;
-      if (app.isProtected) continue;
-      if (app.desktopFile == null || app.desktopFile!.isEmpty) continue;
-
-      final (uses, lastUsed) = usageAvailable
-          ? usageFor(usage, app.name, app.command)
-          : (0, null);
-
-      final evidence = <OptEvidence>[];
-      var risk = OptimizerRisk.safe;
-      var preselect = false;
-
-      // Evidenza forte: il binario non esiste più.
-      final exe = extractExecutable(app.command);
-      final missing =
-          exe != null && exe.isNotEmpty && !File(exe).existsSync();
-      if (missing) {
-        evidence.add('missingBinary');
-        preselect = true;
-      } else if (usageAvailable) {
-        if (uses == 0 &&
-            (lastUsed == null || lastUsed.isBefore(cutoff30))) {
-          evidence.add('unusedApp');
-          risk = OptimizerRisk.safe;
-          preselect = true;
-        } else if (uses == 0 ||
-            (lastUsed != null && lastUsed.isBefore(cutoff7))) {
-          evidence.add('unusedApp');
-          risk = OptimizerRisk.caution;
-          preselect = false;
-        } else {
-          continue; // usata di recente: non toccare
-        }
-      } else {
-        continue; // niente info abitudini: non proponiamo app normali
-      }
-
-      out.add(StartupCandidate(
-        app: app,
-        evidence: evidence,
-        risk: risk,
-        preselected: preselect,
-        uses30d: uses,
-        lastUsed: lastUsed,
-      ));
+      final candidate = evaluateStartupApp(app, usage,
+          usageAvailable: usageAvailable, now: now);
+      if (candidate != null) out.add(candidate);
     }
     return (candidates: out, usageAvailable: usageAvailable);
   }
 
-  /// Primo token del comando → percorso dell'eseguibile (con ~ espanso).
-  /// Estrae l'eseguibile dal comando di una app di avvio (con espanso di ~,
+  /// Valuta una singola app di avvio e ritorna il candidato da proporre, oppure
+  /// `null` se non va proposta. Tutta la logica sta qui (metodo pubblico →
+  /// testabile):
+  ///  1. disabilitata / protetta / senza file .desktop → `null`;
+  ///  2. **eseguibile davvero mancante** (nomi in PATH inclusi, vedi
+  ///     `executableExists`) → candidato preselezionato: vale ANCHE per le
+  ///     voci NoDisplay (un .desktop rotto va ripulito);
+  ///  3. **`NoDisplay=true`** oppure exe sotto `/usr/lib*` (semafori e
+  ///     componenti di sistema) → `null`: lo
+  ///     storico `recently-used.xbel` registra i file aperti dalle app e non
+  ///     contiene MAI questi comandi (`xdg-user-dirs-update`, `nm-applet`,
+  ///     `at-spi`, `spice-vdagent`, ...) → "nessun record" non prova che
+  ///     siano inutilizzati (prima erano falsi positivi preselezionati);
+  ///  4. con storico: inutilizzata da 30gg → preselezionata; inutilizzata o
+  ///     non vista da 7gg → proposta con cautela; usata di recente → `null`;
+  ///  5. senza storico → `null` (nessuna proposta basata sulle abitudini).
+  static StartupCandidate? evaluateStartupApp(
+    StartupApp app,
+    OptimizerUsage usage, {
+    required bool usageAvailable,
+    DateTime? now,
+  }) {
+    if (!app.isEnabled) return null;
+    if (app.isProtected) return null;
+    final file = app.desktopFile;
+    if (file == null || file.isEmpty) return null;
+
+    // Evidenza forte: il binario non esiste più (controllo anche in PATH).
+    final exe = extractExecutable(app.command);
+    if (exe != null && exe.isNotEmpty && !executableExists(exe)) {
+      return StartupCandidate(
+        app: app,
+        evidence: const ['missingBinary'],
+        risk: OptimizerRisk.safe,
+        preselected: true,
+      );
+    }
+
+    // Voce di sistema nascosta: il suo "uso" non si misura dai file recenti.
+    if (app.noDisplay) return null;
+
+    // Eseguibile nelle librerie di sistema: componente di background, mai
+    // un'app che l'utente apre → nessuna proposta basata sulle abitudini.
+    if (exe != null && _systemLibExe.hasMatch(exe)) return null;
+
+    // App normali: servono le informazioni sulle abitudini.
+    if (!usageAvailable) return null;
+
+    final ref = now ?? DateTime.now();
+    final cutoff7 = ref.subtract(const Duration(days: 7));
+    final cutoff30 = ref.subtract(const Duration(days: 30));
+    final (uses, lastUsed) = usageFor(usage, app.name, app.command);
+
+    if (uses == 0 && (lastUsed == null || lastUsed.isBefore(cutoff30))) {
+      return StartupCandidate(
+        app: app,
+        evidence: const ['unusedApp'],
+        risk: OptimizerRisk.safe,
+        preselected: true,
+        uses30d: uses,
+        lastUsed: lastUsed,
+      );
+    }
+    if (uses == 0 || (lastUsed != null && lastUsed.isBefore(cutoff7))) {
+      return StartupCandidate(
+        app: app,
+        evidence: const ['unusedApp'],
+        risk: OptimizerRisk.caution,
+        preselected: false,
+        uses30d: uses,
+        lastUsed: lastUsed,
+      );
+    }
+    return null; // usata di recente: non toccare
+  }
+
+  /// Primo token del comando → percorso dell'eseguibile (con ~ espanso e
   /// senza prefissi env): utile per verificare se il binario esiste ancora.
   static String? extractExecutable(String command) {
     var s = command.trim();
@@ -786,6 +823,26 @@ class SystemOptimizerService {
       return '${Platform.environment['HOME'] ?? ''}${exe.substring(1)}';
     }
     return exe;
+  }
+
+  /// Verifica che l'eseguibile esista davvero.
+  ///
+  /// I `Exec` dei .desktop non sono sempre percorsi assoluti: molti usano
+  /// il NOME in PATH (`xdg-user-dirs-update`, `flatpak`, `orca`, ...).
+  /// Un nome relativo controllato solo con `File(exe).existsSync()` viene
+  /// risolto contro la cwd → risulta SEMPRE "mancante" → l'app verrebbe a
+  /// torto preselezionata con l'evidenza "eseguibile mancante". I nomi
+  /// non-assoluti vengono quindi cercati nelle directory di PATH; i
+  /// percorsi assoluti restano un controllo diretto.
+  static bool executableExists(String exe) {
+    if (exe.isEmpty) return false;
+    if (exe.startsWith('/')) return File(exe).existsSync();
+    final path = Platform.environment['PATH'] ?? '';
+    for (final dir in path.split(':')) {
+      if (dir.isEmpty) continue;
+      if (File('$dir/$exe').existsSync()) return true;
+    }
+    return false;
   }
 
   // ─── Apply ────────────────────────────────────────────────────────────
