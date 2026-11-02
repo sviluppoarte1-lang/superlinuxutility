@@ -6591,6 +6591,408 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Riduci a icona nel tray disattivato'**
   String get settingsMinimizeToTrayOff;
+
+  /// No description provided for @optWizardTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Ottimizzatore'**
+  String get optWizardTitle;
+
+  /// No description provided for @optIntroTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Wizard di ottimizzazione'**
+  String get optIntroTitle;
+
+  /// No description provided for @optIntroDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Analizza i servizi di sistema e le app in avvio, valuta le tue abitudini d\'uso e ti guida nell\'ottimizzazione. I servizi critici del sistema vengono sempre esclusi.'**
+  String get optIntroDesc;
+
+  /// No description provided for @optIntroBullet1.
+  ///
+  /// In it, this message translates to:
+  /// **'Scansione intelligente di tutti i servizi systemd, con filtro dei servizi inamovibili'**
+  String get optIntroBullet1;
+
+  /// No description provided for @optIntroBullet2.
+  ///
+  /// In it, this message translates to:
+  /// **'Rileva le app in avvio inutilizzate o con eseguibile mancante'**
+  String get optIntroBullet2;
+
+  /// No description provided for @optIntroBullet3.
+  ///
+  /// In it, this message translates to:
+  /// **'Considera le tue abitudini (ultimi 30 giorni) per non toccare ciò che usi davvero'**
+  String get optIntroBullet3;
+
+  /// No description provided for @optStartScan.
+  ///
+  /// In it, this message translates to:
+  /// **'Avvia scansione'**
+  String get optStartScan;
+
+  /// No description provided for @optScanningTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Analisi del sistema in corso…'**
+  String get optScanningTitle;
+
+  /// No description provided for @optScanningHint.
+  ///
+  /// In it, this message translates to:
+  /// **'La scansione è bulk: pochi comandi per tutto il sistema.'**
+  String get optScanningHint;
+
+  /// No description provided for @optScanningUnits.
+  ///
+  /// In it, this message translates to:
+  /// **'Lettura unit di sistema…'**
+  String get optScanningUnits;
+
+  /// No description provided for @optScanningShow.
+  ///
+  /// In it, this message translates to:
+  /// **'Analisi dettagli servizi…'**
+  String get optScanningShow;
+
+  /// No description provided for @optScanningBlame.
+  ///
+  /// In it, this message translates to:
+  /// **'Misurazione costi di avvio…'**
+  String get optScanningBlame;
+
+  /// No description provided for @optScanningDeps.
+  ///
+  /// In it, this message translates to:
+  /// **'Verifica dipendenze…'**
+  String get optScanningDeps;
+
+  /// No description provided for @optScanningStartup.
+  ///
+  /// In it, this message translates to:
+  /// **'Analisi app in avvio…'**
+  String get optScanningStartup;
+
+  /// No description provided for @optNoSystemd.
+  ///
+  /// In it, this message translates to:
+  /// **'systemd non è attivo su questo sistema: l\'analisi dei servizi non è disponibile. Puoi comunque ottimizzare le app in avvio.'**
+  String get optNoSystemd;
+
+  /// No description provided for @optServicesTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizi di sistema'**
+  String get optServicesTitle;
+
+  /// optServicesSubtitle
+  ///
+  /// In it, this message translates to:
+  /// **'{scanned} servizi analizzati, {proposed} ottimizzabili'**
+  String optServicesSubtitle(int scanned, int proposed);
+
+  /// No description provided for @optServicesEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun servizio ottimizzabile trovato: il sistema è già efficiente.'**
+  String get optServicesEmpty;
+
+  /// optServicesUnknown
+  ///
+  /// In it, this message translates to:
+  /// **'{count} servizi abilitati non riconosciuti non sono stati toccati.'**
+  String optServicesUnknown(int count);
+
+  /// No description provided for @optStartupTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'App in avvio'**
+  String get optStartupTitle;
+
+  /// optStartupSubtitle
+  ///
+  /// In it, this message translates to:
+  /// **'{proposed} app proposte per la disabilitazione'**
+  String optStartupSubtitle(int proposed);
+
+  /// No description provided for @optStartupEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna app di avvio superflua trovata.'**
+  String get optStartupEmpty;
+
+  /// No description provided for @optNoUsageInfo.
+  ///
+  /// In it, this message translates to:
+  /// **'Storico di utilizzo non disponibile: vengono proposte solo le app il cui eseguibile non esiste più.'**
+  String get optNoUsageInfo;
+
+  /// optSelectedCount
+  ///
+  /// In it, this message translates to:
+  /// **'{selected} di {total} selezionate'**
+  String optSelectedCount(int selected, int total);
+
+  /// No description provided for @optApplyTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Pronto per l\'ottimizzazione'**
+  String get optApplyTitle;
+
+  /// optApplyDesc
+  ///
+  /// In it, this message translates to:
+  /// **'Verranno disabilitati {services} servizi di sistema e {apps} app in avvio.'**
+  String optApplyDesc(int services, int apps);
+
+  /// No description provided for @optApplyUndoNote.
+  ///
+  /// In it, this message translates to:
+  /// **'Ogni operazione viene registrata nello storico e può essere annullata.'**
+  String get optApplyUndoNote;
+
+  /// No description provided for @optNothingSelected.
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona almeno un elemento da ottimizzare.'**
+  String get optNothingSelected;
+
+  /// No description provided for @optApplyNow.
+  ///
+  /// In it, this message translates to:
+  /// **'Applica ora'**
+  String get optApplyNow;
+
+  /// No description provided for @optApplying.
+  ///
+  /// In it, this message translates to:
+  /// **'Applicazione in corso…'**
+  String get optApplying;
+
+  /// No description provided for @optDoneTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Ottimizzazione completata'**
+  String get optDoneTitle;
+
+  /// optDoneDesc
+  ///
+  /// In it, this message translates to:
+  /// **'Disabilitati {services} servizi di sistema e {apps} app in avvio.'**
+  String optDoneDesc(int services, int apps);
+
+  /// optDoneErrors
+  ///
+  /// In it, this message translates to:
+  /// **'{count} operazioni non riuscite'**
+  String optDoneErrors(int count);
+
+  /// No description provided for @optDoneHistoryNote.
+  ///
+  /// In it, this message translates to:
+  /// **'Trovi tutto in Storico operazioni: da lì puoi annullare.'**
+  String get optDoneHistoryNote;
+
+  /// No description provided for @optRiskSafe.
+  ///
+  /// In it, this message translates to:
+  /// **'Sicuro'**
+  String get optRiskSafe;
+
+  /// No description provided for @optRiskCaution.
+  ///
+  /// In it, this message translates to:
+  /// **'Attenzione'**
+  String get optRiskCaution;
+
+  /// No description provided for @optEvBootCost.
+  ///
+  /// In it, this message translates to:
+  /// **'Allunga l\'avvio'**
+  String get optEvBootCost;
+
+  /// No description provided for @optEvNotRunning.
+  ///
+  /// In it, this message translates to:
+  /// **'Mai in esecuzione'**
+  String get optEvNotRunning;
+
+  /// No description provided for @optEvNeverActive.
+  ///
+  /// In it, this message translates to:
+  /// **'Mai attivato'**
+  String get optEvNeverActive;
+
+  /// No description provided for @optEvLastActive.
+  ///
+  /// In it, this message translates to:
+  /// **'Inattivo da tempo'**
+  String get optEvLastActive;
+
+  /// No description provided for @optEvNoBluetooth.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun dispositivo Bluetooth'**
+  String get optEvNoBluetooth;
+
+  /// No description provided for @optEvNoPrinters.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna stampante'**
+  String get optEvNoPrinters;
+
+  /// No description provided for @optEvNoModems.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun modem'**
+  String get optEvNoModems;
+
+  /// No description provided for @optEvNoSnaps.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuna app Snap'**
+  String get optEvNoSnaps;
+
+  /// No description provided for @optEvThirdParty.
+  ///
+  /// In it, this message translates to:
+  /// **'Terze parti'**
+  String get optEvThirdParty;
+
+  /// No description provided for @optEvUnusedApp.
+  ///
+  /// In it, this message translates to:
+  /// **'Non utilizzata'**
+  String get optEvUnusedApp;
+
+  /// No description provided for @optEvMissingBinary.
+  ///
+  /// In it, this message translates to:
+  /// **'Eseguibile mancante'**
+  String get optEvMissingBinary;
+
+  /// No description provided for @optSvcBluetooth.
+  ///
+  /// In it, this message translates to:
+  /// **'Bluetooth di sistema (disabilita se non usi dispositivi Bluetooth)'**
+  String get optSvcBluetooth;
+
+  /// No description provided for @optSvcCups.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio di stampa CUPS (disabilita se non stampi)'**
+  String get optSvcCups;
+
+  /// No description provided for @optSvcAvahi.
+  ///
+  /// In it, this message translates to:
+  /// **'Rete locale mDNS/DNS-SD (scoperta dispositivi in rete)'**
+  String get optSvcAvahi;
+
+  /// No description provided for @optSvcModemManager.
+  ///
+  /// In it, this message translates to:
+  /// **'Gestione modem cellulari'**
+  String get optSvcModemManager;
+
+  /// No description provided for @optSvcSnapd.
+  ///
+  /// In it, this message translates to:
+  /// **'Runtime dei pacchetti Snap'**
+  String get optSvcSnapd;
+
+  /// No description provided for @optSvcPackageKit.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamenti software trasparenti (PackageKit)'**
+  String get optSvcPackageKit;
+
+  /// No description provided for @optSvcFwupd.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiornamento firmware dal software center'**
+  String get optSvcFwupd;
+
+  /// No description provided for @optSvcGeoclue.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio di localizzazione geografica'**
+  String get optSvcGeoclue;
+
+  /// No description provided for @optSvcUpdateNotifier.
+  ///
+  /// In it, this message translates to:
+  /// **'Notifiche aggiornamenti di sistema'**
+  String get optSvcUpdateNotifier;
+
+  /// No description provided for @optSvcAnacron.
+  ///
+  /// In it, this message translates to:
+  /// **'Esecuzione periodica di job (anacron)'**
+  String get optSvcAnacron;
+
+  /// No description provided for @optSvcOpenVpn.
+  ///
+  /// In it, this message translates to:
+  /// **'Client VPN OpenVPN'**
+  String get optSvcOpenVpn;
+
+  /// No description provided for @optSvcTeamViewer.
+  ///
+  /// In it, this message translates to:
+  /// **'TeamViewer (accesso remoto)'**
+  String get optSvcTeamViewer;
+
+  /// No description provided for @optSvcAnydesk.
+  ///
+  /// In it, this message translates to:
+  /// **'AnyDesk (accesso remoto)'**
+  String get optSvcAnydesk;
+
+  /// No description provided for @optSvcRustdesk.
+  ///
+  /// In it, this message translates to:
+  /// **'RustDesk (accesso remoto)'**
+  String get optSvcRustdesk;
+
+  /// No description provided for @optSvcTailscale.
+  ///
+  /// In it, this message translates to:
+  /// **'Tailscale (VPN mesh)'**
+  String get optSvcTailscale;
+
+  /// No description provided for @optSvcDocker.
+  ///
+  /// In it, this message translates to:
+  /// **'Docker / containerd'**
+  String get optSvcDocker;
+
+  /// No description provided for @optSvcLibvirt.
+  ///
+  /// In it, this message translates to:
+  /// **'Libvirt (macchine virtuali)'**
+  String get optSvcLibvirt;
+
+  /// No description provided for @optSvcMysql.
+  ///
+  /// In it, this message translates to:
+  /// **'Database MySQL/MariaDB'**
+  String get optSvcMysql;
+
+  /// No description provided for @optSvcPostgres.
+  ///
+  /// In it, this message translates to:
+  /// **'Database PostgreSQL'**
+  String get optSvcPostgres;
+
+  /// No description provided for @optSvcGeneric.
+  ///
+  /// In it, this message translates to:
+  /// **'Servizio di terze parti abilitato ma mai attivato'**
+  String get optSvcGeneric;
 }
 
 class _AppLocalizationsDelegate

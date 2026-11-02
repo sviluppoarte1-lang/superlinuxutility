@@ -3685,4 +3685,236 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsMinimizeToTrayOff =>
       'Réduire dans la zone de notification désactivé';
+
+  @override
+  String get optWizardTitle => 'Optimiseur';
+
+  @override
+  String get optIntroTitle => 'Assistant d\'optimisation';
+
+  @override
+  String get optIntroDesc =>
+      'Analyse les services système et les applications de démarrage, évalue vos habitudes d\'utilisation et vous guide dans l\'optimisation. Les services critiques du système sont toujours exclus.';
+
+  @override
+  String get optIntroBullet1 =>
+      'Analyse intelligente de tous les services systemd, en filtrant les non-déplaçables';
+
+  @override
+  String get optIntroBullet2 =>
+      'Détecte les applications de démarrage inutilisées ou dont l\'exécutable est manquant';
+
+  @override
+  String get optIntroBullet3 =>
+      'Prend en compte vos habitudes (30 derniers jours) pour ne pas toucher à ce que vous utilisez vraiment';
+
+  @override
+  String get optStartScan => 'Lancer l\'analyse';
+
+  @override
+  String get optScanningTitle => 'Analyse du système en cours…';
+
+  @override
+  String get optScanningHint =>
+      'L\'analyse est groupée : quelques commandes pour tout le système.';
+
+  @override
+  String get optScanningUnits => 'Lecture des unités système…';
+
+  @override
+  String get optScanningShow => 'Analyse des détails des services…';
+
+  @override
+  String get optScanningBlame => 'Mesure des coûts de démarrage…';
+
+  @override
+  String get optScanningDeps => 'Vérification des dépendances…';
+
+  @override
+  String get optScanningStartup => 'Analyse des applications de démarrage…';
+
+  @override
+  String get optNoSystemd =>
+      'systemd n\'est pas actif sur ce système : l\'analyse des services est indisponible. Vous pouvez quand même optimiser les applications de démarrage.';
+
+  @override
+  String get optServicesTitle => 'Services système';
+
+  @override
+  String optServicesSubtitle(int scanned, int proposed) {
+    return '$scanned services analysés, $proposed optimisables';
+  }
+
+  @override
+  String get optServicesEmpty =>
+      'Aucun service optimisable trouvé : le système est déjà efficace.';
+
+  @override
+  String optServicesUnknown(int count) {
+    return '$count services activés non reconnus n\'ont pas été touchés.';
+  }
+
+  @override
+  String get optStartupTitle => 'Applications de démarrage';
+
+  @override
+  String optStartupSubtitle(int proposed) {
+    return '$proposed applications proposées pour désactivation';
+  }
+
+  @override
+  String get optStartupEmpty =>
+      'Aucune application de démarrage superflue trouvée.';
+
+  @override
+  String get optNoUsageInfo =>
+      'Historique d\'utilisation indisponible : seules les applications sans exécutable sont proposées.';
+
+  @override
+  String optSelectedCount(int selected, int total) {
+    return '$selected sur $total sélectionnées';
+  }
+
+  @override
+  String get optApplyTitle => 'Prêt pour l\'optimisation';
+
+  @override
+  String optApplyDesc(int services, int apps) {
+    return '$services services système et $apps applications de démarrage seront désactivés.';
+  }
+
+  @override
+  String get optApplyUndoNote =>
+      'Chaque opération est enregistrée dans l\'historique et peut être annulée.';
+
+  @override
+  String get optNothingSelected =>
+      'Sélectionnez au moins un élément à optimiser.';
+
+  @override
+  String get optApplyNow => 'Appliquer maintenant';
+
+  @override
+  String get optApplying => 'Application en cours…';
+
+  @override
+  String get optDoneTitle => 'Optimisation terminée';
+
+  @override
+  String optDoneDesc(int services, int apps) {
+    return '$services services système et $apps applications de démarrage désactivés.';
+  }
+
+  @override
+  String optDoneErrors(int count) {
+    return '$count opérations échouées';
+  }
+
+  @override
+  String get optDoneHistoryNote =>
+      'Tout est dans l\'historique des opérations : annulez depuis là-bas.';
+
+  @override
+  String get optRiskSafe => 'Sûr';
+
+  @override
+  String get optRiskCaution => 'Attention';
+
+  @override
+  String get optEvBootCost => 'Ralentit le démarrage';
+
+  @override
+  String get optEvNotRunning => 'Jamais en cours';
+
+  @override
+  String get optEvNeverActive => 'Jamais activé';
+
+  @override
+  String get optEvLastActive => 'Inactif depuis longtemps';
+
+  @override
+  String get optEvNoBluetooth => 'Aucun appareil Bluetooth';
+
+  @override
+  String get optEvNoPrinters => 'Aucune imprimante';
+
+  @override
+  String get optEvNoModems => 'Aucun modem';
+
+  @override
+  String get optEvNoSnaps => 'Aucune appli Snap';
+
+  @override
+  String get optEvThirdParty => 'Tiers';
+
+  @override
+  String get optEvUnusedApp => 'Inutilisée';
+
+  @override
+  String get optEvMissingBinary => 'Exécutable manquant';
+
+  @override
+  String get optSvcBluetooth =>
+      'Service Bluetooth système (désactivez-le si vous n\'utilisez pas de périphériques Bluetooth)';
+
+  @override
+  String get optSvcCups =>
+      'Service d\'impression CUPS (désactivez-le si vous n\'imprimez jamais)';
+
+  @override
+  String get optSvcAvahi =>
+      'Réseau local mDNS/DNS-SD (découverte d\'appareils)';
+
+  @override
+  String get optSvcModemManager => 'Gestion des modems cellulaires';
+
+  @override
+  String get optSvcSnapd => 'Environnement d\'exécution des paquets Snap';
+
+  @override
+  String get optSvcPackageKit =>
+      'Mises à jour logicielles transparentes (PackageKit)';
+
+  @override
+  String get optSvcFwupd =>
+      'Mises à jour du firmware depuis le centre logiciel';
+
+  @override
+  String get optSvcGeoclue => 'Service de géolocalisation';
+
+  @override
+  String get optSvcUpdateNotifier => 'Notifications de mises à jour système';
+
+  @override
+  String get optSvcAnacron => 'Exécution périodique de tâches (anacron)';
+
+  @override
+  String get optSvcOpenVpn => 'Client VPN OpenVPN';
+
+  @override
+  String get optSvcTeamViewer => 'TeamViewer (accès distant)';
+
+  @override
+  String get optSvcAnydesk => 'AnyDesk (accès distant)';
+
+  @override
+  String get optSvcRustdesk => 'RustDesk (accès distant)';
+
+  @override
+  String get optSvcTailscale => 'Tailscale (VPN maillé)';
+
+  @override
+  String get optSvcDocker => 'Docker / containerd';
+
+  @override
+  String get optSvcLibvirt => 'Libvirt (machines virtuelles)';
+
+  @override
+  String get optSvcMysql => 'Base de données MySQL/MariaDB';
+
+  @override
+  String get optSvcPostgres => 'Base de données PostgreSQL';
+
+  @override
+  String get optSvcGeneric => 'Service de tiers activé mais jamais activé';
 }

@@ -3644,4 +3644,230 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsMinimizeToTrayOff => 'Minimize to tray disabled';
+
+  @override
+  String get optWizardTitle => 'Optimizer';
+
+  @override
+  String get optIntroTitle => 'Optimization wizard';
+
+  @override
+  String get optIntroDesc =>
+      'Analyzes system services and startup apps, evaluates your usage habits and guides you through the optimization. Critical system services are always excluded.';
+
+  @override
+  String get optIntroBullet1 =>
+      'Smart scan of all systemd services, filtering out the non-removable ones';
+
+  @override
+  String get optIntroBullet2 =>
+      'Detects unused startup apps or apps with a missing executable';
+
+  @override
+  String get optIntroBullet3 =>
+      'Considers your habits (last 30 days) to leave what you really use alone';
+
+  @override
+  String get optStartScan => 'Start scan';
+
+  @override
+  String get optScanningTitle => 'Analyzing the system…';
+
+  @override
+  String get optScanningHint =>
+      'The scan is bulk: a few commands for the whole system.';
+
+  @override
+  String get optScanningUnits => 'Reading system units…';
+
+  @override
+  String get optScanningShow => 'Analyzing service details…';
+
+  @override
+  String get optScanningBlame => 'Measuring boot costs…';
+
+  @override
+  String get optScanningDeps => 'Checking dependencies…';
+
+  @override
+  String get optScanningStartup => 'Analyzing startup apps…';
+
+  @override
+  String get optNoSystemd =>
+      'systemd is not active on this system: service analysis is unavailable. You can still optimize startup apps.';
+
+  @override
+  String get optServicesTitle => 'System services';
+
+  @override
+  String optServicesSubtitle(int scanned, int proposed) {
+    return '$scanned services scanned, $proposed optimizable';
+  }
+
+  @override
+  String get optServicesEmpty =>
+      'No optimizable service found: the system is already efficient.';
+
+  @override
+  String optServicesUnknown(int count) {
+    return '$count enabled but unrecognized services were left untouched.';
+  }
+
+  @override
+  String get optStartupTitle => 'Startup apps';
+
+  @override
+  String optStartupSubtitle(int proposed) {
+    return '$proposed apps proposed for disabling';
+  }
+
+  @override
+  String get optStartupEmpty => 'No unnecessary startup app found.';
+
+  @override
+  String get optNoUsageInfo =>
+      'Usage history unavailable: only apps with a missing executable are proposed.';
+
+  @override
+  String optSelectedCount(int selected, int total) {
+    return '$selected of $total selected';
+  }
+
+  @override
+  String get optApplyTitle => 'Ready to optimize';
+
+  @override
+  String optApplyDesc(int services, int apps) {
+    return '$services system services and $apps startup apps will be disabled.';
+  }
+
+  @override
+  String get optApplyUndoNote =>
+      'Every operation is recorded in the history and can be undone.';
+
+  @override
+  String get optNothingSelected => 'Select at least one item to optimize.';
+
+  @override
+  String get optApplyNow => 'Apply now';
+
+  @override
+  String get optApplying => 'Applying…';
+
+  @override
+  String get optDoneTitle => 'Optimization complete';
+
+  @override
+  String optDoneDesc(int services, int apps) {
+    return 'Disabled $services system services and $apps startup apps.';
+  }
+
+  @override
+  String optDoneErrors(int count) {
+    return '$count operations failed';
+  }
+
+  @override
+  String get optDoneHistoryNote =>
+      'Everything is in Operation history: undo from there.';
+
+  @override
+  String get optRiskSafe => 'Safe';
+
+  @override
+  String get optRiskCaution => 'Caution';
+
+  @override
+  String get optEvBootCost => 'Slows boot';
+
+  @override
+  String get optEvNotRunning => 'Never running';
+
+  @override
+  String get optEvNeverActive => 'Never activated';
+
+  @override
+  String get optEvLastActive => 'Inactive for a long time';
+
+  @override
+  String get optEvNoBluetooth => 'No Bluetooth device';
+
+  @override
+  String get optEvNoPrinters => 'No printer';
+
+  @override
+  String get optEvNoModems => 'No modem';
+
+  @override
+  String get optEvNoSnaps => 'No Snap app';
+
+  @override
+  String get optEvThirdParty => 'Third-party';
+
+  @override
+  String get optEvUnusedApp => 'Unused';
+
+  @override
+  String get optEvMissingBinary => 'Missing executable';
+
+  @override
+  String get optSvcBluetooth =>
+      'System Bluetooth service (disable if you don\'t use Bluetooth devices)';
+
+  @override
+  String get optSvcCups => 'CUPS printing service (disable if you never print)';
+
+  @override
+  String get optSvcAvahi => 'Local network mDNS/DNS-SD (device discovery)';
+
+  @override
+  String get optSvcModemManager => 'Cellular modem management';
+
+  @override
+  String get optSvcSnapd => 'Snap package runtime';
+
+  @override
+  String get optSvcPackageKit => 'Transparent software updates (PackageKit)';
+
+  @override
+  String get optSvcFwupd => 'Firmware updates from the software center';
+
+  @override
+  String get optSvcGeoclue => 'Geographic location service';
+
+  @override
+  String get optSvcUpdateNotifier => 'System update notifications';
+
+  @override
+  String get optSvcAnacron => 'Periodic job execution (anacron)';
+
+  @override
+  String get optSvcOpenVpn => 'OpenVPN client';
+
+  @override
+  String get optSvcTeamViewer => 'TeamViewer (remote access)';
+
+  @override
+  String get optSvcAnydesk => 'AnyDesk (remote access)';
+
+  @override
+  String get optSvcRustdesk => 'RustDesk (remote access)';
+
+  @override
+  String get optSvcTailscale => 'Tailscale (mesh VPN)';
+
+  @override
+  String get optSvcDocker => 'Docker / containerd';
+
+  @override
+  String get optSvcLibvirt => 'Libvirt (virtual machines)';
+
+  @override
+  String get optSvcMysql => 'MySQL/MariaDB database';
+
+  @override
+  String get optSvcPostgres => 'PostgreSQL database';
+
+  @override
+  String get optSvcGeneric => 'Third-party service enabled but never activated';
 }

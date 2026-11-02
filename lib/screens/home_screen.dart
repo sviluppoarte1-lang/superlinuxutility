@@ -16,6 +16,7 @@ import 'info_screen.dart';
 import 'settings_screen.dart';
 import 'disk_analyzer_screen.dart';
 import 'recovery_screen.dart';
+import 'optimizer_wizard_screen.dart';
 import 'smart_monitor_screen.dart';
 import 'tweaks_screen.dart';
 import 'device_manager_screen.dart';
@@ -111,6 +112,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'recovery', 'repositories', 'security', 'software installer',
       'operation history', 'rescue', 'fix',
     ]),
+    _TabSpec('optimizer', _optimizerIcon, [
+      'optimizer', 'optimization', 'wizard', 'system scan', 'unused services',
+      'startup cleanup', 'boot time',
+    ], advancedOnly: true),
     _TabSpec('grub', _grubIcon, [
       'grub', 'bootloader', 'kernel parameters', 'boot menu', 'double boot',
       'advanced',
@@ -475,6 +480,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return const DriverManagerScreen();
       case 'recovery':
         return const RecoveryScreen();
+      case 'optimizer':
+        return const OptimizerWizardScreen();
       case 'grub':
         return const GrubEditorScreen();
       case 'battery':
@@ -521,6 +528,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return l10n.tabDriverManager;
       case 'recovery':
         return l10n.tabRecovery;
+      case 'optimizer':
+        return l10n.optWizardTitle;
       case 'grub':
         return l10n.tabGrub;
       case 'battery':
@@ -683,6 +692,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   );
   static const _recoveryIcon = FeatureIconData(
     icon: Icons.healing, color: Colors.cyan,
+  );
+  static const _optimizerIcon = FeatureIconData(
+    icon: Icons.auto_fix_high, color: Colors.purple,
   );
   static const _batteryIcon = FeatureIconData(
     icon: Icons.battery_charging_full, color: Colors.green,
