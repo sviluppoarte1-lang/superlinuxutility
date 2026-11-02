@@ -7,7 +7,14 @@ import '../services/system_optimizer_service.dart';
 /// scansione di servizi e app in avvio fino all'applicazione con undo.
 /// 0 intro → 1 scansione → 2 servizi → 3 app in avvio → 4 applica → 5 fine.
 class OptimizerWizardScreen extends StatefulWidget {
-  const OptimizerWizardScreen({super.key});
+  /// Azione della chiusura (fine wizard): il wizard è una TAB dentro la
+  /// finestra principale, NON una route → senza questo callback l'unico
+  /// modo per "chiudere" sarebbe `Navigator.pop()` sulla root route, che
+  /// svuota lo stack e lascia una SCHERMATA BIANCA. La Home lo usa per
+  /// tornare alla scheda principale.
+  final VoidCallback? onClose;
+
+  const OptimizerWizardScreen({super.key, this.onClose});
 
   @override
   State<OptimizerWizardScreen> createState() => _OptimizerWizardScreenState();
@@ -56,6 +63,27 @@ class _OptimizerWizardScreenState extends State<OptimizerWizardScreen> {
         _error = e.toString();
         _step = 0;
       });
+    }
+  }
+
+  /// Chiude il wizard alla fine.
+  ///
+  /// 1. Se la Home ha passato `onClose` → si torna alla scheda principale
+  ///    (nessuna route va toccata);
+  /// 2. altrimenti si poppa SOLO se c'è davvero una route da poppare
+  ///    (`canPop`): mai poppare la root di una finestra → schermata bianca;
+  /// 3. infine si torna all'intro così il wizard è di nuovo riutilizzabile.
+  void _closeWizard() {
+    final onClose = widget.onClose;
+    if (onClose != null) {
+      onClose();
+      return;
+    }
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else if (mounted) {
+      setState(() => _step = 0);
     }
   }
 
@@ -590,63 +618,18 @@ class _OptimizerWizardScreenState extends State<OptimizerWizardScreen> {
 
   // ─── Step 5: fine ─────────────────────────────────────────────────────
 
-  Widget _buildDone(AppLocalizations l10n) {
-    final res = _applyResult;
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Icon(Icons.check_circle,
-            size: 56, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: 16),
-        Text(l10n.optDoneTitle,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 12),
-        Text(
-          l10n.optDoneDesc(
-              res?.servicesDisabled ?? 0, res?.appsDisabled ?? 0),
-          textAlign: TextAlign.center,
-        ),
-        if (res != null && res.errors.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Card(
-            child: ListTile(
-              leading: Icon(Icons.warning_amber,
-                  color: Theme.of(context).colorScheme.error),
-              title: Text(l10n.optDoneErrors(res.errors.length)),
-              subtitle: Text(
-                res.errors.take(6).join('\n'),
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-              ),
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.history),
-            title: Text(l10n.optDoneHistoryNote),
-          ),
-        ),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.close),
-        ),
-      ],
-    );
-  }
+  Widget _buildDone(AppLocalizations l10n) =>
+      OptimizerDoneView(result: _applyResult, onClose: _closeWizard);
 
   // ─── Navigazione ─────────────────────────────────────────────────────
 
   Widget _buildNavBar(AppLocalizations l10n) {
     final canBack = _step > 2;
     final canNext = _step < 4;
-    final total = _result;
-    final nothingSelected = _step == 2 &&
-        total != null &&
-        _selectedServices.isEmpty &&
-        total.services.isNotEmpty;
+    // NB: "Avanti" è SEMPRE abilitato: bloccare il passo servizi quando
+    // nessuno è selezionato impediva di raggiungere le app in avvio (chi
+    // vuole ottimizzare solo quelle). Il passo applica gestisce da solo il
+    // caso "nessuna selezione".
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -661,7 +644,7 @@ class _OptimizerWizardScreenState extends State<OptimizerWizardScreen> {
             const Spacer(),
             if (canNext)
               FilledButton.icon(
-                onPressed: nothingSelected ? null : _next,
+                onPressed: _next,
                 icon: const Icon(Icons.arrow_forward),
                 label: Text(l10n.onboardingContinue),
               ),
@@ -799,5 +782,71 @@ class _OptimizerWizardScreenState extends State<OptimizerWizardScreen> {
       default:
         return l10n.optSvcGeneric;
     }
+  }
+}
+
+/// Schermata finale del wizard (estratta → testabile): esito dell'apply e
+/// pulsante "Chiudi" che usa SOLO il callback `onClose` (mai
+/// `Navigator.pop()`: il wizard è una tab, poppare la root route lascia una
+/// schermata bianca).
+class OptimizerDoneView extends StatelessWidget {
+  final OptimizerApplyResult? result;
+
+  /// Azione di chiusura richiesta al tap su "Chiudi".
+  final VoidCallback onClose;
+
+  const OptimizerDoneView({
+    super.key,
+    required this.result,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final res = result;
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Icon(Icons.check_circle, size: 56, color: colorScheme.primary),
+        const SizedBox(height: 16),
+        Text(
+          l10n.optDoneTitle,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          l10n.optDoneDesc(res?.servicesDisabled ?? 0, res?.appsDisabled ?? 0),
+          textAlign: TextAlign.center,
+        ),
+        if (res != null && res.errors.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.warning_amber, color: colorScheme.error),
+              title: Text(l10n.optDoneErrors(res.errors.length)),
+              subtitle: Text(
+                res.errors.take(6).join('\n'),
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.history),
+            title: Text(l10n.optDoneHistoryNote),
+          ),
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: onClose,
+          child: Text(l10n.close),
+        ),
+      ],
+    );
   }
 }

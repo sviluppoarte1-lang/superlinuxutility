@@ -481,7 +481,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       case 'recovery':
         return const RecoveryScreen();
       case 'optimizer':
-        return const OptimizerWizardScreen();
+        // Alla fine del wizard si torna alla scheda principale: il wizard è
+        // una tab, Navigator.pop() qui svuoterebbe lo stack → schermata bianca.
+        return OptimizerWizardScreen(
+          onClose: () => _goToTabKey('services'),
+        );
       case 'grub':
         return const GrubEditorScreen();
       case 'battery':

@@ -435,6 +435,66 @@ ActiveEnterTimestamp=
     });
   });
 
+  testWidgets('OptimizerDoneView: Chiudi usa il callback, senza poppare',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    var closed = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: OptimizerDoneView(
+            result: const OptimizerApplyResult(
+              servicesDisabled: 3,
+              appsDisabled: 4,
+              errors: ['x.service'],
+            ),
+            onClose: () => closed++,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Optimization complete'), findsOneWidget);
+    expect(find.textContaining('Disabled 3 system services and 4 startup apps'),
+        findsOneWidget);
+    expect(find.text('x.service'), findsOneWidget);
+
+    await tester.tap(find.text('Close'));
+    await tester.pump();
+
+    expect(closed, 1, reason: 'Chiudi deve usare il callback onClose');
+    // La route è ancora lì: niente Navigator.pop() (farebbe schermata bianca).
+    expect(find.byType(OptimizerDoneView), findsOneWidget);
+  });
+
+  testWidgets('OptimizerDoneView con result nullo non va in crash',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: OptimizerDoneView(result: null, onClose: () {}),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Optimization complete'), findsOneWidget);
+    expect(find.text('Close'), findsOneWidget);
+  });
+
   test('scan reale: struttura coerente (systemd di questa macchina)',
       () async {
     final r = await SystemOptimizerService.scan()
