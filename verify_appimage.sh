@@ -113,7 +113,20 @@ $need
 done
 [ "$fail" -eq 0 ] && info "$elf_count ELF verificati: ogni NEEDED risolvibile in-AppDir (solo base-system in whitelist)"
 
-# ── 5) symlink assoluti/broken ──────────────────────────────────────────────
+# ── 5) un solo AppImage per versione nella root (niente doppioni) ───────────
+# build_appimage.sh produce <pkg>-<versione>-x86_64.AppImage; un file che non
+# segue questo naming (es. Super_Linux_Utility-x86_64.AppImage autogenerato da
+# linuxdeploy) e' il doppione di una stessa versione: va eliminato.
+dups=$(find "$BASEDIR" -maxdepth 1 -name "*.AppImage" \
+    ! -name "super-linux-utility*" -printf '  %f\n' 2>/dev/null)
+if [ -n "$dups" ]; then
+    err "doppioni nella root del progetto (va tenuto UN file per versione):
+$dups"
+else
+    info "root: solo AppImage versionati, nessun doppione"
+fi
+
+# ── 6) symlink assoluti/broken ──────────────────────────────────────────────
 abs_links=$(find "$APPDIR" -type l -lname '/*' 2>/dev/null | head -10)
 if [ -n "$abs_links" ]; then
     err "symlink assoluti che puntano al sistema host:"

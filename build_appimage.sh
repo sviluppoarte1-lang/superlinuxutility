@@ -294,6 +294,16 @@ build_variant() {
     echo ""
     step "Building variant: ${display_name} (${variant})"
 
+    # UN SOLO file per variante/versione.
+    local final_name="${pkg_name}-${APP_VERSION}-x86_64.AppImage"
+
+    # Nome autogenerato da linuxdeploy dal campo Name del .desktop (spazi
+    # -> underscore) scritto nella CWD: era il DOPPIONE che restava accanto
+    # al file versionato (verificato: linuxdeploy non scrive in
+    # build/appimage/, ma nella directory da cui viene lanciato).
+    local generic_name
+    generic_name="$(echo "$display_name" | tr -cd 'A-Za-z0-9 _-' | tr ' ' '_')-x86_64.AppImage"
+
     # Flutter build with variant-specific dart-define
     info "Running: flutter build linux --${BUILD_MODE} --dart-define=APP_BUILD=${dart_define}"
     LICENSE_SECRET="$(read_license_secret)"
@@ -498,21 +508,52 @@ EOF
     # Do NOT self-extract: a normal AppImage just needs the user to run it once.
     unset APPIMAGE_EXTRACT_AND_RUN
 
+    # Pulizia dei doppioni PRIMA della produzione: uscite della run precedente
+    # (stessa versione), nomi autogenerati rimasti e file nelle directory in
+    # cui questo script ha storicamente cercato l'output. Ogni build lascia
+    # in piedi esattamente un file per variante/versione.
+    rm -f "./$final_name" "./$generic_name"
+    rm -f "${APPDIR_ROOT}"/*.AppImage "${APPDIR_ROOT}/${variant}"/*.AppImage
+
+    # LDAI_OUTPUT: dice al plugin "appimage" di linuxdeploy ESATTAMENTE quale
+    # file produrre. Senza, il plugin scrive il nome autogenerato nella CWD
+    # (mai in build/appimage/): questo script non lo trovava, eseguiva comunque
+    # il fallback appimagetool e restavano DUE AppImage identici per versione.
+    local dep_rc=0
+    LDAI_OUTPUT="$PWD/$final_name" \
     "$LINUXDEPLOY" \
         --appdir "$variant_appdir" \
         --desktop-file "$variant_appdir/$BINARY_NAME.desktop" \
         --icon-file "$variant_appdir/$BINARY_NAME.png" \
         --plugin gtk \
-        --output appimage 2>&1 | tee "${APPDIR_ROOT}/${variant}_linuxdeploy.log"
-    local dep_rc=$?
+        --output appimage 2>&1 | tee "${APPDIR_ROOT}/${variant}_linuxdeploy.log" || dep_rc=$?
+
+    # Individua l'output: il file finale (se LDAI_OUTPUT e' stato onorato),
+    # oppure il nome autogenerato nelle directory candidate, portato al nome
+    # finale. Nessuna copia extra deve restare in giro.
+    if [ ! -f "$final_name" ]; then
+        local appimage_file="" cand
+        for cand in "./$generic_name" "${APPDIR_ROOT}/$generic_name" \
+                    "${APPDIR_ROOT}/${variant}/$generic_name"; do
+            if [ -f "$cand" ]; then
+                appimage_file="$cand"
+                break
+            fi
+        done
+        if [ -z "$appimage_file" ]; then
+            # le directory sopra sono state svuotate: qualsiasi uscita e' fresca.
+            # -not -path '*/tools/*': tools/ contiene linuxdeploy e appimagetool
+            # stessi (*.AppImage) che NON vanno mai presi/mossi.
+            appimage_file=$(find "${APPDIR_ROOT}" -maxdepth 2 -name "*.AppImage" -type f \
+                -not -path "*/tools/*" 2>/dev/null | head -1)
+        fi
+        if [ -n "$appimage_file" ]; then
+            mv -f "$appimage_file" "$final_name"
+        fi
+    fi
 
     # Check if linuxdeploy produced the AppImage (only on success, not via masking).
-    local appimage_file
-    appimage_file=$(find "${APPDIR_ROOT}" -maxdepth 1 -name "*.AppImage" -type f | head -1)
-
-    if [ "$dep_rc" -eq 0 ] && [ -n "$appimage_file" ]; then
-        local final_name="${pkg_name}-${APP_VERSION}-x86_64.AppImage"
-        mv "$appimage_file" "$final_name"
+    if [ "$dep_rc" -eq 0 ] && [ -f "$final_name" ]; then
         success "AppImage created: $final_name ($(du -h "$final_name" | cut -f1))"
         return 0
     fi
@@ -522,7 +563,6 @@ EOF
     sed -i 's/%F//g' "$variant_appdir/$BINARY_NAME.desktop"
     chmod +x "$variant_appdir/usr/bin/$BINARY_NAME"
 
-    local final_name="${pkg_name}-${APP_VERSION}-x86_64.AppImage"
     ARCH=x86_64 DEPLOY_GTK_VERSION="$gtk_version" "$APPIMAGETOOL" \
         --no-appstream \
         "$variant_appdir" \
@@ -554,6 +594,20 @@ for variant_def in "${VARIANTS[@]}"; do
         BUILT+=("$variant")
     else
         FAILED+=("$variant")
+    fi
+done
+
+# ─── Sweep finale: un solo file per versione/variante ───────────────────────
+# Se linuxdeploy ha lasciato in CWD il file autogenerato (LDAI_OUTPUT non
+# onorato in qualche ambiente) e ne esiste anche la copia versionata, il
+# primo e' un doppione dello stesso contenuto: va rimosso.
+for variant_def in "${VARIANTS[@]}"; do
+    IFS='|' read -r variant pkg_name dart_define display_name description <<< "$variant_def"
+    _final_file="${pkg_name}-${APP_VERSION}-x86_64.AppImage"
+    _generic_file="$(echo "$display_name" | tr -cd 'A-Za-z0-9 _-' | tr ' ' '_')-x86_64.AppImage"
+    if [ -f "$_final_file" ] && [ -f "$_generic_file" ] && [ "$_generic_file" != "$_final_file" ]; then
+        rm -f "$_generic_file"
+        info "Rimosso doppione: $_generic_file (tenuto $_final_file)"
     fi
 done
 
