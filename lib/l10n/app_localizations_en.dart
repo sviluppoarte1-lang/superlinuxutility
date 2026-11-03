@@ -919,6 +919,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String updatesRemainingAfterApply(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count updates still pending',
+      one: '$count update still pending',
+      zero: 'No updates left',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String updatesAvailableCount(int count) {
     return '$count updates available';
   }

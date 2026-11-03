@@ -1114,16 +1114,65 @@ class RecoveryService {
     return '${n.year}${p2(n.month)}${p2(n.day)}_${p2(n.hour)}${p2(n.minute)}${p2(n.second)}';
   }
 
+  /// Chiavi di `updateReport` → nomi manager usati da [performUpdates].
+  static const Map<String, String> _reportKeyToManager = {
+    'apt': 'APT',
+    'dnf': 'DNF',
+    'pacman': 'Pacman',
+    'snap': 'Snap',
+    'flatpak': 'Flatpak',
+  };
+
+  /// Manager che avevano aggiornamenti PENDENTI secondo l'ultimo controllo
+  /// (`updateReport` con `mode == 'installable'` e conteggio > 0).
+  ///
+  /// Serve a [performUpdates] per sapere quali manager DEVONO riuscire: un
+  /// manager senza lavoro (es. `flatpak update -y` → "Nothing to do" → exit 0)
+  /// non può coprire il fallimento di quello che aveva davvero gli aggiornamenti.
+  static Set<String> pendingManagersFromReport(Map<String, dynamic>? report) {
+    final out = <String>{};
+    if (report == null) return out;
+    report.forEach((key, value) {
+      final manager = _reportKeyToManager[key];
+      if (manager == null || value is! Map) return;
+      if (value['mode'] != 'installable') return;
+      final raw = value['installableCount'] ?? value['count'] ?? 0;
+      final count = raw is int ? raw : int.tryParse('$raw') ?? 0;
+      if (count > 0) out.add(manager);
+    });
+    return out;
+  }
+
+  /// Esito dell'apply.
+  ///
+  /// Se si sapeva quali manager avevano aggiornamenti pendenti
+  /// ([expectedManagers]), **tutti** devono essere riusciti; altrimenti si
+  /// usa il criterio storico ("almeno uno ha successo").
+  static bool computeApplySuccess({
+    Set<String>? expectedManagers,
+    required Map<String, bool> managerResults,
+    required List<String> updatedManagers,
+  }) {
+    final expected = expectedManagers;
+    if (expected == null || expected.isEmpty) {
+      return updatedManagers.isNotEmpty;
+    }
+    return expected.every((m) => managerResults[m] == true);
+  }
+
   static Future<Map<String, dynamic>> performUpdates({
     Function(String)? onOutput,
     void Function(double progress, String? statusLabel)? onProgress,
     int expectedPackageCount = 0,
     List<String>? selectedUpdates,
+    Set<String>? expectedManagers,
   }) async {
     try {
       final systemInfo = await SystemDetector.detectSystem();
       var output = '';
       final updated = <String>[];
+      // Esito per manager (false finché non prova a eseguire davvero).
+      final managerResults = <String, bool>{};
 
       var numManagers = 0;
       if (systemInfo.hasApt) numManagers++;
@@ -1159,6 +1208,7 @@ class RecoveryService {
 
       // APT (Ubuntu/Debian/Mint): apt update separato + upgrade con avanzamento
       if (systemInfo.hasApt) {
+        managerResults['APT'] = false;
         final a = segStart();
         final b = segEnd();
         final span = b - a;
@@ -1216,6 +1266,7 @@ class RecoveryService {
             },
           );
 
+          managerResults['APT'] = aptExit == 0;
           if (aptExit == 0) {
             updated.add('APT');
           } else {
@@ -1229,6 +1280,7 @@ class RecoveryService {
 
       // DNF (Fedora/RHEL/CentOS)
       if (systemInfo.hasDnf) {
+        managerResults['DNF'] = false;
         final a = segStart();
         final b = segEnd();
         final span = b - a;
@@ -1285,6 +1337,7 @@ class RecoveryService {
               );
             },
           );
+          managerResults['DNF'] = code == 0;
           if (code == 0) {
             updated.add('DNF');
           } else {
@@ -1298,6 +1351,7 @@ class RecoveryService {
 
       // Pacman (Arch/Manjaro)
       if (systemInfo.hasPacman) {
+        managerResults['Pacman'] = false;
         final a = segStart();
         final b = segEnd();
         final span = b - a;
@@ -1324,6 +1378,7 @@ class RecoveryService {
             },
           );
           output += 'Pacman: exit $code\n';
+          managerResults['Pacman'] = code == 0;
           if (code == 0) {
             updated.add('Pacman');
           }
@@ -1335,6 +1390,7 @@ class RecoveryService {
 
       // Snap
       if (systemInfo.hasSnap) {
+        managerResults['Snap'] = false;
         final a = segStart();
         final b = segEnd();
         final span = b - a;
@@ -1360,6 +1416,7 @@ class RecoveryService {
               );
             },
           );
+          managerResults['Snap'] = code == 0;
           if (code == 0) {
             updated.add('Snap');
           } else {
@@ -1379,6 +1436,7 @@ class RecoveryService {
         final userSpan = span * 0.5;
         final sysSpan = span - userSpan;
         var ranAny = false;
+        managerResults['Flatpak'] = false;
         try {
           // Update "user" (non usa sudo, per non cambiare HOME).
           onProgress?.call(a, 'Flatpak: user update');
@@ -1443,6 +1501,7 @@ class RecoveryService {
           output += 'Flatpak (system): Errore durante l\'aggiornamento: $e\n';
         }
 
+        managerResults['Flatpak'] = ranAny;
         if (ranAny) {
           updated.add('Flatpak');
         }
@@ -1451,11 +1510,27 @@ class RecoveryService {
 
       onProgress?.call(1.0, null);
 
-      if (updated.isEmpty) {
+      final success = computeApplySuccess(
+        expectedManagers: expectedManagers,
+        managerResults: managerResults,
+        updatedManagers: updated,
+      );
+      if (!success) {
+        // Manager che avevano aggiornamenti pendenti e non sono riusciti:
+        // NON è un successo anche se qualcun altro (senza lavoro) è uscito 0.
+        final failed = (expectedManagers ?? const <String>{})
+            .where((m) => managerResults[m] != true)
+            .toList()
+          ..sort();
         return {
           'success': false,
-          'message': 'Nessun aggiornamento eseguito',
+          'message': failed.isEmpty
+              ? 'Nessun aggiornamento eseguito'
+              : 'Aggiornamenti non riusciti per: ${failed.join(", ")}',
           'output': output,
+          'updated': updated,
+          'results': managerResults,
+          'failedManagers': failed,
         };
       }
 
@@ -1464,6 +1539,7 @@ class RecoveryService {
         'message': 'Aggiornamenti completati per: ${updated.join(", ")}',
         'output': output,
         'updated': updated,
+        'results': managerResults,
       };
     } catch (e) {
       return {

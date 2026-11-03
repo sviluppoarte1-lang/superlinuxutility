@@ -1684,6 +1684,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{0 pacchetti} one{{count} pacchetto} other{{count} pacchetti}}'**
   String updateCheckSummaryPackageCount(int count);
 
+  /// Snackbar dopo l'applicazione degli aggiornamenti quando qualcosa è rimasto pendente
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, =0{Nessun aggiornamento rimasto} one{{count} aggiornamento ancora in attesa} other{{count} aggiornamenti ancora in attesa}}'**
+  String updatesRemainingAfterApply(int count);
+
   /// No description provided for @updatesAvailableCount.
   ///
   /// In it, this message translates to:

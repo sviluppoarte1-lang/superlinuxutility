@@ -385,6 +385,11 @@
       }
     }
   },
+  "updatesRemainingAfterApply": "{count, plural, =0{Nessun aggiornamento rimasto} one{{count} aggiornamento ancora in attesa} other{{count} aggiornamenti ancora in attesa}}",
+  "@updatesRemainingAfterApply": {
+    "description": "Snackbar dopo l'applicazione degli aggiornamenti quando qualcosa è rimasto pendente",
+    "placeholders": {"count": {"type": "int"}}
+  },
   "updatesAvailableCount": "{count} aggiornamenti disponibili",
   "@updatesAvailableCount": {
     "placeholders": {

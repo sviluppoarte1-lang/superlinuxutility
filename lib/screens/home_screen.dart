@@ -940,7 +940,25 @@ class _TabSpec {
 class TrayCheckUpdatesDialog extends StatefulWidget {
   final Map<String, dynamic>? initialResult;
 
-  const TrayCheckUpdatesDialog({this.initialResult});
+  /// Solo per i test: sostituisce l'apply reale (niente apt/flatpak veri).
+  @visibleForTesting
+  final Future<Map<String, dynamic>> Function({
+    Function(String)? onOutput,
+    void Function(double progress, String? statusLabel)? onProgress,
+    int expectedPackageCount,
+    List<String>? selectedUpdates,
+    Set<String>? expectedManagers,
+  })? applyOverride;
+
+  /// Solo per i test: sostituisce la verifica finale eseguita dopo l'apply.
+  @visibleForTesting
+  final Future<Map<String, dynamic>> Function()? checkOverride;
+
+  const TrayCheckUpdatesDialog({
+    this.initialResult,
+    this.applyOverride,
+    this.checkOverride,
+  });
 
   @override
   State<TrayCheckUpdatesDialog> createState() => TrayCheckUpdatesDialogState();
@@ -1007,7 +1025,8 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
         setState(() => _checkStatus = AppLocalizations.of(context)!.homeCheckingUpdates);
       }
     });
-    final result = await RecoveryService.checkForUpdates();
+    final doCheck = widget.checkOverride ?? RecoveryService.checkForUpdates;
+    final result = await doCheck();
     if (mounted) {
       setState(() {
         _loading = false;
@@ -1094,9 +1113,19 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
       _applyPendingPackages = List<String>.from(pending);
     });
     try {
-      final result = await RecoveryService.performUpdates(
+      // Quali manager avevano davvero aggiornamenti pendenti: DEVONO tutti
+      // riuscire. Un manager senza lavoro (es. `flatpak update -y` →
+      // "Nothing to do" → exit 0) non deve mascherare il fallimento di chi
+      // aveva gli aggiornamenti: l'app dichiarerebbe successo mentre gli
+      // stessi pacchetti restano proposti al controllo successivo.
+      final expectedManagers = RecoveryService.pendingManagersFromReport(
+        _result?['updateReport'] as Map<String, dynamic>?,
+      );
+      final doApply = widget.applyOverride ?? RecoveryService.performUpdates;
+      final result = await doApply(
         expectedPackageCount: expectedCount,
         selectedUpdates: allSelected ? null : pending,
+        expectedManagers: expectedManagers,
         onOutput: (data) {
           if (!mounted) return;
           setState(() {
@@ -1115,9 +1144,33 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
         },
       );
       if (!mounted) return;
+
+      // Verifica finale: non dichiarare "fatto" se gli stessi aggiornamenti
+      // sono ancora pendenti (apply parziale, pacchetti tenuti indietro,
+      // errore mascherato). Resta in modalità "applying" per non far
+      // riapparire la lista vecchia durante il controllo.
+      Map<String, dynamic>? recheck;
+      if (result['success'] == true) {
+        setState(() => _applyStatus = l10n.homeCheckingUpdates);
+        try {
+          final doCheck = widget.checkOverride ?? RecoveryService.checkForUpdates;
+          recheck = await doCheck();
+        } catch (_) {
+          recheck = null;
+        }
+        if (!mounted) return;
+      }
+
+      final applyOk = result['success'] == true;
+      final checkRes = recheck;
+      final checkOk = checkRes != null && checkRes['success'] == true;
+      final remaining =
+          checkOk ? (checkRes['updateCount'] as int? ?? 0) : 0;
+      final done = applyOk && (!checkOk || remaining == 0);
+
       setState(() {
         _applyingUpdates = false;
-        if (result['success'] == true) {
+        if (done) {
           _result = {
             'success': true,
             'updateCount': 0,
@@ -1127,13 +1180,35 @@ class TrayCheckUpdatesDialogState extends State<TrayCheckUpdatesDialog> {
             'updateInstallableLabels': <String>[],
             'updatePhasedLabels': <String>[],
           };
+        } else if (applyOk && checkRes != null) {
+          // Restano aggiornamenti: mostra quelli REALMENTE rimasti invece
+          // di dichiarare 0 lasciando in piedi la lista vecchia.
+          _result = checkRes;
         }
+        // NB: la lista mostrata viene da _installableLabels/_rawUpdates, che
+        // finora NON venivano azzerati dopo l'apply → la stessa lista
+        // restava in piedi "proponendo" pacchetti già eseguiti.
+        _initSelection();
       });
-      final message = result['success'] == true ? l10n.recoveryCheckUpdatesComplete : (result['error']?.toString() ?? result['message']?.toString() ?? '');
+
+      final String message;
+      final Color color;
+      if (!applyOk) {
+        message = result['error']?.toString() ??
+            result['message']?.toString() ??
+            '';
+        color = Colors.red;
+      } else if (done) {
+        message = l10n.recoveryCheckUpdatesComplete;
+        color = Colors.green;
+      } else {
+        message = l10n.updatesRemainingAfterApply(remaining);
+        color = Colors.orange;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: result['success'] == true ? Colors.green : Colors.red,
+          backgroundColor: color,
           duration: const Duration(seconds: 5),
         ),
       );

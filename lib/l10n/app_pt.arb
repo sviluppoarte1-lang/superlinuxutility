@@ -482,6 +482,11 @@
       }
     }
   },
+  "updatesRemainingAfterApply": "{count, plural, =0{Sem atualizações pendentes} one{{count} atualização ainda pendente} other{{count} atualizações ainda pendentes}}",
+  "@updatesRemainingAfterApply": {
+    "description": "Snackbar dopo l'applicazione degli aggiornamenti quando qualcosa è rimasto pendente",
+    "placeholders": {"count": {"type": "int"}}
+  },
   "updatesAvailableCount": "{count} atualizações disponíveis",
   "@updatesAvailableCount": {
     "placeholders": {
