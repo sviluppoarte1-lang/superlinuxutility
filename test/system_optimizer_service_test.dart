@@ -495,6 +495,134 @@ ActiveEnterTimestamp=
     expect(find.text('Close'), findsOneWidget);
   });
 
+  // Flusso completo del wizard con scansione/apply finti: verifica i passi,
+  // il pulsante "Avanti" libero a zero selezione, il dialogo di conferma
+  // dell'apply e la chiusura SENZA poppare (regressione schermata bianca).
+  testWidgets('wizard: flusso completo intro → fine → onClose, no pop',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    OptimizerScanResult fakeScanResult() => OptimizerScanResult(
+          hasSystemd: true,
+          services: const [
+            ServiceCandidate(
+              unit: 'demo.service',
+              descKey: 'optSvcGeneric',
+              risk: OptimizerRisk.caution,
+              evidence: ['neverActive'],
+              enabledState: 'enabled',
+              activeState: 'inactive',
+            ),
+          ],
+          startupApps: [
+            StartupCandidate(
+              app: StartupApp(
+                name: 'Demo App',
+                command: '/bin/sh -c true',
+                isEnabled: true,
+                desktopFile: '/tmp/demo.desktop',
+              ),
+              evidence: const ['unusedApp'],
+              risk: OptimizerRisk.safe,
+              preselected: true,
+            ),
+          ],
+          servicesScanned: 10,
+        );
+
+    Future<OptimizerScanResult> fakeScan({void Function(String)? onPhase}) async {
+      onPhase?.call('units');
+      return fakeScanResult();
+    }
+
+    List<ServiceCandidate>? appliedServices;
+    List<StartupApp>? appliedApps;
+    Future<OptimizerApplyResult> fakeApply({
+      required List<ServiceCandidate> services,
+      required List<StartupApp> apps,
+      void Function(String)? onProgress,
+    }) async {
+      appliedServices = services;
+      appliedApps = apps;
+      onProgress?.call('demo.service');
+      return const OptimizerApplyResult(
+          servicesDisabled: 0, appsDisabled: 1, errors: []);
+    }
+
+    var closed = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: OptimizerWizardScreen(
+          onClose: () => closed++,
+          scanOverride: fakeScan,
+          applyOverride: fakeApply,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Step 0: intro.
+    expect(find.text('Optimization wizard'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Start scan'));
+    await tester.pump();
+    await tester.pump();
+
+    // Step 2: servizi — e "Avanti" DEVE essere attivo anche con zero
+    // selezioni (prima era bloccato: impossibile raggiungere le app).
+    expect(find.text('System services'), findsOneWidget);
+    final nextBtn = find.widgetWithText(FilledButton, 'Next');
+    expect(tester.widget<FilledButton>(nextBtn).onPressed, isNotNull,
+        reason: 'Avanti non deve dipendere dalla selezione dei servizi');
+    await tester.tap(nextBtn);
+    await tester.pump();
+
+    // Step 3: app in avvio (l'app finta è preselezionata).
+    expect(find.text('Startup apps'), findsOneWidget);
+    expect(find.text('Demo App'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+    await tester.pump();
+
+    // Step 4: riepilogo → serve il DIALOGO di conferma.
+    expect(find.text('Ready to optimize'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Apply now'));
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsOneWidget,
+        reason: "l'apply richiede sempre una conferma");
+    // Annulla → nessuna applicazione.
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(appliedApps, isNull);
+
+    // Conferma → apply finto → step finale.
+    await tester.tap(find.widgetWithText(FilledButton, 'Apply now'));
+    await tester.pump();
+    final confirm = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(FilledButton, 'Apply now'),
+    );
+    await tester.tap(confirm);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Optimization complete'), findsOneWidget);
+    expect(appliedServices, isEmpty,
+        reason: 'nessun servizio selezionato: non devono essere toccati');
+    expect(appliedApps, hasLength(1));
+
+    // "Chiudi": chiama onClose e NON poppa la route (schermata bianca).
+    await tester.tap(find.text('Close'));
+    await tester.pump();
+    expect(closed, 1);
+    expect(find.byType(OptimizerWizardScreen), findsOneWidget,
+        reason: 'la route deve restare: niente Navigator.pop() sulla root');
+  });
+
   test('scan reale: struttura coerente (systemd di questa macchina)',
       () async {
     final r = await SystemOptimizerService.scan()

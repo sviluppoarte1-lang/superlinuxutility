@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/startup_app.dart';
 import '../services/system_optimizer_service.dart';
 
 /// Wizard di ottimizzazione (advanced/personal): guida l'utente dalla
@@ -14,7 +15,27 @@ class OptimizerWizardScreen extends StatefulWidget {
   /// tornare alla scheda principale.
   final VoidCallback? onClose;
 
-  const OptimizerWizardScreen({super.key, this.onClose});
+  /// Solo per i test: sostituisce la scansione reale (niente comandi di
+  /// sistema). Quando è null si usa `SystemOptimizerService.scan`.
+  @visibleForTesting
+  final Future<OptimizerScanResult> Function({void Function(String)? onPhase})?
+      scanOverride;
+
+  /// Solo per i test: sostituisce l'apply reale (niente systemctl/autostart
+  /// veri). Quando è null si usa `SystemOptimizerService.apply`.
+  @visibleForTesting
+  final Future<OptimizerApplyResult> Function({
+    required List<ServiceCandidate> services,
+    required List<StartupApp> apps,
+    void Function(String)? onProgress,
+  })? applyOverride;
+
+  const OptimizerWizardScreen({
+    super.key,
+    this.onClose,
+    this.scanOverride,
+    this.applyOverride,
+  });
 
   @override
   State<OptimizerWizardScreen> createState() => _OptimizerWizardScreenState();
@@ -39,7 +60,8 @@ class _OptimizerWizardScreenState extends State<OptimizerWizardScreen> {
       _phase = '';
     });
     try {
-      final r = await SystemOptimizerService.scan(
+      final scan = widget.scanOverride ?? SystemOptimizerService.scan;
+      final r = await scan(
         onPhase: (p) {
           if (mounted) setState(() => _phase = p);
         },
@@ -127,7 +149,8 @@ class _OptimizerWizardScreenState extends State<OptimizerWizardScreen> {
       _phase = '';
     });
     try {
-      final res = await SystemOptimizerService.apply(
+      final doApply = widget.applyOverride ?? SystemOptimizerService.apply;
+      final res = await doApply(
         services: services,
         apps: apps,
         onProgress: (p) {
